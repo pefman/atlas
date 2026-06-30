@@ -1,0 +1,51 @@
+{
+  "name": "atlas",
+  "version": "1.0.0",
+  "description": "",
+  "directories": {
+    "doc": "docs"
+  },
+  "scripts": {
+    "dev": "concurrently \"npm run dev:server\" \"npm run dev:client\"",
+    "dev:client": "vite",
+    "dev:server": "tsx server/index.ts",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/pefman/atlas.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "bugs": {
+    "url": "https://github.com/pefman/atlas/issues"
+  },
+  "homepage": "https://github.com/pefman/atlas#readme",
+  "dependencies": {
+    "better-sqlite3": "^12.11.1",
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.3.2",
+    "@types/better-sqlite3": "^7.6.13",
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.6",
+    "@types/react": "^19.2.17",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^6.0.3",
+    "autoprefixer": "^10.5.2",
+    "concurrently": "^10.0.3",
+    "postcss": "^8.5.16",
+    "tailwindcss": "^4.3.2",
+    "tsx": "^4.22.4",
+    "typescript": "^6.0.3",
+    "vite": "^8.1.2"
+  }
+}
