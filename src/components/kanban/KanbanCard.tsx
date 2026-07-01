@@ -1,16 +1,8 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Play } from 'lucide-react';
-import { ProgressRing } from '@/components/ui/progress-ring';
-import type { Subtask, Task as TaskType } from '@/types';
-
-interface Task {
-  id: number;
-  title: string;
-  description: string;
-  role_id: number;
-  status: 'backlog' | 'in_progress' | 'review' | 'done';
-}
+import type { Subtask, Task } from '@/types';
+import { priorityColors } from '@/lib/priority';
 
 interface KanbanCardProps {
   task?: Task;
@@ -19,19 +11,6 @@ interface KanbanCardProps {
   onTaskClick?: (taskId: number) => void;
   onTaskPickup?: (taskId: number) => void;
 }
-
-const priorityColors: Record<string, string> = {
-  high: 'bg-red-500/10 text-red-600 dark:text-red-400 border-red-200 dark:border-red-800',
-  medium: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-800',
-  low: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-800',
-};
-
-const statusColors: Record<string, string> = {
-  backlog: 'bg-muted text-muted-foreground',
-  'in_progress': 'bg-blue-500/10 text-blue-600 dark:text-blue-400',
-  review: 'bg-amber-500/10 text-amber-600 dark:text-amber-400',
-  done: 'bg-green-500/10 text-green-600 dark:text-green-400',
-};
 
 export function KanbanCard({ task, subtask, onExecute, onTaskClick, onTaskPickup }: KanbanCardProps) {
   const item = task || subtask;
@@ -52,7 +31,6 @@ export function KanbanCard({ task, subtask, onExecute, onTaskClick, onTaskPickup
       
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
-          <ProgressRing progress={100} size={16} strokeWidth={1.5} />
           {!isTask && (
             <Badge variant="secondary" className={`text-xs shrink-0 ${priorityColors[(item as Subtask).priority]}`}>
               {(item as Subtask).priority}

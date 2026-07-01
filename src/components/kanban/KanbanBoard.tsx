@@ -2,24 +2,7 @@ import { useEffect, useState } from 'react';
 import { KanbanColumn } from './KanbanColumn';
 import { Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
-
-interface Task {
-  id: number;
-  title: string;
-  description: string;
-  role_name: string;
-  status: 'backlog' | 'in_progress' | 'review' | 'done';
-  created_at: string;
-}
-
-interface Subtask {
-  id: number;
-  task_id: number;
-  title: string;
-  description: string;
-  role_name: string;
-  status: 'backlog' | 'in_progress' | 'review' | 'done';
-}
+import type { Task, Subtask } from '@/types';
 
 interface KanbanBoardProps {
   taskId?: number;

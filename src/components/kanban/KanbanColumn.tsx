@@ -1,22 +1,6 @@
 import { KanbanCard } from './KanbanCard';
 import { Circle } from 'lucide-react';
-
-interface Task {
-  id: number;
-  title: string;
-  description: string;
-  role_name: string;
-  status: 'backlog' | 'in_progress' | 'review' | 'done';
-}
-
-interface Subtask {
-  id: number;
-  task_id: number;
-  title: string;
-  description: string;
-  role_name: string;
-  status: 'backlog' | 'in_progress' | 'review' | 'done';
-}
+import type { Task, Subtask } from '@/types';
 
 interface KanbanColumnProps {
   title: string;

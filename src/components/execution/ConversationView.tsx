@@ -60,9 +60,6 @@ export function ConversationView({ subtasks, priorityColors }: ConversationViewP
       await Promise.all(fetchPromises);
 
       if (!signal.aborted) {
-        if (newLogs.size === 0 && subtasks.length > 0) {
-          setError('Failed to load execution logs');
-        }
         setLogs(newLogs);
       }
     };
