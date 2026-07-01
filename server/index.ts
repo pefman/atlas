@@ -8,6 +8,7 @@ import executeSubtaskRoutes from './routes/executeSubtask';
 import roleRoutes from './routes/roles';
 import agentRoutes from './routes/agents';
 import { db } from './db';
+import { startCEOWorker } from './executor';
 
 const app = express();
 const PORT = 3001;
@@ -29,4 +30,5 @@ app.use('/api/agents', agentRoutes);
 
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
+  startCEOWorker();
 });

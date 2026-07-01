@@ -224,3 +224,36 @@ async function getProvider(): Promise<any> {
 
   return new OllamaProvider(settings.endpoint, settings.model);
 }
+
+// CEO background worker - periodically checks for backlog tasks
+let ceoInterval: NodeJS.Timeout | null = null;
+
+export function startCEOWorker() {
+  if (ceoInterval) {
+    clearInterval(ceoInterval);
+  }
+  
+  // Check every 5 seconds for new tasks
+  ceoInterval = setInterval(async () => {
+    try {
+      const hasTasks = await processNextTask();
+      if (!hasTasks) {
+        // No tasks, but keep checking
+        return;
+      }
+      // Task was processed, continue loop
+    } catch (error) {
+      console.error('CEO worker error:', error);
+    }
+  }, 5000);
+  
+  console.log('CEO worker started - checking for backlog tasks every 5 seconds');
+}
+
+export function stopCEOWorker() {
+  if (ceoInterval) {
+    clearInterval(ceoInterval);
+    ceoInterval = null;
+    console.log('CEO worker stopped');
+  }
+}
