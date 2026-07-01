@@ -1,7 +1,9 @@
 import { useEffect, useState } from 'react';
 import { KanbanColumn } from './KanbanColumn';
-import { Loader2 } from 'lucide-react';
+import { CreateTaskDialog } from './CreateTaskDialog';
+import { Loader2, Plus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
 import type { Task, Subtask } from '@/types';
 
 interface KanbanBoardProps {
@@ -84,6 +86,8 @@ export function KanbanBoard({ taskId }: KanbanBoardProps) {
     );
   }
 
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+
   const backlogTasks = tasks.filter(t => t.status === 'backlog');
   const inProgressTasks = tasks.filter(t => t.status === 'in_progress');
   const reviewTasks = tasks.filter(t => t.status === 'review');
@@ -96,6 +100,13 @@ export function KanbanBoard({ taskId }: KanbanBoardProps) {
 
   return (
     <div className="flex gap-4 p-6 overflow-x-auto">
+      <div className="flex items-center justify-between mb-4">
+        <h2 className="text-lg font-semibold">Kanban Board</h2>
+        <Button onClick={() => setCreateDialogOpen(true)}>
+          <Plus className="h-4 w-4 mr-2" />
+          Create Task
+        </Button>
+      </div>
       <KanbanColumn
         title="Backlog"
         status="backlog"
@@ -127,6 +138,11 @@ export function KanbanBoard({ taskId }: KanbanBoardProps) {
         tasks={doneTasks}
         subtasks={doneSubtasks}
         onTaskClick={handleTaskClick}
+      />
+      <CreateTaskDialog
+        open={createDialogOpen}
+        onOpenChange={setCreateDialogOpen}
+        onCreated={fetchData}
       />
     </div>
   );
