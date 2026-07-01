@@ -13,7 +13,8 @@ export class OpenAIProvider implements AIProvider {
   }
 
   async chat(messages: Message[]): Promise<string> {
-    const response = await fetch(`${this.endpoint}/v1/chat/completions`, {
+    const path = this.endpoint.endsWith('/v1') ? '/chat/completions' : '/v1/chat/completions';
+    const response = await fetch(`${this.endpoint}${path}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -34,7 +35,8 @@ export class OpenAIProvider implements AIProvider {
   }
 
   async getModels(): Promise<AIModel[]> {
-    const response = await fetch(`${this.endpoint}/v1/models`, {
+    const path = this.endpoint.endsWith('/v1') ? '/models' : '/v1/models';
+    const response = await fetch(`${this.endpoint}${path}`, {
       headers: {
         'Authorization': `Bearer ${this.apiKey}`,
       },
