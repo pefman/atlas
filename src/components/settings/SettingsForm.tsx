@@ -43,7 +43,12 @@ export function SettingsForm() {
           if (!res.ok) throw new Error('Failed to fetch models');
           return res.json();
         })
-        .then((data) => setModels(data))
+        .then((data) => {
+          setModels(data);
+          if (data.length > 0 && !settings.model) {
+            setSettings((s) => ({ ...s, model: data[0].id }));
+          }
+        })
         .catch((err) => console.error('Failed to fetch models:', err))
         .finally(() => setFetchingModels(false));
     }
