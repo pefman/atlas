@@ -85,7 +85,7 @@ export function KanbanBoard({ taskId }: KanbanBoardProps) {
     }
 
     try {
-      const url = type === 'task' ? `/api/tasks/${id}` : `/api/subtasks/${id}`;
+      const url = type === 'task' ? `/api/tasks/${id}/status` : `/api/subtasks/${id}/status`;
       const response = await fetch(url, {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },

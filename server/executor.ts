@@ -2,6 +2,7 @@ import { db } from './db';
 import { OllamaProvider } from './ai/ollama';
 import { OpenAIProvider } from './ai/openai';
 import { Message } from './ai/provider';
+import { execEventBus } from './events';
 
 interface TaskContext {
   taskTitle: string;
@@ -248,15 +249,13 @@ async function getProvider(): Promise<any> {
 
 async function notifyUser(message: string, taskId?: number): Promise<void> {
   try {
-    await fetch('/api/notifications', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        sender_role: 'ceo',
-        message,
-        task_id: taskId || null
-      })
-    });
+    const result = db.prepare(`
+      INSERT INTO notifications (sender_role, message, task_id)
+      VALUES (?, ?, ?)
+    `).run('ceo', message, taskId || null);
+
+    const notification = db.prepare('SELECT * FROM notifications WHERE id = ?').get(result.lastInsertRowid);
+    execEventBus.emit('notification', notification);
   } catch (error) {
     console.error('Failed to send notification:', error);
   }

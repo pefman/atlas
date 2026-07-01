@@ -43,7 +43,7 @@ router.get('/:id', (req: Request, res: Response) => {
 
 // Create task
 router.post('/', (req: Request, res: Response) => {
-  const { title, description } = req.body;
+  const { title, description, priority, role_id } = req.body;
   
   if (!title || !description) {
     res.status(400).json({ error: 'Missing required fields' });
@@ -57,10 +57,28 @@ router.post('/', (req: Request, res: Response) => {
     return;
   }
   
+  // Validate priority if provided
+  const validPriorities = ['low', 'medium', 'high'];
+  if (priority && !validPriorities.includes(priority)) {
+    res.status(400).json({ error: 'Invalid priority. Must be one of: low, medium, high' });
+    return;
+  }
+  
+  // Validate role_id if provided - must match an existing role
+  let assignedRoleId = ceoRole.id;
+  if (role_id) {
+    const role = db.prepare('SELECT id FROM roles WHERE id = ?').get(role_id) as { id: number } | undefined;
+    if (!role) {
+      res.status(400).json({ error: 'Invalid role_id. Role not found.' });
+      return;
+    }
+    assignedRoleId = role.id;
+  }
+  
   const result = db.prepare(`
-    INSERT INTO tasks (title, description, role_id, status)
-    VALUES (?, ?, ?, 'backlog')
-  `).run(title, description, ceoRole.id);
+    INSERT INTO tasks (title, description, role_id, priority, status)
+    VALUES (?, ?, ?, ?, 'backlog')
+  `).run(title, description, assignedRoleId, priority || null);
   
   const task = db.prepare('SELECT * FROM tasks WHERE id = ?').get(result.lastInsertRowid);
   

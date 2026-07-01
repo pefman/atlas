@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { db } from '../db';
+import { execEventBus } from '../events';
 
 const router = Router();
 
@@ -42,7 +43,10 @@ router.post('/', (req: Request, res: Response) => {
     INSERT INTO notifications (sender_role, message, task_id)
     VALUES (?, ?, ?)
   `).run(sender_role, message, task_id || null);
-  
+
+  const notification = db.prepare('SELECT * FROM notifications WHERE id = ?').get(result.lastInsertRowid);
+  execEventBus.emit('notification', notification);
+
   res.status(201).json({ id: result.lastInsertRowid });
 });
 
