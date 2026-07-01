@@ -1,5 +1,6 @@
-import { Brain, Kanban, Settings, ListTodo } from 'lucide-react';
+import { Brain, Kanban, Settings, ListTodo, Moon, Sun } from 'lucide-react';
 import { NavLink, useLocation } from 'react-router-dom';
+import { Switch } from '@/components/ui/switch';
 import {
   Sidebar,
   SidebarContent,
@@ -8,6 +9,7 @@ import {
   SidebarMenu,
   SidebarMenuItem,
 } from '@/components/ui/sidebar';
+import { useTheme } from '@/context/ThemeProvider';
 
 const items = [
   {
@@ -29,13 +31,17 @@ const items = [
 
 export function AppSidebar() {
   const location = useLocation();
+  const { isDark, toggleTheme } = useTheme();
 
   return (
     <Sidebar>
       <SidebarHeader>
-        <div className="flex items-center gap-2 px-2">
-          <Brain className="h-6 w-6" />
-          <span className="text-lg font-semibold">AI Task Executor</span>
+        <div className="flex items-center justify-between px-2">
+          <div className="flex items-center gap-2">
+            <Brain className="h-6 w-6" />
+            <span className="text-lg font-semibold">AI Task Executor</span>
+          </div>
+          <Switch checked={isDark} onCheckedChange={toggleTheme} aria-label="Toggle dark mode" />
         </div>
       </SidebarHeader>
       <SidebarContent>
