@@ -22,6 +22,7 @@ const defaultSettings: Settings = {
 export function SettingsForm() {
   const [settings, setSettings] = useState<Settings>(defaultSettings);
   const [saving, setSaving] = useState(false);
+  const [testing, setTesting] = useState(false);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -48,6 +49,25 @@ export function SettingsForm() {
       console.error(err);
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleTest = async () => {
+    setTesting(true);
+    try {
+      const res = await fetch('/api/settings/test', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(settings),
+      });
+      const data = await res.json();
+      if (!data.success) throw new Error(data.error || 'Test failed');
+      toast.success(`Connection successful! Response: ${data.response}`);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Test failed';
+      toast.error(`Connection failed: ${message}`);
+    } finally {
+      setTesting(false);
     }
   };
 
@@ -118,9 +138,14 @@ export function SettingsForm() {
             />
           </div>
 
-          <Button type="submit" disabled={saving}>
-            {saving ? 'Saving...' : 'Save settings'}
-          </Button>
+          <div className="flex gap-2">
+            <Button type="button" variant="secondary" onClick={handleTest} disabled={saving || testing}>
+              {testing ? 'Testing...' : 'Test Connection'}
+            </Button>
+            <Button type="submit" disabled={saving || testing}>
+              {saving ? 'Saving...' : 'Save settings'}
+            </Button>
+          </div>
         </CardContent>
       </Card>
     </form>
