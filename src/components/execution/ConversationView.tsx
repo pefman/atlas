@@ -30,25 +30,45 @@ interface ConversationViewProps {
 
 export function ConversationView({ subtasks }: ConversationViewProps) {
   const [logs, setLogs] = useState<Map<number, any[]>>(new Map());
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    const abortController = new AbortController();
+    const { signal } = abortController;
+
     const fetchLogs = async () => {
+      setError(null);
       const newLogs = new Map<number, any[]>();
-      for (const subtask of subtasks) {
+
+      const fetchPromises = subtasks.map(async (subtask) => {
         try {
-          const response = await fetch(`/api/execute/logs/${subtask.id}`);
+          const response = await fetch(`/api/execute/logs/${subtask.id}`, { signal });
           if (response.ok) {
             const data = await response.json();
             newLogs.set(subtask.id, data);
           }
-        } catch (error) {
-          console.error(`Failed to fetch logs for subtask ${subtask.id}:`, error);
+        } catch (err) {
+          if (!signal.aborted) {
+            console.error(`Failed to fetch logs for subtask ${subtask.id}:`, err);
+          }
         }
+      });
+
+      await Promise.all(fetchPromises);
+
+      if (!signal.aborted) {
+        if (newLogs.size === 0 && subtasks.length > 0) {
+          setError('Failed to load execution logs');
+        }
+        setLogs(newLogs);
       }
-      setLogs(newLogs);
     };
 
     fetchLogs();
+
+    return () => {
+      abortController.abort();
+    };
   }, [subtasks]);
 
   const conversationData: SubtaskMessage[] = subtasks.map(subtask => ({
@@ -58,6 +78,14 @@ export function ConversationView({ subtasks }: ConversationViewProps) {
     roleInitials: getRoleInitials(subtask.role_name),
     messages: transformLogsToConversation(logs.get(subtask.id) || []),
   }));
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-40 text-destructive">
+        {error}
+      </div>
+    );
+  }
 
   if (subtasks.length === 0) {
     return (
