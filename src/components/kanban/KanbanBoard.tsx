@@ -74,22 +74,32 @@ export function KanbanBoard({ taskId }: KanbanBoardProps) {
   const handleDrop = async (itemId: string, newStatus: string) => {
     const [type, idStr] = itemId.split('-');
     const id = parseInt(idStr);
-    
+
+    const prevTasks = [...tasks];
+    const prevSubtasks = [...subtasks];
+
     if (type === 'task') {
-      await fetch(`/api/tasks/${id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: newStatus })
-      });
-    } else if (type === 'subtask') {
-      await fetch(`/api/subtasks/${id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ status: newStatus })
-      });
+      setTasks(t => t.map((t: Task) => t.id === id ? { ...t, status: newStatus as Task['status'] } : t));
+    } else {
+      setSubtasks(s => s.map((s: Subtask) => s.id === id ? { ...s, status: newStatus as Subtask['status'] } : s));
     }
-    
-    await fetchData();
+
+    try {
+      const url = type === 'task' ? `/api/tasks/${id}` : `/api/subtasks/${id}`;
+      const response = await fetch(url, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus })
+      });
+
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+
+      await fetchData();
+    } catch (error) {
+      console.error('Failed to update item status:', error);
+      setTasks(prevTasks);
+      setSubtasks(prevSubtasks);
+    }
   };
 
   if (loading) {
@@ -132,8 +142,12 @@ export function KanbanBoard({ taskId }: KanbanBoardProps) {
       <KanbanDndProvider
         items={[
           ...backlogTasks.map(t => ({ id: `task-${t.id}`, status: t.status })),
+          ...inProgressTasks.map(t => ({ id: `task-${t.id}`, status: t.status })),
+          ...reviewTasks.map(t => ({ id: `task-${t.id}`, status: t.status })),
           ...doneTasks.map(t => ({ id: `task-${t.id}`, status: t.status })),
           ...backlogSubtasks.map(s => ({ id: `subtask-${s.id}`, status: s.status })),
+          ...inProgressSubtasks.map(s => ({ id: `subtask-${s.id}`, status: s.status })),
+          ...reviewSubtasks.map(s => ({ id: `subtask-${s.id}`, status: s.status })),
           ...doneSubtasks.map(s => ({ id: `subtask-${s.id}`, status: s.status }))
         ]}
         onDrop={handleDrop}
