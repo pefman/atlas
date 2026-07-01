@@ -91,7 +91,7 @@ router.get('/models', async (req: Request, res: Response) => {
     let aiProvider: AIProvider;
     
     if (settings.provider === 'openai') {
-      aiProvider = new OpenAIProvider(settings.api_key || '', settings.model);
+      aiProvider = new OpenAIProvider(settings.api_key || '', settings.model, settings.endpoint);
     } else {
       aiProvider = new OllamaProvider(settings.endpoint || 'http://localhost:11434', settings.model);
     }
