@@ -14,13 +14,18 @@ export class OpenAIProvider implements AIProvider {
 
   async chat(messages: Message[]): Promise<string> {
     const path = this.endpoint.endsWith('/v1') ? '/chat/completions' : '/v1/chat/completions';
+    const url = `${this.endpoint}${path}`;
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
     };
     if (this.apiKey) {
       headers['Authorization'] = `Bearer ${this.apiKey}`;
     }
-    const response = await fetch(`${this.endpoint}${path}`, {
+    
+    console.log('[OpenAI] Requesting:', url);
+    console.log('[OpenAI] Headers:', JSON.stringify({ ...headers, Authorization: headers.Authorization ? 'Bearer ***' : undefined }));
+    
+    const response = await fetch(url, {
       method: 'POST',
       headers,
       body: JSON.stringify({
@@ -29,32 +34,48 @@ export class OpenAIProvider implements AIProvider {
       }),
     });
 
+    console.log('[OpenAI] Response status:', response.status);
+    
     if (!response.ok) {
+      const errorText = await response.text();
+      console.error('[OpenAI] Request failed:', errorText);
       throw new Error(`OpenAI API error: ${response.status}`);
     }
 
     const data = await response.json();
+    console.log('[OpenAI] Response from server received');
     return data.choices[0].message.content;
   }
 
   async getModels(): Promise<AIModel[]> {
     const path = this.endpoint.endsWith('/v1') ? '/models' : '/v1/models';
+    const url = `${this.endpoint}${path}`;
     const headers: Record<string, string> = {};
     if (this.apiKey) {
       headers['Authorization'] = `Bearer ${this.apiKey}`;
     }
-    const response = await fetch(`${this.endpoint}${path}`, {
+    
+    console.log('[OpenAI] Fetching models from:', url);
+    console.log('[OpenAI] Headers:', JSON.stringify({ ...headers, Authorization: headers.Authorization ? 'Bearer ***' : undefined }));
+    
+    const response = await fetch(url, {
       headers,
     });
 
+    console.log('[OpenAI] Models request status:', response.status);
+    
     if (!response.ok) {
+      const errorText = await response.text();
+      console.error('[OpenAI] Models request failed:', errorText);
       throw new Error(`OpenAI API error: ${response.status}`);
     }
 
     const data = await response.json();
-    return (data.data || []).map((m: any) => ({
+    const models = (data.data || []).map((m: any) => ({
       id: m.id,
       name: m.id,
     }));
+    console.log('[OpenAI] Found', models.length, 'models:', models.map(m => m.id));
+    return models;
   }
 }

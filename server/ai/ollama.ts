@@ -11,7 +11,11 @@ export class OllamaProvider implements AIProvider {
   }
 
   async chat(messages: Message[]): Promise<string> {
-    const response = await fetch(`${this.endpoint}/api/chat`, {
+    const url = `${this.endpoint}/api/chat`;
+    console.log('[Ollama] Requesting:', url);
+    console.log('[Ollama] Model:', this.model);
+    
+    const response = await fetch(url, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -21,25 +25,39 @@ export class OllamaProvider implements AIProvider {
       }),
     });
 
+    console.log('[Ollama] Response status:', response.status);
+    
     if (!response.ok) {
+      const errorText = await response.text();
+      console.error('[Ollama] Request failed:', errorText);
       throw new Error(`Ollama API error: ${response.status}`);
     }
 
     const data = await response.json();
+    console.log('[Ollama] Response received');
     return data.message.content;
   }
 
   async getModels(): Promise<AIModel[]> {
-    const response = await fetch(`${this.endpoint}/api/tags`);
+    const url = `${this.endpoint}/api/tags`;
+    console.log('[Ollama] Fetching models from:', url);
+    
+    const response = await fetch(url);
+    
+    console.log('[Ollama] Models request status:', response.status);
     
     if (!response.ok) {
+      const errorText = await response.text();
+      console.error('[Ollama] Models request failed:', errorText);
       throw new Error(`Ollama API error: ${response.status}`);
     }
 
     const data = await response.json();
-    return (data.models || []).map((m: any) => ({
+    const models = (data.models || []).map((m: any) => ({
       id: m.name,
       name: m.name,
     }));
+    console.log('[Ollama] Found', models.length, 'models:', models.map(m => m.id));
+    return models;
   }
 }
