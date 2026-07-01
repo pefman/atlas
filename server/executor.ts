@@ -215,11 +215,19 @@ async function getProvider(): Promise<any> {
   const settings = db.prepare('SELECT * FROM settings ORDER BY id DESC LIMIT 1').get();
 
   if (!settings) {
+    console.log('[Executor] No settings found, using default Ollama provider');
     return new OllamaProvider('http://localhost:11434', 'llama3');
   }
 
+  console.log('[Executor] Using provider:', settings.provider, 'with model:', settings.model);
+  
   if (settings.provider === 'openai') {
-    return new OpenAIProvider(settings.api_key || '', settings.model);
+    if (!settings.api_key) {
+      console.error('[Executor] OpenAI provider selected but no API key configured. Falling back to Ollama.');
+      return new OllamaProvider('http://localhost:11434', 'llama3');
+    }
+    console.log('[Executor] OpenAI API key present:', settings.api_key.substring(0, 10) + '...');
+    return new OpenAIProvider(settings.api_key, settings.model, settings.endpoint);
   }
 
   return new OllamaProvider(settings.endpoint, settings.model);
