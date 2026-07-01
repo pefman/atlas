@@ -43,14 +43,14 @@ router.get('/:id', (req: Request, res: Response) => {
 
 // Create task
 router.post('/', (req: Request, res: Response) => {
-  const { title, description, priority, role_id } = req.body;
+  const { title, description, priority, role_id, status } = req.body;
   
   if (!title || !description) {
     res.status(400).json({ error: 'Missing required fields' });
     return;
   }
   
-  // Get CEO role ID for task assignment
+  // Get CEO role ID for task assignment (default if not specified)
   const ceoRole = db.prepare('SELECT id FROM roles WHERE name = ?').get('ceo') as { id: number } | undefined;
   if (!ceoRole) {
     res.status(500).json({ error: 'CEO role not found' });
@@ -75,17 +75,24 @@ router.post('/', (req: Request, res: Response) => {
     assignedRoleId = role.id;
   }
   
+  // Validate and default status
+  const validStatuses = ['backlog', 'in_progress'];
+  let taskStatus = 'backlog';
+  if (status && validStatuses.includes(status)) {
+    taskStatus = status;
+  }
+  
   const result = db.prepare(`
     INSERT INTO tasks (title, description, role_id, priority, status)
-    VALUES (?, ?, ?, ?, 'backlog')
-  `).run(title, description, assignedRoleId, priority || null);
+    VALUES (?, ?, ?, ?, ?)
+  `).run(title, description, assignedRoleId, priority || null, taskStatus);
   
   const task = db.prepare('SELECT * FROM tasks WHERE id = ?').get(result.lastInsertRowid);
   
   res.status(201).json(task);
 });
 
-// Pick up task from backlog (called by CEO)
+// Pick up task (called by CEO) - can pickup from backlog or in_progress
 router.patch('/:id/pickup', (req: Request, res: Response) => {
   const task = db.prepare('SELECT * FROM tasks WHERE id = ?').get(req.params.id);
   
@@ -94,8 +101,8 @@ router.patch('/:id/pickup', (req: Request, res: Response) => {
     return;
   }
   
-  if (task.status !== 'backlog') {
-    res.status(400).json({ error: 'Task is not in backlog' });
+  if (task.status !== 'backlog' && task.status !== 'in_progress') {
+    res.status(400).json({ error: 'Task is not in backlog or in_progress' });
     return;
   }
   

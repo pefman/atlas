@@ -25,10 +25,11 @@ export function NotificationBell() {
   return (
     <Popover>
       <PopoverTrigger>
-        <button
-          type="button"
-          className="relative inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-5 [&_svg]:shrink-0 text-muted-foreground hover:text-foreground"
+        <span
+          className="relative inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-5 [&_svg]:shrink-0 text-muted-foreground hover:text-foreground cursor-pointer"
           aria-label="Notifications"
+          role="button"
+          tabIndex={0}
         >
           <Bell className="h-5 w-5" />
           {unreadCount > 0 && (
@@ -36,7 +37,7 @@ export function NotificationBell() {
               {unreadCount}
             </Badge>
           )}
-        </button>
+        </span>
       </PopoverTrigger>
       <PopoverContent className="w-80" align="end">
         <div className="space-y-2">

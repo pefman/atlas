@@ -96,9 +96,8 @@ export function DataTable<TData, TValue>({
         />
         <DropdownMenu>
           <MenuPrimitive.Trigger
-            render={({ props, ...renderProps }) => (
+            render={(_renderProps) => (
               <button
-                {...props}
                 className="group/button inline-flex shrink-0 items-center justify-center rounded-lg border border-border bg-background text-sm font-medium whitespace-nowrap transition-all outline-none select-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 active:not-aria-[haspopup]:translate-y-px disabled:pointer-events-none disabled:opacity-50 hover:bg-muted hover:text-foreground h-8 gap-1.5 px-2.5 ml-auto"
               >
                 Columns

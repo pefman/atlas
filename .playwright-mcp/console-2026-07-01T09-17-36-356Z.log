@@ -203,3 +203,722 @@
 [ 2401250ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5173/api/tasks/9:0
 [ 2401250ms] [ERROR] Failed to fetch task: Error: HTTP 404
     at fetchTask (http://localhost:5173/src/components/tasks/TaskDetail.tsx:80:11) @ http://localhost:5173/src/components/tasks/TaskDetail.tsx:84
+[ 3704306ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:5173/src/App.tsx?t=1782901160653:0
+[ 3704306ms] [ERROR] [vite] Failed to reload /src/App.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://localhost:5173/@vite/client:928
+[ 3708830ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5173/api/tasks/9:0
+[ 3708831ms] [ERROR] Failed to fetch task: Error: HTTP 404
+    at fetchTask (http://localhost:5173/src/components/tasks/TaskDetail.tsx:80:11) @ http://localhost:5173/src/components/tasks/TaskDetail.tsx:84
+[ 3708835ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5173/api/notifications:0
+[ 3708835ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5173/api/notifications/stream:0
+[ 3708837ms] [ERROR] Failed to fetch notifications: SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON @ http://localhost:5173/src/components/notifications/NotificationProvider.tsx:17
+[ 3708837ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5173/api/tasks/9:0
+[ 3708837ms] [ERROR] Failed to fetch task: Error: HTTP 404
+    at fetchTask (http://localhost:5173/src/components/tasks/TaskDetail.tsx:80:11) @ http://localhost:5173/src/components/tasks/TaskDetail.tsx:84
+[ 3708841ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5173/api/notifications:0
+[ 3708841ms] [ERROR] Failed to fetch notifications: SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON @ http://localhost:5173/src/components/notifications/NotificationProvider.tsx:17
+[ 3738833ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5173/api/notifications:0
+[ 3738833ms] [ERROR] Failed to fetch notifications: SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON @ http://localhost:5173/src/components/notifications/NotificationProvider.tsx:17
+[ 3768831ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5173/api/notifications:0
+[ 3768832ms] [ERROR] Failed to fetch notifications: SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON @ http://localhost:5173/src/components/notifications/NotificationProvider.tsx:17
+[ 3792151ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5173/api/tasks/9:0
+[ 3792151ms] [ERROR] Failed to fetch task: Error: HTTP 404
+    at fetchTask (http://localhost:5173/src/components/tasks/TaskDetail.tsx:80:11) @ http://localhost:5173/src/components/tasks/TaskDetail.tsx:84
+[ 3792155ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5173/api/notifications:0
+[ 3792155ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5173/api/notifications/stream:0
+[ 3792155ms] [WARNING] SSE connection error for notifications @ http://localhost:5173/src/components/notifications/NotificationProvider.tsx?t=1782901248425:43
+[ 3792155ms] [ERROR] Failed to fetch notifications: SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON @ http://localhost:5173/src/components/notifications/NotificationProvider.tsx?t=1782901248425:18
+[ 3822153ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5173/api/notifications:0
+[ 3822154ms] [ERROR] Failed to fetch notifications: SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON @ http://localhost:5173/src/components/notifications/NotificationProvider.tsx?t=1782901248425:18
+[ 3846255ms] [ERROR] Invalid hook call. Hooks can only be called inside of the body of a function component. This could happen for one of the following reasons:
+1. You might have mismatching versions of React and the renderer (such as React DOM)
+2. You might be breaking the Rules of Hooks
+3. You might have more than one copy of React in the same app
+See https://react.dev/link/invalid-hook-call for tips about how to debug and fix this problem. @ http://localhost:5173/node_modules/.vite/deps/react.js?v=91627e3b:296
+[ 3846258ms] [ERROR] Invalid hook call. Hooks can only be called inside of the body of a function component. This could happen for one of the following reasons:
+1. You might have mismatching versions of React and the renderer (such as React DOM)
+2. You might be breaking the Rules of Hooks
+3. You might have more than one copy of React in the same app
+See https://react.dev/link/invalid-hook-call for tips about how to debug and fix this problem. @ http://localhost:5173/node_modules/.vite/deps/react.js?v=91627e3b:296
+[ 3846259ms] [ERROR] %o
+
+%s
+
+%s
+ TypeError: Cannot read properties of null (reading 'useContext')
+    at exports.useContext (http://localhost:5173/node_modules/.vite/deps/react.js?v=91627e3b:706:22)
+    at usePopoverRootContext (http://localhost:5173/node_modules/.vite/deps/@base-ui_react_popover.js?v=bbbc1900:29:31)
+    at PopoverRoot (http://localhost:5173/node_modules/.vite/deps/@base-ui_react_popover.js?v=bbbc1900:188:6)
+    at Object.react_stack_bottom_frame (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=a03c3e33:12866:12)
+    at renderWithHooks (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=a03c3e33:4213:19)
+    at updateFunctionComponent (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=a03c3e33:5569:16)
+    at beginWork (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=a03c3e33:6140:20)
+    at runWithFiberInDEV (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=a03c3e33:851:66)
+    at performUnitOfWork (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=a03c3e33:8429:92)
+    at workLoopSync (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=a03c3e33:8325:37) The above error occurred in the <PopoverRoot> component. React will try to recreate this component tree from scratch using the error boundary you provided, ErrorBoundary. @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=a03c3e33:5273
+[ 3846259ms] [ERROR] Uncaught error: TypeError: Cannot read properties of null (reading 'useContext')
+    at exports.useContext (http://localhost:5173/node_modules/.vite/deps/react.js?v=91627e3b:706:22)
+    at usePopoverRootContext (http://localhost:5173/node_modules/.vite/deps/@base-ui_react_popover.js?v=bbbc1900:29:31)
+    at PopoverRoot (http://localhost:5173/node_modules/.vite/deps/@base-ui_react_popover.js?v=bbbc1900:188:6)
+    at Object.react_stack_bottom_frame (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=a03c3e33:12866:12)
+    at renderWithHooks (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=a03c3e33:4213:19)
+    at updateFunctionComponent (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=a03c3e33:5569:16)
+    at beginWork (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=a03c3e33:6140:20)
+    at runWithFiberInDEV (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=a03c3e33:851:66)
+    at performUnitOfWork (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=a03c3e33:8429:92)
+    at workLoopSync (http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=a03c3e33:8325:37) {componentStack: 
+    at PopoverRoot (http://localhost:5173/node_mo…calhost:5173/src/context/ThemeProvider.tsx:13:33)} @ http://localhost:5173/src/components/ErrorBoundary.tsx:15
+[ 3846494ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=91627e3b:14335
+[ 3846532ms] [ERROR] In HTML, %s cannot be a descendant of <%s>.
+This will cause a hydration error.%s <button> button 
+
+  ...
+    <main data-slot="sidebar-inset" className="relative f...">
+      <SiteHeader>
+        <header className="flex h-16 ...">
+          <SidebarTrigger>
+          <Separator>
+          <h1>
+          <div className="ml-auto">
+            <NotificationBell>
+              <Popover>
+                <PopoverRoot data-slot="popover">
+                  <FloatingTree>
+                    <PopoverRootComponent props={{...}}>
+                      <PopoverTrigger asChild={true}>
+                        <PopoverTrigger data-slot="popover-tr..." asChild={true}>
+>                         <button
+>                           type="button"
+>                           onClick={function}
+>                           onMouseDown={function}
+>                           onKeyDown={function}
+>                           onKeyUp={function}
+>                           onPointerDown={function}
+>                           tabIndex={0}
+>                           disabled={false}
+>                           data-base-ui-click-trigger=""
+>                           id="base-ui-_r_4_"
+>                           aria-haspopup="dialog"
+>                           aria-expanded={false}
+>                           aria-controls={undefined}
+>                           data-slot="popover-trigger"
+>                           asChild={true}
+>                           ref={function}
+>                         >
+                            <Button variant="ghost" size="icon" className="relative">
+                              <Button data-slot="button" className={"group/bu..."}>
+>                               <button
+>                                 type="button"
+>                                 onClick={function}
+>                                 onMouseDown={function}
+>                                 onKeyDown={function}
+>                                 onKeyUp={function}
+>                                 onPointerDown={function}
+>                                 tabIndex={0}
+>                                 disabled={false}
+>                                 data-slot="button"
+>                                 ref={function}
+>                                 className={"group/button inline-flex shrink-0 items-center justify-center rounded-l..."}
+>                               >
+                      ...
+      ...
+ @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=91627e3b:1772
+[ 3846532ms] [ERROR] <%s> cannot contain a nested %s.
+See this log for the ancestor stack trace. button <button> @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=91627e3b:1774
+[ 3846532ms] [ERROR] React does not recognize the `%s` prop on a DOM element. If you intentionally want it to appear in the DOM as a custom attribute, spell it as lowercase `%s` instead. If you accidentally passed it from a parent component, remove it from the DOM element. asChild aschild @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=91627e3b:1893
+[ 3846546ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5173/api/tasks/9:0
+[ 3846546ms] [ERROR] Failed to fetch task: Error: HTTP 404
+    at fetchTask (http://localhost:5173/src/components/tasks/TaskDetail.tsx:80:11) @ http://localhost:5173/src/components/tasks/TaskDetail.tsx:84
+[ 3846546ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5173/api/notifications:0
+[ 3846548ms] [ERROR] Failed to fetch notifications: SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON @ http://localhost:5173/src/components/notifications/NotificationProvider.tsx?t=1782901248425:18
+[ 3846552ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5173/api/notifications/stream:0
+[ 3846552ms] [WARNING] SSE connection error for notifications @ http://localhost:5173/src/components/notifications/NotificationProvider.tsx?t=1782901248425:43
+[ 3846552ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5173/api/tasks/9:0
+[ 3846552ms] [ERROR] Failed to fetch task: Error: HTTP 404
+    at fetchTask (http://localhost:5173/src/components/tasks/TaskDetail.tsx:80:11) @ http://localhost:5173/src/components/tasks/TaskDetail.tsx:84
+[ 3846552ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5173/api/notifications:0
+[ 3846552ms] [ERROR] Failed to fetch notifications: SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON @ http://localhost:5173/src/components/notifications/NotificationProvider.tsx?t=1782901248425:18
+[ 3876550ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5173/api/notifications:0
+[ 3876550ms] [ERROR] Failed to fetch notifications: SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON @ http://localhost:5173/src/components/notifications/NotificationProvider.tsx?t=1782901248425:18
+[ 3906551ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5173/api/notifications:0
+[ 3906551ms] [ERROR] Failed to fetch notifications: SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON @ http://localhost:5173/src/components/notifications/NotificationProvider.tsx?t=1782901248425:18
+[ 3936547ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5173/api/notifications:0
+[ 3936548ms] [ERROR] Failed to fetch notifications: SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON @ http://localhost:5173/src/components/notifications/NotificationProvider.tsx?t=1782901248425:18
+[ 3937044ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:5173/src/components/kanban/KanbanBoard.tsx?t=1782901393398:0
+[ 3937044ms] [ERROR] [vite] Failed to reload /src/components/kanban/KanbanBoard.tsx. This could be due to syntax errors or importing non-existent modules. (see errors above) @ http://localhost:5173/@vite/client:928
+[ 3966548ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5173/api/notifications:0
+[ 3966548ms] [ERROR] Failed to fetch notifications: SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON @ http://localhost:5173/src/components/notifications/NotificationProvider.tsx?t=1782901248425:18
+[ 3996551ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5173/api/notifications:0
+[ 3996551ms] [ERROR] Failed to fetch notifications: SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON @ http://localhost:5173/src/components/notifications/NotificationProvider.tsx?t=1782901248425:18
+[ 4026551ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5173/api/notifications:0
+[ 4026551ms] [ERROR] Failed to fetch notifications: SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON @ http://localhost:5173/src/components/notifications/NotificationProvider.tsx?t=1782901248425:18
+[ 4056551ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5173/api/notifications:0
+[ 4056551ms] [ERROR] Failed to fetch notifications: SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON @ http://localhost:5173/src/components/notifications/NotificationProvider.tsx?t=1782901248425:18
+[ 4086548ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5173/api/notifications:0
+[ 4086548ms] [ERROR] Failed to fetch notifications: SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON @ http://localhost:5173/src/components/notifications/NotificationProvider.tsx?t=1782901248425:18
+[ 4116549ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5173/api/notifications:0
+[ 4116550ms] [ERROR] Failed to fetch notifications: SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON @ http://localhost:5173/src/components/notifications/NotificationProvider.tsx?t=1782901248425:18
+[ 4146552ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5173/api/notifications:0
+[ 4146552ms] [ERROR] Failed to fetch notifications: SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON @ http://localhost:5173/src/components/notifications/NotificationProvider.tsx?t=1782901248425:18
+[ 4165466ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=a0e6c864:14335
+[ 4165505ms] [ERROR] In HTML, %s cannot be a descendant of <%s>.
+This will cause a hydration error.%s <button> button 
+
+  ...
+    <main data-slot="sidebar-inset" className="relative f...">
+      <SiteHeader>
+        <header className="flex h-16 ...">
+          <SidebarTrigger>
+          <Separator>
+          <h1>
+          <div className="ml-auto">
+            <NotificationBell>
+              <Popover>
+                <PopoverRoot data-slot="popover">
+                  <FloatingTree>
+                    <PopoverRootComponent props={{...}}>
+                      <PopoverTrigger>
+                        <PopoverTrigger data-slot="popover-tr...">
+>                         <button
+>                           type="button"
+>                           onClick={function}
+>                           onMouseDown={function}
+>                           onKeyDown={function}
+>                           onKeyUp={function}
+>                           onPointerDown={function}
+>                           tabIndex={0}
+>                           disabled={false}
+>                           data-base-ui-click-trigger=""
+>                           id="base-ui-_r_4_"
+>                           aria-haspopup="dialog"
+>                           aria-expanded={false}
+>                           aria-controls={undefined}
+>                           data-slot="popover-trigger"
+>                           ref={function}
+>                         >
+>                           <button
+>                             type="button"
+>                             className={"relative inline-flex items-center justify-center gap-2 whitespace-nowrap ro..."}
+>                             aria-label="Notifications"
+>                           >
+                      ...
+      ...
+ @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=a0e6c864:1772
+[ 4165505ms] [ERROR] <%s> cannot contain a nested %s.
+See this log for the ancestor stack trace. button <button> @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=a0e6c864:1774
+[ 4165519ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5173/api/tasks/9:0
+[ 4165519ms] [ERROR] Failed to fetch task: Error: HTTP 404
+    at fetchTask (http://localhost:5173/src/components/tasks/TaskDetail.tsx?t=1782901621234:80:11) @ http://localhost:5173/src/components/tasks/TaskDetail.tsx?t=1782901621234:84
+[ 4165519ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5173/api/notifications:0
+[ 4165520ms] [ERROR] Failed to fetch notifications: SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON @ http://localhost:5173/src/components/notifications/NotificationProvider.tsx?t=1782901248425:18
+[ 4165524ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5173/api/notifications/stream:0
+[ 4165524ms] [WARNING] SSE connection error for notifications @ http://localhost:5173/src/components/notifications/NotificationProvider.tsx?t=1782901248425:43
+[ 4165524ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5173/api/tasks/9:0
+[ 4165524ms] [ERROR] Failed to fetch task: Error: HTTP 404
+    at fetchTask (http://localhost:5173/src/components/tasks/TaskDetail.tsx?t=1782901621234:80:11) @ http://localhost:5173/src/components/tasks/TaskDetail.tsx?t=1782901621234:84
+[ 4165524ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5173/api/notifications:0
+[ 4165526ms] [ERROR] Failed to fetch notifications: SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON @ http://localhost:5173/src/components/notifications/NotificationProvider.tsx?t=1782901248425:18
+[ 4171040ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=a7e4b106:14335
+[ 4171077ms] [ERROR] In HTML, %s cannot be a descendant of <%s>.
+This will cause a hydration error.%s <button> button 
+
+  ...
+    <main data-slot="sidebar-inset" className="relative f...">
+      <SiteHeader>
+        <header className="flex h-16 ...">
+          <SidebarTrigger>
+          <Separator>
+          <h1>
+          <div className="ml-auto">
+            <NotificationBell>
+              <Popover>
+                <PopoverRoot data-slot="popover">
+                  <FloatingTree>
+                    <PopoverRootComponent props={{...}}>
+                      <PopoverTrigger>
+                        <PopoverTrigger data-slot="popover-tr...">
+>                         <button
+>                           type="button"
+>                           onClick={function}
+>                           onMouseDown={function}
+>                           onKeyDown={function}
+>                           onKeyUp={function}
+>                           onPointerDown={function}
+>                           tabIndex={0}
+>                           disabled={false}
+>                           data-base-ui-click-trigger=""
+>                           id="base-ui-_r_4_"
+>                           aria-haspopup="dialog"
+>                           aria-expanded={false}
+>                           aria-controls={undefined}
+>                           data-slot="popover-trigger"
+>                           ref={function}
+>                         >
+>                           <button
+>                             type="button"
+>                             className={"relative inline-flex items-center justify-center gap-2 whitespace-nowrap ro..."}
+>                             aria-label="Notifications"
+>                           >
+                      ...
+      ...
+ @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=a7e4b106:1772
+[ 4171077ms] [ERROR] <%s> cannot contain a nested %s.
+See this log for the ancestor stack trace. button <button> @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=a7e4b106:1774
+[ 4171092ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5173/api/tasks/9:0
+[ 4171092ms] [ERROR] Failed to fetch task: Error: HTTP 404
+    at fetchTask (http://localhost:5173/src/components/tasks/TaskDetail.tsx?t=1782901626867:80:11) @ http://localhost:5173/src/components/tasks/TaskDetail.tsx?t=1782901626867:84
+[ 4171096ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5173/api/notifications:0
+[ 4171096ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5173/api/notifications/stream:0
+[ 4171097ms] [WARNING] SSE connection error for notifications @ http://localhost:5173/src/components/notifications/NotificationProvider.tsx?t=1782901248425:43
+[ 4171097ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5173/api/tasks/9:0
+[ 4171097ms] [ERROR] Failed to fetch task: Error: HTTP 404
+    at fetchTask (http://localhost:5173/src/components/tasks/TaskDetail.tsx?t=1782901626867:80:11) @ http://localhost:5173/src/components/tasks/TaskDetail.tsx?t=1782901626867:84
+[ 4171097ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5173/api/notifications:0
+[ 4171097ms] [ERROR] Failed to fetch notifications: SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON @ http://localhost:5173/src/components/notifications/NotificationProvider.tsx?t=1782901248425:18
+[ 4171097ms] [ERROR] Failed to fetch notifications: SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON @ http://localhost:5173/src/components/notifications/NotificationProvider.tsx?t=1782901248425:18
+[ 4201095ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5173/api/notifications:0
+[ 4201096ms] [ERROR] Failed to fetch notifications: SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON @ http://localhost:5173/src/components/notifications/NotificationProvider.tsx?t=1782901248425:18
+[ 4231097ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5173/api/notifications:0
+[ 4231097ms] [ERROR] Failed to fetch notifications: SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON @ http://localhost:5173/src/components/notifications/NotificationProvider.tsx?t=1782901248425:18
+[ 4261094ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5173/api/notifications:0
+[ 4261094ms] [ERROR] Failed to fetch notifications: SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON @ http://localhost:5173/src/components/notifications/NotificationProvider.tsx?t=1782901248425:18
+[ 4291094ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5173/api/notifications:0
+[ 4291094ms] [ERROR] Failed to fetch notifications: SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON @ http://localhost:5173/src/components/notifications/NotificationProvider.tsx?t=1782901248425:18
+[ 4321096ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5173/api/notifications:0
+[ 4321097ms] [ERROR] Failed to fetch notifications: SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON @ http://localhost:5173/src/components/notifications/NotificationProvider.tsx?t=1782901248425:18
+[ 4351095ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5173/api/notifications:0
+[ 4351096ms] [ERROR] Failed to fetch notifications: SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON @ http://localhost:5173/src/components/notifications/NotificationProvider.tsx?t=1782901248425:18
+[ 4381097ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5173/api/notifications:0
+[ 4381097ms] [ERROR] Failed to fetch notifications: SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON @ http://localhost:5173/src/components/notifications/NotificationProvider.tsx?t=1782901248425:18
+[ 4411095ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5173/api/notifications:0
+[ 4411096ms] [ERROR] Failed to fetch notifications: SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON @ http://localhost:5173/src/components/notifications/NotificationProvider.tsx?t=1782901248425:18
+[ 4441093ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5173/api/notifications:0
+[ 4441094ms] [ERROR] Failed to fetch notifications: SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON @ http://localhost:5173/src/components/notifications/NotificationProvider.tsx?t=1782901248425:18
+[ 4471100ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5173/api/notifications:0
+[ 4471101ms] [ERROR] Failed to fetch notifications: SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON @ http://localhost:5173/src/components/notifications/NotificationProvider.tsx?t=1782901248425:18
+[ 4501100ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5173/api/notifications:0
+[ 4501100ms] [ERROR] Failed to fetch notifications: SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON @ http://localhost:5173/src/components/notifications/NotificationProvider.tsx?t=1782901248425:18
+[ 4531103ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5173/api/notifications:0
+[ 4531104ms] [ERROR] Failed to fetch notifications: SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON @ http://localhost:5173/src/components/notifications/NotificationProvider.tsx?t=1782901248425:18
+[ 4561100ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5173/api/notifications:0
+[ 4561100ms] [ERROR] Failed to fetch notifications: SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON @ http://localhost:5173/src/components/notifications/NotificationProvider.tsx?t=1782901248425:18
+[ 4591102ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5173/api/notifications:0
+[ 4591103ms] [ERROR] Failed to fetch notifications: SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON @ http://localhost:5173/src/components/notifications/NotificationProvider.tsx?t=1782901248425:18
+[ 4621101ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5173/api/notifications:0
+[ 4621101ms] [ERROR] Failed to fetch notifications: SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON @ http://localhost:5173/src/components/notifications/NotificationProvider.tsx?t=1782901248425:18
+[ 4651101ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5173/api/notifications:0
+[ 4651102ms] [ERROR] Failed to fetch notifications: SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON @ http://localhost:5173/src/components/notifications/NotificationProvider.tsx?t=1782901248425:18
+[ 4681101ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5173/api/notifications:0
+[ 4681101ms] [ERROR] Failed to fetch notifications: SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON @ http://localhost:5173/src/components/notifications/NotificationProvider.tsx?t=1782901248425:18
+[ 4711103ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5173/api/notifications:0
+[ 4711104ms] [ERROR] Failed to fetch notifications: SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON @ http://localhost:5173/src/components/notifications/NotificationProvider.tsx?t=1782901248425:18
+[ 4741099ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5173/api/notifications:0
+[ 4741100ms] [ERROR] Failed to fetch notifications: SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON @ http://localhost:5173/src/components/notifications/NotificationProvider.tsx?t=1782901248425:18
+[ 4771104ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5173/api/notifications:0
+[ 4771104ms] [ERROR] Failed to fetch notifications: SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON @ http://localhost:5173/src/components/notifications/NotificationProvider.tsx?t=1782901248425:18
+[ 4801103ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5173/api/notifications:0
+[ 4801104ms] [ERROR] Failed to fetch notifications: SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON @ http://localhost:5173/src/components/notifications/NotificationProvider.tsx?t=1782901248425:18
+[ 4831104ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5173/api/notifications:0
+[ 4831104ms] [ERROR] Failed to fetch notifications: SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON @ http://localhost:5173/src/components/notifications/NotificationProvider.tsx?t=1782901248425:18
+[ 4861104ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5173/api/notifications:0
+[ 4861104ms] [ERROR] Failed to fetch notifications: SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON @ http://localhost:5173/src/components/notifications/NotificationProvider.tsx?t=1782901248425:18
+[ 4891102ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5173/api/notifications:0
+[ 4891102ms] [ERROR] Failed to fetch notifications: SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON @ http://localhost:5173/src/components/notifications/NotificationProvider.tsx?t=1782901248425:18
+[ 4921108ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5173/api/notifications:0
+[ 4921109ms] [ERROR] Failed to fetch notifications: SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON @ http://localhost:5173/src/components/notifications/NotificationProvider.tsx?t=1782901248425:18
+[ 4951106ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5173/api/notifications:0
+[ 4951107ms] [ERROR] Failed to fetch notifications: SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON @ http://localhost:5173/src/components/notifications/NotificationProvider.tsx?t=1782901248425:18
+[ 4981107ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5173/api/notifications:0
+[ 4981108ms] [ERROR] Failed to fetch notifications: SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON @ http://localhost:5173/src/components/notifications/NotificationProvider.tsx?t=1782901248425:18
+[ 5011107ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5173/api/notifications:0
+[ 5011107ms] [ERROR] Failed to fetch notifications: SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON @ http://localhost:5173/src/components/notifications/NotificationProvider.tsx?t=1782901248425:18
+[ 5041108ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5173/api/notifications:0
+[ 5041108ms] [ERROR] Failed to fetch notifications: SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON @ http://localhost:5173/src/components/notifications/NotificationProvider.tsx?t=1782901248425:18
+[ 5071107ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5173/api/notifications:0
+[ 5071108ms] [ERROR] Failed to fetch notifications: SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON @ http://localhost:5173/src/components/notifications/NotificationProvider.tsx?t=1782901248425:18
+[ 5101108ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5173/api/notifications:0
+[ 5101108ms] [ERROR] Failed to fetch notifications: SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON @ http://localhost:5173/src/components/notifications/NotificationProvider.tsx?t=1782901248425:18
+[ 5131109ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5173/api/notifications:0
+[ 5131109ms] [ERROR] Failed to fetch notifications: SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON @ http://localhost:5173/src/components/notifications/NotificationProvider.tsx?t=1782901248425:18
+[ 5161106ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5173/api/notifications:0
+[ 5161107ms] [ERROR] Failed to fetch notifications: SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON @ http://localhost:5173/src/components/notifications/NotificationProvider.tsx?t=1782901248425:18
+[ 5191108ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5173/api/notifications:0
+[ 5191109ms] [ERROR] Failed to fetch notifications: SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON @ http://localhost:5173/src/components/notifications/NotificationProvider.tsx?t=1782901248425:18
+[ 5221108ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5173/api/notifications:0
+[ 5221109ms] [ERROR] Failed to fetch notifications: SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON @ http://localhost:5173/src/components/notifications/NotificationProvider.tsx?t=1782901248425:18
+[ 5251108ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5173/api/notifications:0
+[ 5251109ms] [ERROR] Failed to fetch notifications: SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON @ http://localhost:5173/src/components/notifications/NotificationProvider.tsx?t=1782901248425:18
+[ 5281109ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5173/api/notifications:0
+[ 5281110ms] [ERROR] Failed to fetch notifications: SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON @ http://localhost:5173/src/components/notifications/NotificationProvider.tsx?t=1782901248425:18
+[ 5311109ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5173/api/notifications:0
+[ 5311109ms] [ERROR] Failed to fetch notifications: SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON @ http://localhost:5173/src/components/notifications/NotificationProvider.tsx?t=1782901248425:18
+[ 5313947ms] [LOG] [vite] server connection lost. Polling for restart... @ http://localhost:5173/@vite/client:992
+[ 5314071ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=a7e4b106:14335
+[ 5314126ms] [ERROR] In HTML, %s cannot be a descendant of <%s>.
+This will cause a hydration error.%s <button> button 
+
+  ...
+    <main data-slot="sidebar-inset" className="relative f...">
+      <SiteHeader>
+        <header className="flex h-16 ...">
+          <SidebarTrigger>
+          <Separator>
+          <h1>
+          <div className="ml-auto">
+            <NotificationBell>
+              <Popover>
+                <PopoverRoot data-slot="popover">
+                  <FloatingTree>
+                    <PopoverRootComponent props={{...}}>
+                      <PopoverTrigger>
+                        <PopoverTrigger data-slot="popover-tr...">
+>                         <button
+>                           type="button"
+>                           onClick={function}
+>                           onMouseDown={function}
+>                           onKeyDown={function}
+>                           onKeyUp={function}
+>                           onPointerDown={function}
+>                           tabIndex={0}
+>                           disabled={false}
+>                           data-base-ui-click-trigger=""
+>                           id="base-ui-_r_4_"
+>                           aria-haspopup="dialog"
+>                           aria-expanded={false}
+>                           aria-controls={undefined}
+>                           data-slot="popover-trigger"
+>                           ref={function}
+>                         >
+>                           <button
+>                             type="button"
+>                             className={"relative inline-flex items-center justify-center gap-2 whitespace-nowrap ro..."}
+>                             aria-label="Notifications"
+>                           >
+                      ...
+      ...
+ @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=a7e4b106:1772
+[ 5314126ms] [ERROR] <%s> cannot contain a nested %s.
+See this log for the ancestor stack trace. button <button> @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=a7e4b106:1774
+[ 5314201ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5173/api/tasks/9:0
+[ 5314201ms] [ERROR] Failed to fetch task: Error: HTTP 404
+    at fetchTask (http://localhost:5173/src/components/tasks/TaskDetail.tsx?t=1782901871891:80:11) @ http://localhost:5173/src/components/tasks/TaskDetail.tsx?t=1782901871891:84
+[ 5314207ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5173/api/notifications/stream:0
+[ 5314207ms] [WARNING] SSE connection error for notifications @ http://localhost:5173/src/components/notifications/NotificationProvider.tsx?t=1782901248425:43
+[ 5314207ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5173/api/notifications:0
+[ 5314207ms] [ERROR] Failed to fetch notifications: SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON @ http://localhost:5173/src/components/notifications/NotificationProvider.tsx?t=1782901248425:18
+[ 5314209ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5173/api/tasks/9:0
+[ 5314209ms] [ERROR] Failed to fetch task: Error: HTTP 404
+    at fetchTask (http://localhost:5173/src/components/tasks/TaskDetail.tsx?t=1782901871891:80:11) @ http://localhost:5173/src/components/tasks/TaskDetail.tsx?t=1782901871891:84
+[ 5314216ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5173/api/notifications:0
+[ 5314217ms] [ERROR] Failed to fetch notifications: SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON @ http://localhost:5173/src/components/notifications/NotificationProvider.tsx?t=1782901248425:18
+[ 5542826ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5173/api/notifications:0
+[ 5542826ms] [ERROR] Failed to fetch notifications: SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON @ http://localhost:5173/src/components/notifications/NotificationProvider.tsx?t=1782901248425:18
+[ 5564827ms] [LOG] [vite] server connection lost. Polling for restart... @ http://localhost:5173/@vite/client:992
+[ 5567156ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=a7e4b106:14335
+[ 5567176ms] [ERROR] In HTML, %s cannot be a descendant of <%s>.
+This will cause a hydration error.%s <button> button 
+
+  ...
+    <main data-slot="sidebar-inset" className="relative f...">
+      <SiteHeader>
+        <header className="flex h-16 ...">
+          <SidebarTrigger>
+          <Separator>
+          <h1>
+          <div className="ml-auto">
+            <NotificationBell>
+              <Popover>
+                <PopoverRoot data-slot="popover">
+                  <FloatingTree>
+                    <PopoverRootComponent props={{...}}>
+                      <PopoverTrigger>
+                        <PopoverTrigger data-slot="popover-tr...">
+>                         <button
+>                           type="button"
+>                           onClick={function}
+>                           onMouseDown={function}
+>                           onKeyDown={function}
+>                           onKeyUp={function}
+>                           onPointerDown={function}
+>                           tabIndex={0}
+>                           disabled={false}
+>                           data-base-ui-click-trigger=""
+>                           id="base-ui-_r_4_"
+>                           aria-haspopup="dialog"
+>                           aria-expanded={false}
+>                           aria-controls={undefined}
+>                           data-slot="popover-trigger"
+>                           ref={function}
+>                         >
+>                           <button
+>                             type="button"
+>                             className={"relative inline-flex items-center justify-center gap-2 whitespace-nowrap ro..."}
+>                             aria-label="Notifications"
+>                           >
+                      ...
+      ...
+ @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=a7e4b106:1772
+[ 5567176ms] [ERROR] <%s> cannot contain a nested %s.
+See this log for the ancestor stack trace. button <button> @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=a7e4b106:1774
+[ 5567190ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5173/api/tasks/9:0
+[ 5567190ms] [ERROR] Failed to fetch task: Error: HTTP 404
+    at fetchTask (http://localhost:5173/src/components/tasks/TaskDetail.tsx:80:11) @ http://localhost:5173/src/components/tasks/TaskDetail.tsx:84
+[ 5567190ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5173/api/notifications:0
+[ 5567192ms] [ERROR] Failed to fetch notifications: SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON @ http://localhost:5173/src/components/notifications/NotificationProvider.tsx:18
+[ 5567192ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5173/api/notifications/stream:0
+[ 5567192ms] [WARNING] SSE connection error for notifications @ http://localhost:5173/src/components/notifications/NotificationProvider.tsx:43
+[ 5567192ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5173/api/tasks/9:0
+[ 5567192ms] [ERROR] Failed to fetch task: Error: HTTP 404
+    at fetchTask (http://localhost:5173/src/components/tasks/TaskDetail.tsx:80:11) @ http://localhost:5173/src/components/tasks/TaskDetail.tsx:84
+[ 5567196ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5173/api/notifications:0
+[ 5567196ms] [ERROR] Failed to fetch notifications: SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON @ http://localhost:5173/src/components/notifications/NotificationProvider.tsx:18
+[ 5597189ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5173/api/notifications:0
+[ 5597189ms] [ERROR] Failed to fetch notifications: SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON @ http://localhost:5173/src/components/notifications/NotificationProvider.tsx:18
+[ 5627188ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5173/api/notifications:0
+[ 5627188ms] [ERROR] Failed to fetch notifications: SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON @ http://localhost:5173/src/components/notifications/NotificationProvider.tsx:18
+[ 5634401ms] [LOG] [vite] server connection lost. Polling for restart... @ http://localhost:5173/@vite/client:992
+[ 5634551ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=a7e4b106:14335
+[ 5634574ms] [ERROR] In HTML, %s cannot be a descendant of <%s>.
+This will cause a hydration error.%s <button> button 
+
+  ...
+    <main data-slot="sidebar-inset" className="relative f...">
+      <SiteHeader>
+        <header className="flex h-16 ...">
+          <SidebarTrigger>
+          <Separator>
+          <h1>
+          <div className="ml-auto">
+            <NotificationBell>
+              <Popover>
+                <PopoverRoot data-slot="popover">
+                  <FloatingTree>
+                    <PopoverRootComponent props={{...}}>
+                      <PopoverTrigger>
+                        <PopoverTrigger data-slot="popover-tr...">
+>                         <button
+>                           type="button"
+>                           onClick={function}
+>                           onMouseDown={function}
+>                           onKeyDown={function}
+>                           onKeyUp={function}
+>                           onPointerDown={function}
+>                           tabIndex={0}
+>                           disabled={false}
+>                           data-base-ui-click-trigger=""
+>                           id="base-ui-_r_4_"
+>                           aria-haspopup="dialog"
+>                           aria-expanded={false}
+>                           aria-controls={undefined}
+>                           data-slot="popover-trigger"
+>                           ref={function}
+>                         >
+>                           <button
+>                             type="button"
+>                             className={"relative inline-flex items-center justify-center gap-2 whitespace-nowrap ro..."}
+>                             aria-label="Notifications"
+>                           >
+                      ...
+      ...
+ @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=a7e4b106:1772
+[ 5634574ms] [ERROR] <%s> cannot contain a nested %s.
+See this log for the ancestor stack trace. button <button> @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=a7e4b106:1774
+[ 5634626ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5173/api/tasks/9:0
+[ 5634626ms] [ERROR] Failed to fetch task: Error: HTTP 404
+    at fetchTask (http://localhost:5173/src/components/tasks/TaskDetail.tsx:80:11) @ http://localhost:5173/src/components/tasks/TaskDetail.tsx:84
+[ 5634630ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5173/api/notifications/stream:0
+[ 5634630ms] [WARNING] SSE connection error for notifications @ http://localhost:5173/src/components/notifications/NotificationProvider.tsx:43
+[ 5634631ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5173/api/notifications:0
+[ 5634631ms] [ERROR] Failed to fetch notifications: SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON @ http://localhost:5173/src/components/notifications/NotificationProvider.tsx:18
+[ 5634640ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5173/api/tasks/9:0
+[ 5634641ms] [ERROR] Failed to fetch task: Error: HTTP 404
+    at fetchTask (http://localhost:5173/src/components/tasks/TaskDetail.tsx:80:11) @ http://localhost:5173/src/components/tasks/TaskDetail.tsx:84
+[ 5634641ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5173/api/notifications:0
+[ 5634644ms] [ERROR] Failed to fetch notifications: SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON @ http://localhost:5173/src/components/notifications/NotificationProvider.tsx:18
+[ 6290428ms] [LOG] [vite] server connection lost. Polling for restart... @ http://localhost:5173/@vite/client:992
+[ 6293274ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:5173/api/agents:0
+[ 6296274ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:5173/api/agents:0
+[ 6299274ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:5173/api/agents:0
+[ 6302274ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:5173/api/agents:0
+[ 6305277ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:5173/api/agents:0
+[ 6308278ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:5173/api/notifications:0
+[ 6308278ms] [ERROR] Failed to fetch notifications: TypeError: Failed to fetch
+    at http://localhost:5173/src/components/notifications/NotificationProvider.tsx:14:22 @ http://localhost:5173/src/components/notifications/NotificationProvider.tsx:18
+[ 6308278ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:5173/api/agents:0
+[ 6309633ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=a7e4b106:14335
+[ 6309652ms] [ERROR] In HTML, %s cannot be a descendant of <%s>.
+This will cause a hydration error.%s <button> button 
+
+  ...
+    <main data-slot="sidebar-inset" className="relative f...">
+      <SiteHeader>
+        <header className="flex h-16 ...">
+          <SidebarTrigger>
+          <Separator>
+          <h1>
+          <div className="ml-auto">
+            <NotificationBell>
+              <Popover>
+                <PopoverRoot data-slot="popover">
+                  <FloatingTree>
+                    <PopoverRootComponent props={{...}}>
+                      <PopoverTrigger>
+                        <PopoverTrigger data-slot="popover-tr...">
+>                         <button
+>                           type="button"
+>                           onClick={function}
+>                           onMouseDown={function}
+>                           onKeyDown={function}
+>                           onKeyUp={function}
+>                           onPointerDown={function}
+>                           tabIndex={0}
+>                           disabled={false}
+>                           data-base-ui-click-trigger=""
+>                           id="base-ui-_r_4_"
+>                           aria-haspopup="dialog"
+>                           aria-expanded={false}
+>                           aria-controls={undefined}
+>                           data-slot="popover-trigger"
+>                           ref={function}
+>                         >
+>                           <button
+>                             type="button"
+>                             className={"relative inline-flex items-center justify-center gap-2 whitespace-nowrap ro..."}
+>                             aria-label="Notifications"
+>                           >
+                      ...
+      ...
+ @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=a7e4b106:1772
+[ 6309652ms] [ERROR] <%s> cannot contain a nested %s.
+See this log for the ancestor stack trace. button <button> @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=a7e4b106:1774
+[ 6309662ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5173/api/tasks/9:0
+[ 6309662ms] [ERROR] Failed to fetch task: Error: HTTP 404
+    at fetchTask (http://localhost:5173/src/components/tasks/TaskDetail.tsx:80:11) @ http://localhost:5173/src/components/tasks/TaskDetail.tsx:84
+[ 6309663ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5173/api/notifications:0
+[ 6309663ms] [ERROR] Failed to fetch notifications: SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON @ http://localhost:5173/src/components/notifications/NotificationProvider.tsx:18
+[ 6309667ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5173/api/notifications/stream:0
+[ 6309667ms] [WARNING] SSE connection error for notifications @ http://localhost:5173/src/components/notifications/NotificationProvider.tsx:43
+[ 6309668ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5173/api/tasks/9:0
+[ 6309668ms] [ERROR] Failed to fetch task: Error: HTTP 404
+    at fetchTask (http://localhost:5173/src/components/tasks/TaskDetail.tsx:80:11) @ http://localhost:5173/src/components/tasks/TaskDetail.tsx:84
+[ 6309668ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5173/api/notifications:0
+[ 6309669ms] [ERROR] Failed to fetch notifications: SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON @ http://localhost:5173/src/components/notifications/NotificationProvider.tsx:18
+[ 6339666ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5173/api/notifications:0
+[ 6339666ms] [ERROR] Failed to fetch notifications: SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON @ http://localhost:5173/src/components/notifications/NotificationProvider.tsx:18
+[ 6343427ms] [ERROR] React does not recognize the `%s` prop on a DOM element. If you intentionally want it to appear in the DOM as a custom attribute, spell it as lowercase `%s` instead. If you accidentally passed it from a parent component, remove it from the DOM element. asChild aschild @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=a7e4b106:1893
+[ 6350282ms] [LOG] [vite] server connection lost. Polling for restart... @ http://localhost:5173/@vite/client:992
+[ 6351660ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:5173/api/agents:0
+[ 6352588ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=a7e4b106:14335
+[ 6352607ms] [ERROR] In HTML, %s cannot be a descendant of <%s>.
+This will cause a hydration error.%s <button> button 
+
+  ...
+    <main data-slot="sidebar-inset" className="relative f...">
+      <SiteHeader>
+        <header className="flex h-16 ...">
+          <SidebarTrigger>
+          <Separator>
+          <h1>
+          <div className="ml-auto">
+            <NotificationBell>
+              <Popover>
+                <PopoverRoot data-slot="popover">
+                  <FloatingTree>
+                    <PopoverRootComponent props={{...}}>
+                      <PopoverTrigger asChild={true}>
+                        <PopoverTrigger data-slot="popover-tr..." asChild={true}>
+>                         <button
+>                           type="button"
+>                           onClick={function}
+>                           onMouseDown={function}
+>                           onKeyDown={function}
+>                           onKeyUp={function}
+>                           onPointerDown={function}
+>                           tabIndex={0}
+>                           disabled={false}
+>                           data-base-ui-click-trigger=""
+>                           id="base-ui-_r_4_"
+>                           aria-haspopup="dialog"
+>                           aria-expanded={false}
+>                           aria-controls={undefined}
+>                           data-slot="popover-trigger"
+>                           asChild={true}
+>                           ref={function}
+>                         >
+>                           <button
+>                             type="button"
+>                             className={"relative inline-flex items-center justify-center gap-2 whitespace-nowrap ro..."}
+>                             aria-label="Notifications"
+>                           >
+                      ...
+      ...
+ @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=a7e4b106:1772
+[ 6352607ms] [ERROR] <%s> cannot contain a nested %s.
+See this log for the ancestor stack trace. button <button> @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=a7e4b106:1774
+[ 6352607ms] [ERROR] React does not recognize the `%s` prop on a DOM element. If you intentionally want it to appear in the DOM as a custom attribute, spell it as lowercase `%s` instead. If you accidentally passed it from a parent component, remove it from the DOM element. asChild aschild @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=a7e4b106:1893
+[ 6352622ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5173/api/tasks/9:0
+[ 6352622ms] [ERROR] Failed to fetch task: Error: HTTP 404
+    at fetchTask (http://localhost:5173/src/components/tasks/TaskDetail.tsx:80:11) @ http://localhost:5173/src/components/tasks/TaskDetail.tsx:84
+[ 6352627ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5173/api/tasks/9:0
+[ 6352627ms] [ERROR] Failed to fetch task: Error: HTTP 404
+    at fetchTask (http://localhost:5173/src/components/tasks/TaskDetail.tsx:80:11) @ http://localhost:5173/src/components/tasks/TaskDetail.tsx:84
+[ 6470344ms] [LOG] [vite] server connection lost. Polling for restart... @ http://localhost:5173/@vite/client:992
+[ 6470345ms] [WARNING] SSE connection error for notifications @ http://localhost:5173/src/components/notifications/NotificationProvider.tsx:43
+[ 6470345ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:5173/api/notifications/stream:0
+[ 6472615ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:5173/api/agents:0
+[ 6472616ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:5173/api/notifications:0
+[ 6472616ms] [ERROR] Failed to fetch notifications: TypeError: Failed to fetch
+    at http://localhost:5173/src/components/notifications/NotificationProvider.tsx:14:22 @ http://localhost:5173/src/components/notifications/NotificationProvider.tsx:18
+[ 6473664ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=a7e4b106:14335
+[ 6473684ms] [ERROR] In HTML, %s cannot be a descendant of <%s>.
+This will cause a hydration error.%s <button> button 
+
+  ...
+    <main data-slot="sidebar-inset" className="relative f...">
+      <SiteHeader>
+        <header className="flex h-16 ...">
+          <SidebarTrigger>
+          <Separator>
+          <h1>
+          <div className="ml-auto">
+            <NotificationBell>
+              <Popover>
+                <PopoverRoot data-slot="popover">
+                  <FloatingTree>
+                    <PopoverRootComponent props={{...}}>
+                      <PopoverTrigger asChild={true}>
+                        <PopoverTrigger data-slot="popover-tr..." asChild={true}>
+>                         <button
+>                           type="button"
+>                           onClick={function}
+>                           onMouseDown={function}
+>                           onKeyDown={function}
+>                           onKeyUp={function}
+>                           onPointerDown={function}
+>                           tabIndex={0}
+>                           disabled={false}
+>                           data-base-ui-click-trigger=""
+>                           id="base-ui-_r_4_"
+>                           aria-haspopup="dialog"
+>                           aria-expanded={false}
+>                           aria-controls={undefined}
+>                           data-slot="popover-trigger"
+>                           asChild={true}
+>                           ref={function}
+>                         >
+>                           <button
+>                             type="button"
+>                             className={"relative inline-flex items-center justify-center gap-2 whitespace-nowrap ro..."}
+>                             aria-label="Notifications"
+>                           >
+                      ...
+      ...
+ @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=a7e4b106:1772
+[ 6473684ms] [ERROR] <%s> cannot contain a nested %s.
+See this log for the ancestor stack trace. button <button> @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=a7e4b106:1774
+[ 6473684ms] [ERROR] React does not recognize the `%s` prop on a DOM element. If you intentionally want it to appear in the DOM as a custom attribute, spell it as lowercase `%s` instead. If you accidentally passed it from a parent component, remove it from the DOM element. asChild aschild @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=a7e4b106:1893
+[ 6473699ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5173/api/tasks/9:0
+[ 6473699ms] [ERROR] Failed to fetch task: Error: HTTP 404
+    at fetchTask (http://localhost:5173/src/components/tasks/TaskDetail.tsx:80:11) @ http://localhost:5173/src/components/tasks/TaskDetail.tsx:84
+[ 6473700ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5173/api/tasks/9:0
+[ 6473700ms] [ERROR] Failed to fetch task: Error: HTTP 404
+    at fetchTask (http://localhost:5173/src/components/tasks/TaskDetail.tsx:80:11) @ http://localhost:5173/src/components/tasks/TaskDetail.tsx:84

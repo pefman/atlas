@@ -1,5 +1,6 @@
 import { KanbanCard } from './KanbanCard';
-import { Circle } from 'lucide-react';
+import { Circle, Plus } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import type { Task, Subtask } from '@/types';
 
 interface KanbanColumnProps {
@@ -7,6 +8,7 @@ interface KanbanColumnProps {
   status: 'backlog' | 'in_progress' | 'review' | 'done';
   tasks?: Task[];
   subtasks: Subtask[];
+  onCreateTask?: () => void;
   onExecute?: (subtaskId: number) => void;
   onSubtaskExecute?: (subtaskId: number) => void;
   onTaskClick?: (taskId: number) => void;
@@ -34,18 +36,28 @@ const statusColors: Record<string, string> = {
   done: 'text-green-500',
 };
 
-export function KanbanColumn({ title, status, tasks = [], subtasks, onExecute, onSubtaskExecute, onTaskClick, onTaskPickup }: KanbanColumnProps) {
+export function KanbanColumn({ title, status, tasks = [], subtasks, onCreateTask, onExecute, onSubtaskExecute, onTaskClick, onTaskPickup }: KanbanColumnProps) {
   const totalCount = tasks.length + subtasks.length;
 
   return (
     <div className={`flex-1 min-w-[280px] ${columnColors[status]} border ${columnBorders[status]} rounded-lg p-4 shadow-sm`}>
-      <h3 className="font-semibold mb-4 flex items-center justify-between">
+      <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-2">
           <Circle className={`h-3 w-3 ${statusColors[status]}`} />
-          <span className="text-sm">{title}</span>
+          <span className="text-sm font-semibold">{title}</span>
         </div>
         <span className="text-xs bg-background/50 px-2 py-1 rounded-full">{totalCount}</span>
-      </h3>
+      </div>
+      {onCreateTask && (
+        <Button
+          variant="outline"
+          className="w-full mb-3 h-10"
+          onClick={onCreateTask}
+        >
+          <Plus className="h-4 w-4 mr-2" />
+          Add Task
+        </Button>
+      )}
       <div className="space-y-3">
         {tasks.map((task) => (
           <KanbanCard

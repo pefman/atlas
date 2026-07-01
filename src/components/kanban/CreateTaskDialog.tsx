@@ -20,8 +20,7 @@ interface CreateTaskDialogProps {
 export function CreateTaskDialog({ open, onOpenChange, onCreated }: CreateTaskDialogProps) {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [priority, setPriority] = useState<'high' | 'medium' | 'low'>('medium');
-  const [roleId, setRoleId] = useState<number>(7); // researcher default
+  const [status, setStatus] = useState<'backlog' | 'in_progress'>('backlog');
   const [loading, setLoading] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -32,7 +31,7 @@ export function CreateTaskDialog({ open, onOpenChange, onCreated }: CreateTaskDi
       const res = await fetch('/api/tasks', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title, description, priority, role_id: roleId })
+        body: JSON.stringify({ title, description, status })
       });
 
       if (!res.ok) throw new Error('Failed to create task');
@@ -41,8 +40,7 @@ export function CreateTaskDialog({ open, onOpenChange, onCreated }: CreateTaskDi
       onOpenChange(false);
       setTitle('');
       setDescription('');
-      setPriority('medium');
-      setRoleId(7);
+      setStatus('backlog');
     } catch (error) {
       console.error('Failed to create task:', error);
       alert('Failed to create task. Please try again.');
@@ -78,28 +76,14 @@ export function CreateTaskDialog({ open, onOpenChange, onCreated }: CreateTaskDi
             />
           </div>
           <div className="space-y-2">
-            <label className="text-sm font-medium">Priority</label>
-            <Select value={priority} onValueChange={(v) => setPriority(v as any)}>
+            <label className="text-sm font-medium">Start Status</label>
+            <Select value={status} onValueChange={(v) => setStatus(v as 'backlog' | 'in_progress')}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="high">High</SelectItem>
-                <SelectItem value="medium">Medium</SelectItem>
-                <SelectItem value="low">Low</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Assignee</label>
-            <Select value={roleId.toString()} onValueChange={(v) => v && setRoleId(parseInt(v))}>
-              <SelectTrigger>
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="7">Researcher</SelectItem>
-                <SelectItem value="8">Writer</SelectItem>
-                <SelectItem value="9">Reviewer</SelectItem>
+                <SelectItem value="backlog">Backlog</SelectItem>
+                <SelectItem value="in_progress">In Progress (Start Now)</SelectItem>
               </SelectContent>
             </Select>
           </div>
