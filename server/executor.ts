@@ -68,14 +68,15 @@ async function decomposeTask(task: any): Promise<any[]> {
   
   // Log decomposition in execution_logs
   for (const subtask of insertedSubtasks) {
+    const role = db.prepare('SELECT * FROM roles WHERE id = ?').get(subtask.role_id) as any;
     db.prepare(`
       INSERT INTO execution_logs (subtask_id, step, step_type, role_id, input, output)
       VALUES (?, 0, 'assign', ?, ?, ?)
     `).run(
       subtask.id,
       ceoRole.id,
-      JSON.stringify({ task_title: task.title, assigned_role: st.role }),
-      `Assigned to ${st.role}`
+      JSON.stringify({ task_title: task.title, assigned_role: role.name }),
+      `Assigned to ${role.name}`
     );
   }
   
