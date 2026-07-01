@@ -24,6 +24,8 @@ export function SettingsForm() {
   const [saving, setSaving] = useState(false);
   const [testing, setTesting] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [models, setModels] = useState<{ id: string; name: string }[]>([]);
+  const [fetchingModels, setFetchingModels] = useState(false);
 
   useEffect(() => {
     fetch('/api/settings')
@@ -32,6 +34,20 @@ export function SettingsForm() {
       .catch((err) => console.error('Failed to fetch settings:', err))
       .finally(() => setLoading(false));
   }, []);
+
+  useEffect(() => {
+    if (settings.provider && (settings.provider === 'ollama' || settings.provider === 'openai')) {
+      setFetchingModels(true);
+      fetch('/api/settings/models')
+        .then((res) => {
+          if (!res.ok) throw new Error('Failed to fetch models');
+          return res.json();
+        })
+        .then((data) => setModels(data))
+        .catch((err) => console.error('Failed to fetch models:', err))
+        .finally(() => setFetchingModels(false));
+    }
+  }, [settings.provider, settings.endpoint, settings.api_key]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -142,12 +158,32 @@ export function SettingsForm() {
 
           <div className="space-y-2">
             <Label htmlFor="model">Model</Label>
-            <Input
-              id="model"
-              value={settings.model}
-              onChange={(e) => setSettings((s) => ({ ...s, model: e.target.value }))}
-              placeholder="llama3"
-            />
+            {models.length > 0 ? (
+              <Select
+                value={settings.model}
+                onValueChange={(value: string | null) => setSettings((s) => ({ ...s, model: value || '' }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select model" />
+                </SelectTrigger>
+                <SelectContent>
+                  {models.map((m) => (
+                    <SelectItem key={m.id} value={m.id}>
+                      {m.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            ) : (
+              <Input
+                id="model"
+                value={settings.model}
+                onChange={(e) => setSettings((s) => ({ ...s, model: e.target.value }))}
+                placeholder="llama3"
+                disabled={fetchingModels}
+              />
+            )}
+            {fetchingModels && <p className="text-xs text-muted-foreground">Fetching models...</p>}
           </div>
 
           <div className="flex gap-2">

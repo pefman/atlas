@@ -1,4 +1,4 @@
-import { AIProvider, Message } from './provider';
+import { AIProvider, Message, AIModel } from './provider';
 
 export class OpenAIProvider implements AIProvider {
   name = 'openai';
@@ -29,5 +29,23 @@ export class OpenAIProvider implements AIProvider {
 
     const data = await response.json();
     return data.choices[0].message.content;
+  }
+
+  async getModels(): Promise<AIModel[]> {
+    const response = await fetch('https://api.openai.com/v1/models', {
+      headers: {
+        'Authorization': `Bearer ${this.apiKey}`,
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`OpenAI API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return (data.data || []).map((m: any) => ({
+      id: m.id,
+      name: m.id,
+    }));
   }
 }

@@ -2,7 +2,7 @@ import { Router, Request, Response } from 'express';
 import { db } from '../db';
 import { OllamaProvider } from '../ai/ollama';
 import { OpenAIProvider } from '../ai/openai';
-import { AIProvider, Message } from '../ai/provider';
+import { AIProvider, Message, AIModel } from '../ai/provider';
 
 const router = Router();
 
@@ -78,5 +78,30 @@ async function testSettings(req: Request, res: Response) {
 }
 
 router.post('/test', testSettings);
+
+// Get available models
+router.get('/models', async (req: Request, res: Response) => {
+  try {
+    const settings = db.prepare('SELECT * FROM settings ORDER BY id DESC LIMIT 1').get() as any;
+    
+    if (!settings) {
+      return res.json([]);
+    }
+    
+    let aiProvider: AIProvider;
+    
+    if (settings.provider === 'openai') {
+      aiProvider = new OpenAIProvider(settings.api_key || '', settings.model);
+    } else {
+      aiProvider = new OllamaProvider(settings.endpoint || 'http://localhost:11434', settings.model);
+    }
+    
+    const models = await aiProvider.getModels();
+    res.json(models);
+  } catch (error) {
+    const errorMessage = error instanceof Error ? error.message : 'Failed to fetch models';
+    res.status(500).json({ error: errorMessage });
+  }
+});
 
 export default router;

@@ -1,4 +1,4 @@
-import { AIProvider, Message } from './provider';
+import { AIProvider, Message, AIModel } from './provider';
 
 export class OllamaProvider implements AIProvider {
   name = 'ollama';
@@ -27,5 +27,19 @@ export class OllamaProvider implements AIProvider {
 
     const data = await response.json();
     return data.message.content;
+  }
+
+  async getModels(): Promise<AIModel[]> {
+    const response = await fetch(`${this.endpoint}/api/tags`);
+    
+    if (!response.ok) {
+      throw new Error(`Ollama API error: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return (data.models || []).map((m: any) => ({
+      id: m.name,
+      name: m.name,
+    }));
   }
 }
