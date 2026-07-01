@@ -54,11 +54,11 @@ export function KanbanColumn({ title, status, tasks = [], subtasks, onExecute, o
   const totalCount = tasks.length + subtasks.length;
 
   return (
-    <div className={`flex-1 min-w-[280px] ${columnColors[status]} border ${columnBorders[status]} rounded-lg p-4`}>
+    <div className={`flex-1 min-w-[280px] ${columnColors[status]} border ${columnBorders[status]} rounded-lg p-4 shadow-sm`}>
       <h3 className="font-semibold mb-4 flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Circle className={`h-3 w-3 ${statusColors[status]}`} />
-          <span>{title}</span>
+          <span className="text-sm">{title}</span>
         </div>
         <span className="text-xs bg-background/50 px-2 py-1 rounded-full">{totalCount}</span>
       </h3>
