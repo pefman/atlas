@@ -95,7 +95,7 @@ async function generateSubtasks(task: any): Promise<any[]> {
   return insertedSubtasks;
 }
 
-async function executeSubtask(subtaskId: number): Promise<void> {
+export async function executeSubtask(subtaskId: number): Promise<void> {
   const subtask = db.prepare('SELECT * FROM subtasks WHERE id = ?').get(subtaskId) as any;
 
   if (!subtask) {

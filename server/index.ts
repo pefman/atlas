@@ -4,6 +4,7 @@ import taskRoutes from './routes/tasks';
 import subtaskRoutes from './routes/subtasks';
 import settingsRoutes from './routes/settings';
 import executeRoutes from './routes/execute';
+import executeSubtaskRoutes from './routes/executeSubtask';
 import roleRoutes from './routes/roles';
 import { db } from './db';
 
@@ -21,6 +22,7 @@ app.use('/api/tasks', taskRoutes);
 app.use('/api/subtasks', subtaskRoutes);
 app.use('/api/settings', settingsRoutes);
 app.use('/api/execute', executeRoutes);
+app.use('/api/execute', executeSubtaskRoutes);
 app.use('/api/roles', roleRoutes);
 
 app.listen(PORT, () => {

@@ -1,8 +1,13 @@
-export function KanbanPage() {
+import { KanbanBoard } from '@/components/kanban/KanbanBoard';
+
+interface KanbanPageProps {
+  taskId?: number;
+}
+
+export function KanbanPage({ taskId }: KanbanPageProps) {
   return (
-    <div className="flex-1 p-6">
-      <h2 className="text-2xl font-bold mb-4">Kanban Board</h2>
-      <p className="text-muted-foreground">Kanban board coming soon...</p>
+    <div className="flex-1">
+      <KanbanBoard taskId={taskId} />
     </div>
   );
 }
