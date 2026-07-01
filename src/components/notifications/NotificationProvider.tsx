@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { Notification } from '@/types';
 
 interface NotificationContextType {
@@ -13,8 +13,9 @@ const NotificationContext = createContext<NotificationContextType | null>(null);
 export function NotificationProvider({ children }: { children: React.ReactNode }) {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
+  const [isConnected, setIsConnected] = useState(true);
 
-  const fetchNotifications = async () => {
+  const fetchNotifications = useCallback(async () => {
     try {
       const res = await fetch('/api/notifications');
       const data = await res.json();
@@ -23,18 +24,23 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
     } catch (error) {
       console.error('Failed to fetch notifications:', error);
     }
-  };
+  }, []);
 
-  const markAsRead = async (id: number) => {
-    await fetch(`/api/notifications/${id}/read`, { method: 'PATCH' });
-    await fetchNotifications();
-  };
+  const markAsRead = useCallback(async (id: number) => {
+    try {
+      await fetch(`/api/notifications/${id}/read`, { method: 'PATCH' });
+    } catch (error) {
+      console.error('Failed to mark notification as read:', error);
+    } finally {
+      await fetchNotifications();
+    }
+  }, [fetchNotifications]);
 
   useEffect(() => {
     fetchNotifications();
     const interval = setInterval(fetchNotifications, 30000);
     return () => clearInterval(interval);
-  }, []);
+  }, [fetchNotifications]);
 
   useEffect(() => {
     const eventSource = new EventSource('/api/notifications/stream');
@@ -45,10 +51,18 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
       setUnreadCount(prev => prev + 1);
     });
 
+    eventSource.onerror = () => {
+      console.warn('SSE connection error for notifications');
+      setIsConnected(false);
+    };
+
     return () => eventSource.close();
   }, []);
 
-  const value = { notifications, unreadCount, markAsRead, refresh: fetchNotifications };
+  const value = useMemo(
+    () => ({ notifications, unreadCount, markAsRead, refresh: fetchNotifications }),
+    [notifications, unreadCount, markAsRead, fetchNotifications],
+  );
 
   return (
     <NotificationContext.Provider value={value}>
