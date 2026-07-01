@@ -15,6 +15,87 @@ interface TaskContext {
   }>;
 }
 
+type DecompositionSubtask = {
+  title?: unknown;
+  description?: unknown;
+  role?: unknown;
+  priority?: unknown;
+};
+
+const DEFAULT_SUBTASK_ROLE = 'backend_developer';
+const FALLBACK_SUBTASK_PRIORITY = 'medium';
+
+const ROLE_ALIASES: Record<string, string> = {
+  researcher: 'product_manager',
+  writer: 'frontend_developer',
+  reviewer: 'qa_engineer',
+  planner: 'product_manager',
+  frontend: 'frontend_developer',
+  backend: 'backend_developer',
+  seo: 'seo_specialist',
+  qa: 'qa_engineer',
+  product: 'product_manager',
+};
+
+function normalizePriority(value: unknown): 'high' | 'medium' | 'low' {
+  if (typeof value !== 'string') {
+    return FALLBACK_SUBTASK_PRIORITY;
+  }
+
+  const normalized = value.trim().toLowerCase();
+  if (normalized === 'high' || normalized === 'medium' || normalized === 'low') {
+    return normalized;
+  }
+
+  return FALLBACK_SUBTASK_PRIORITY;
+}
+
+function normalizeRoleName(value: unknown): string {
+  if (typeof value !== 'string') {
+    return DEFAULT_SUBTASK_ROLE;
+  }
+
+  const sanitized = value.trim().toLowerCase().replace(/[\s-]+/g, '_');
+  return ROLE_ALIASES[sanitized] ?? sanitized;
+}
+
+function parseDecompositionSubtasks(rawContent: string): DecompositionSubtask[] {
+  const parseJson = (input: string): unknown => JSON.parse(input);
+
+  const candidates: string[] = [rawContent.trim()];
+  const fencedJson = rawContent.match(/```(?:json)?\s*([\s\S]*?)```/i);
+  if (fencedJson?.[1]) {
+    candidates.push(fencedJson[1].trim());
+  }
+
+  const objectMatch = rawContent.match(/\{[\s\S]*\}/);
+  if (objectMatch?.[0]) {
+    candidates.push(objectMatch[0]);
+  }
+
+  const arrayMatch = rawContent.match(/\[[\s\S]*\]/);
+  if (arrayMatch?.[0]) {
+    candidates.push(arrayMatch[0]);
+  }
+
+  for (const candidate of candidates) {
+    try {
+      const parsed = parseJson(candidate);
+      if (Array.isArray(parsed)) {
+        return parsed as DecompositionSubtask[];
+      }
+
+      if (parsed && typeof parsed === 'object' && Array.isArray((parsed as any).subtasks)) {
+        return (parsed as any).subtasks as DecompositionSubtask[];
+      }
+    } catch {
+      // Continue trying additional extraction candidates.
+    }
+  }
+
+  throw new Error('No valid decomposition JSON found in model response');
+}
+
 async function decomposeTask(task: any): Promise<any[]> {
   const provider = await getProvider();
   
@@ -36,53 +117,76 @@ async function decomposeTask(task: any): Promise<any[]> {
   await updateAgentStats(ceoRole.id, response.usage);
   
   // Parse JSON response
-  let subtaskData;
+  let subtaskData: DecompositionSubtask[];
   try {
-    const jsonMatch = response.match(/\[[\s\S]*\]/);
-    if (jsonMatch) {
-      subtaskData = JSON.parse(jsonMatch[0]);
-    } else {
-      throw new Error('No JSON found');
-    }
-  } catch (e) {
+    subtaskData = parseDecompositionSubtasks(response.content);
+  } catch {
     // Fallback: create a single subtask
     subtaskData = [{
       title: task.title,
       description: task.description,
-      role: 'researcher',
+      role: DEFAULT_SUBTASK_ROLE,
+      priority: FALLBACK_SUBTASK_PRIORITY,
     }];
+  }
+
+  const availableRoles = db.prepare('SELECT id, name FROM roles').all() as Array<{ id: number; name: string }>;
+  const roleByName = new Map(availableRoles.map(role => [role.name, role]));
+
+  const fallbackRole =
+    roleByName.get(DEFAULT_SUBTASK_ROLE) ??
+    roleByName.get('tech_lead') ??
+    roleByName.get('ceo');
+
+  if (!fallbackRole) {
+    throw new Error('No fallback role available for decomposition assignment');
   }
   
   // Insert subtasks into database
   const insertedSubtasks = [];
   for (const st of subtaskData) {
+    const normalizedTitle = typeof st.title === 'string' && st.title.trim()
+      ? st.title.trim()
+      : `Subtask for ${task.title}`;
+
+    const normalizedDescription = typeof st.description === 'string' && st.description.trim()
+      ? st.description.trim()
+      : task.description;
+
+    const requestedRole = typeof st.role === 'string' ? st.role : DEFAULT_SUBTASK_ROLE;
+    const normalizedRole = normalizeRoleName(st.role);
+    const resolvedRole = roleByName.get(normalizedRole) ?? fallbackRole;
+    const resolvedPriority = normalizePriority(st.priority);
+
     const result = db.prepare(`
       INSERT INTO subtasks (task_id, title, description, role_id, assigned_by, priority)
-      VALUES (?, ?, ?, (SELECT id FROM roles WHERE name = ?), 'ceo', ?)
-    `).run(task.id, st.title, st.description, st.role, st.priority || 'medium');
+      VALUES (?, ?, ?, ?, 'ceo', ?)
+    `).run(task.id, normalizedTitle, normalizedDescription, resolvedRole.id, resolvedPriority);
     
     const subtask = db.prepare('SELECT * FROM subtasks WHERE id = ?').get(result.lastInsertRowid) as any;
     insertedSubtasks.push(subtask);
-  }
-  
-  // Update task ceo_status
-  db.prepare(`
-    UPDATE tasks SET ceo_status = 'decomposed', decomposed_at = datetime('now'), updated_at = datetime('now') WHERE id = ?
-  `).run(task.id);
-  
-  // Log decomposition in execution_logs
-  for (const subtask of insertedSubtasks) {
-    const role = db.prepare('SELECT * FROM roles WHERE id = ?').get(subtask.role_id) as any;
+
     db.prepare(`
       INSERT INTO execution_logs (subtask_id, step, step_type, role_id, input, output)
       VALUES (?, 0, 'assign', ?, ?, ?)
     `).run(
       subtask.id,
       ceoRole.id,
-      JSON.stringify({ task_title: task.title, assigned_role: role.name }),
-      `Assigned to ${role.name}`
+      JSON.stringify({
+        task_title: task.title,
+        requested_role: requestedRole,
+        normalized_role: normalizedRole,
+        resolved_role: resolvedRole.name,
+        fallback_used: resolvedRole.name !== normalizedRole,
+      }),
+      `Assigned to ${resolvedRole.name}`
     );
   }
+  
+  // Update task ceo_status
+  db.prepare(`
+    UPDATE tasks SET ceo_status = 'decomposed', decomposed_at = datetime('now'), updated_at = datetime('now') WHERE id = ?
+  `).run(task.id);
   
   return insertedSubtasks;
 }
@@ -141,6 +245,13 @@ export async function executeTask(taskId: number): Promise<void> {
 }
 
 export async function processNextTask(): Promise<boolean> {
+  // Check if AI provider is configured
+  const settings = db.prepare('SELECT * FROM settings ORDER BY id DESC LIMIT 1').get();
+  if (!settings) {
+    console.log('[CEO Worker] No AI settings configured, skipping task execution');
+    return false;
+  }
+
   // Get next task in backlog
   const task = db.prepare(`
     SELECT * FROM tasks 

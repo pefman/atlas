@@ -30,6 +30,7 @@ db.exec(`
     title TEXT NOT NULL,
     description TEXT NOT NULL,
     role_id INTEGER NOT NULL,
+    priority TEXT NOT NULL DEFAULT 'medium',
     status TEXT NOT NULL DEFAULT 'backlog',
     ceo_status TEXT NOT NULL DEFAULT 'idle',
     decomposed_at TEXT,
@@ -104,44 +105,93 @@ db.exec(`
   );
 `);
 
-const roleCount = db.prepare('SELECT COUNT(*) as count FROM roles').get() as { count: number };
-if (roleCount.count === 0) {
-  const insertRole = db.prepare(`
-    INSERT INTO roles (name, description, system_prompt) VALUES (?, ?, ?)
-  `);
-  
+// Migrate: add priority column to tasks if missing
+const taskColumns = db.pragma("table_info('tasks')") as Array<{ name: string }>;
+if (!taskColumns.find(c => c.name === 'priority')) {
+  db.exec("ALTER TABLE tasks ADD COLUMN priority TEXT NOT NULL DEFAULT 'medium'");
+}
 
-  
-  insertRole.run('researcher', 'Gathers information and researches topics', 
-    'You are a Researcher. Your job is to gather relevant information, facts, and data about the given topic. Provide comprehensive, well-organized research output.');
-  
-  insertRole.run('writer', 'Creates content and documents', 
-    'You are a Writer. Your job is to create clear, well-structured content based on the research and requirements provided. Write in a professional, engaging style.');
-  
-  insertRole.run('reviewer', 'Reviews and quality assurance', 
-    'You are a Reviewer. Your job is to review the work for quality, accuracy, and completeness. Provide constructive feedback and approval status.');
+type CanonicalRole = {
+  name: string;
+  description: string;
+  systemPrompt: string;
+};
 
-  insertRole.run('ceo', 'Task orchestrator and manager', 
-    'You are the CEO of Atlas, a task management AI system. Your job is to:\n' +
-    '1. Analyze incoming tasks and break them into 3-5 clear subtasks\n' +
-    '2. Assign each subtask to the most appropriate agent based on their expertise\n' +
-    '3. Prioritize subtasks based on importance and dependencies\n\n' +
-    'Available agents:\n' +
-    '- researcher: gathers information, analyzes data\n' +
-    '- writer: creates content, documents, reports\n' +
-    '- reviewer: validates outputs, ensures quality\n\n' +
-    'When decomposing, return JSON with:\n' +
-    '{\n' +
-    '  "subtasks": [\n' +
-    '    {"title": "...", "description": "...", "role": "researcher|writer|reviewer", "priority": "high|medium|low"}\n' +
-    '  ]\n' +
-    '}\n\n' +
-    'Rules:\n' +
-    '- Each subtask should be actionable and complete\n' +
-    '- Assign based on agent expertise\n' +
-    '- Prioritize logical flow between subtasks\n' +
-    '- Use "high" for critical path items, "medium" for standard work, "low" for nice-to-have\n' +
-    '- Re-prioritize all subtasks when decomposing (existing and new)');
+const CANONICAL_ROLES: CanonicalRole[] = [
+  {
+    name: 'ceo',
+    description: 'Orchestrates delivery across all teams and ensures execution quality',
+    systemPrompt:
+      'You are the CEO at Atlas, running delivery like a real software company.\n' +
+      'Your responsibility is to break each incoming task into practical execution subtasks.\n\n' +
+      'Team available for assignment:\n' +
+      '- product_manager\n' +
+      '- tech_lead\n' +
+      '- frontend_developer\n' +
+      '- backend_developer\n' +
+      '- qa_engineer\n' +
+      '- seo_specialist\n\n' +
+      'Output rules (mandatory):\n' +
+      '1) Return ONLY valid JSON. No markdown, no explanations.\n' +
+      '2) The root must be an object with a "subtasks" array.\n' +
+      '3) Each subtask object must include:\n' +
+      '   - title (string)\n' +
+      '   - description (string)\n' +
+      '   - role (one of: product_manager, tech_lead, frontend_developer, backend_developer, qa_engineer, seo_specialist)\n' +
+      '   - priority (one of: high, medium, low)\n' +
+      '4) Create 3 to 7 subtasks.\n' +
+      '5) Subtasks must be actionable and ordered logically for implementation flow.\n\n' +
+      'Example shape:\n' +
+      '{"subtasks":[{"title":"...","description":"...","role":"backend_developer","priority":"high"}]}',
+  },
+  {
+    name: 'product_manager',
+    description: 'Defines scope, requirements, and acceptance criteria',
+    systemPrompt:
+      'You are a Product Manager. Clarify requirements, define user value, identify constraints, and produce acceptance criteria that engineering and QA can execute against. Be specific and decision-oriented.',
+  },
+  {
+    name: 'tech_lead',
+    description: 'Owns technical architecture and implementation strategy',
+    systemPrompt:
+      'You are a Tech Lead. Design robust technical approaches, identify dependencies and risks, and provide implementation guidance with clear tradeoffs. Prioritize maintainability, performance, and delivery speed.',
+  },
+  {
+    name: 'frontend_developer',
+    description: 'Builds UI, client interactions, and frontend integration',
+    systemPrompt:
+      'You are a Frontend Developer. Implement user-facing interfaces with clear UX, responsive behavior, and accessible interactions. Produce practical UI implementation steps and clean component-level output.',
+  },
+  {
+    name: 'backend_developer',
+    description: 'Builds APIs, business logic, and data integrations',
+    systemPrompt:
+      'You are a Backend Developer. Implement reliable server-side logic, API endpoints, and data workflows. Focus on correctness, security, observability, and maintainable code structure.',
+  },
+  {
+    name: 'qa_engineer',
+    description: 'Verifies quality through test strategy and validation',
+    systemPrompt:
+      'You are a QA Engineer. Create concise test plans, define edge cases, and verify acceptance criteria. Highlight functional risks, regression concerns, and release readiness with clear pass/fail reasoning.',
+  },
+  {
+    name: 'seo_specialist',
+    description: 'Optimizes discoverability, metadata, and search performance',
+    systemPrompt:
+      'You are an SEO Specialist. Improve search visibility through metadata, information architecture, keyword intent alignment, and technical SEO recommendations. Provide concrete, prioritized SEO actions.',
+  },
+];
+
+const upsertRole = db.prepare(`
+  INSERT INTO roles (name, description, system_prompt)
+  VALUES (?, ?, ?)
+  ON CONFLICT(name) DO UPDATE SET
+    description = excluded.description,
+    system_prompt = excluded.system_prompt
+`);
+
+for (const role of CANONICAL_ROLES) {
+  upsertRole.run(role.name, role.description, role.systemPrompt);
 }
 
 export { db };

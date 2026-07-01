@@ -1,5 +1,5 @@
-import { Brain, Kanban, Settings, ListTodo, Moon, Sun, Command, User, ChevronRight } from 'lucide-react';
-import { NavLink, useLocation } from 'react-router-dom';
+import { Brain, Kanban, Settings, ListTodo, Command, User } from 'lucide-react';
+import { NavLink } from 'react-router-dom';
 import { Switch } from '@/components/ui/switch';
 import {
   Sidebar,
@@ -8,7 +8,6 @@ import {
   SidebarHeader,
   SidebarMenu,
   SidebarMenuItem,
-  SidebarTrigger,
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { useTheme } from '@/context/ThemeProvider';
@@ -19,9 +18,14 @@ import { Badge } from '@/components/ui/badge';
 
 const items = [
   {
-    title: 'Kanban Board',
-    url: '/',
+    title: 'Kanban',
+    url: '/kanban',
     icon: Kanban,
+  },
+  {
+    title: 'Tasks',
+    url: '/tasks',
+    icon: ListTodo,
   },
   {
     title: 'Settings',
@@ -37,7 +41,6 @@ interface AppSidebarProps {
 }
 
 export function AppSidebar({ openCommandPalette, selectedAgent, onAgentSelect }: AppSidebarProps) {
-  const location = useLocation();
   const { isDark, toggleTheme } = useTheme();
   const [agents, setAgents] = useState<Agent[]>([]);
 
@@ -60,30 +63,37 @@ export function AppSidebar({ openCommandPalette, selectedAgent, onAgentSelect }:
   return (
     <Sidebar>
       <SidebarHeader>
-        <div className="flex items-center justify-between px-2">
+        <div className="space-y-3 px-2 py-1">
           <div className="flex items-center gap-2">
             <Brain className="h-6 w-6" />
             <span className="text-lg font-semibold">AI Task Executor</span>
           </div>
-          <div className="flex items-center gap-2">
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={openCommandPalette}
-              className="h-8 w-8"
-            >
-              <Command className="h-4 w-4" />
-            </Button>
-            <Switch checked={isDark} onCheckedChange={toggleTheme} aria-label="Toggle dark mode" />
+          <div className="flex items-center justify-between">
+            <p className="text-xs text-muted-foreground">Workspace</p>
+            <div className="flex items-center gap-2">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={openCommandPalette}
+                className="h-8 w-8"
+              >
+                <Command className="h-4 w-4" />
+              </Button>
+              <Switch checked={isDark} onCheckedChange={toggleTheme} aria-label="Toggle dark mode" />
+            </div>
           </div>
         </div>
       </SidebarHeader>
       <SidebarContent>
-        <SidebarMenu>
+        <div className="px-4 pb-1 pt-2">
+          <h3 className="text-xs font-semibold text-muted-foreground">Navigation</h3>
+        </div>
+        <SidebarMenu className="px-2">
           {items.map((item) => (
             <SidebarMenuItem key={item.title}>
               <NavLink
                 to={item.url}
+                end={item.url === '/kanban'}
                 className={({ isActive }) =>
                   `peer/menu-button group/menu-button flex w-full items-center gap-2 overflow-hidden rounded-md p-2 text-left text-sm ring-sidebar-ring outline-hidden transition-[width,height,padding] group-has-data-[sidebar=menu-action]/menu-item:pr-8 group-data-[collapsible=icon]:size-8! group-data-[collapsible=icon]:p-2! hover:bg-sidebar-accent hover:text-sidebar-accent-foreground focus-visible:ring-2 active:bg-sidebar-accent active:text-sidebar-accent-foreground disabled:pointer-events-none disabled:opacity-50 aria-disabled:pointer-events-none aria-disabled:opacity-50 data-open:hover:bg-sidebar-accent data-open:hover:text-sidebar-accent-foreground ${
                     isActive
@@ -102,7 +112,7 @@ export function AppSidebar({ openCommandPalette, selectedAgent, onAgentSelect }:
         <div className="px-4 py-2">
           <div className="mb-3">
             <div className="flex items-center justify-between mb-2">
-              <h3 className="text-xs font-semibold text-muted-foreground">Management</h3>
+              <h3 className="text-xs font-semibold text-muted-foreground">Leadership</h3>
               <Badge variant="secondary" className="text-xs">
                 {agents.filter(a => a.name === 'ceo').length}
               </Badge>
@@ -120,13 +130,13 @@ export function AppSidebar({ openCommandPalette, selectedAgent, onAgentSelect }:
           
           <div className="mb-3">
             <div className="flex items-center justify-between mb-2">
-              <h3 className="text-xs font-semibold text-muted-foreground">Agents</h3>
+              <h3 className="text-xs font-semibold text-muted-foreground">Execution Agents</h3>
               <Badge variant="secondary" className="text-xs">
-                {agents.filter(a => !['ceo', 'planner'].includes(a.name)).length}
+                {agents.filter(a => a.name !== 'ceo').length}
               </Badge>
             </div>
             <div className="space-y-1">
-              {agents.filter(a => !['ceo', 'planner'].includes(a.name)).map((agent) => (
+              {agents.filter(a => a.name !== 'ceo').map((agent) => (
                 <AgentSidebarItem
                   key={agent.id}
                   agent={agent}

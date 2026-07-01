@@ -54,7 +54,7 @@ export function CreateTaskDialog({ onTaskCreated }: CreateTaskDialogProps) {
         <DialogHeader>
           <DialogTitle>Create New Task</DialogTitle>
           <DialogDescription>
-            Define a task for the AI to execute. The CEO will automatically assign work to appropriate agents.
+            Define a task for the AI team to execute. The CEO will decompose work and route it to product, frontend, backend, QA, and SEO specialists.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">

@@ -16,9 +16,16 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
 import { Loader2, TestTube, Save, Trash2, Wifi, WifiOff } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 type Settings = {
   provider: 'ollama' | 'openai';
@@ -41,6 +48,7 @@ export function SettingsForm() {
   const [models, setModels] = useState<{ id: string; name: string }[]>([]);
   const [fetchingModels, setFetchingModels] = useState(false);
   const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
+  const [clearDialogOpen, setClearDialogOpen] = useState(false);
 
   useEffect(() => {
     fetch('/api/settings')
@@ -124,9 +132,6 @@ export function SettingsForm() {
   };
 
   const handleClear = async () => {
-    if (!confirm('Are you sure you want to clear all settings? This cannot be undone.')) {
-      return;
-    }
     setSaving(true);
     try {
       const res = await fetch('/api/settings', {
@@ -136,6 +141,7 @@ export function SettingsForm() {
       setSettings(defaultSettings);
       setModels([]);
       setTestResult(null);
+      setClearDialogOpen(false);
       toast.success('Settings cleared');
     } catch (err) {
       toast.error('Failed to clear settings');
@@ -146,21 +152,16 @@ export function SettingsForm() {
 
   if (loading) {
     return (
-      <div className="flex-1 p-6 flex items-center justify-center">
+      <div className="flex items-center justify-center py-12">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
       </div>
     );
   }
 
   return (
-    <div className="flex-1 p-6 space-y-6">
-      <div>
-        <h2 className="text-2xl font-bold">Settings</h2>
-        <p className="text-muted-foreground mt-1">Configure AI providers and application settings</p>
-      </div>
-
+    <div className="space-y-6">
       <Tabs defaultValue="provider" className="space-y-4">
-        <TabsList>
+        <TabsList className="w-full justify-start overflow-x-auto">
           <TabsTrigger value="provider">AI Provider</TabsTrigger>
           <TabsTrigger value="general">General</TabsTrigger>
           <TabsTrigger value="advanced">Advanced</TabsTrigger>
@@ -272,14 +273,14 @@ export function SettingsForm() {
                 )}
 
                 {testResult && (
-                  <div className={`p-4 rounded-lg border ${testResult.success ? 'bg-green-50 dark:bg-green-950 border-green-200 dark:border-green-800' : 'bg-red-50 dark:bg-red-950 border-red-200 dark:border-red-800'}`}>
+                  <div className={`status-banner ${testResult.success ? 'status-banner-success' : 'status-banner-danger'}`}>
                     <div className="flex items-center gap-2">
                       {testResult.success ? (
-                        <Wifi className="h-4 w-4 text-green-500" />
+                        <Wifi className="h-4 w-4" />
                       ) : (
-                        <WifiOff className="h-4 w-4 text-red-500" />
+                        <WifiOff className="h-4 w-4" />
                       )}
-                      <span className={`text-sm font-medium ${testResult.success ? 'text-green-700 dark:text-green-300' : 'text-red-700 dark:text-red-300'}`}>
+                      <span className="text-sm font-medium">
                         {testResult.message}
                       </span>
                     </div>
@@ -345,8 +346,9 @@ export function SettingsForm() {
               <div className="p-4 rounded-lg border bg-muted/50">
                 <h3 className="font-medium mb-2">Task Execution</h3>
                 <p className="text-sm text-muted-foreground">
-                  Tasks are automatically decomposed and executed by the CEO agent. 
-                  The CEO processes one task at a time from the backlog.
+                  Tasks are decomposed by the CEO and assigned across a software-company team
+                  (product manager, tech lead, frontend, backend, QA, and SEO). The CEO processes
+                  one backlog task at a time.
                 </p>
               </div>
               <div className="p-4 rounded-lg border bg-muted/50">
@@ -381,7 +383,7 @@ export function SettingsForm() {
                 </p>
                 <Button
                   variant="destructive"
-                  onClick={handleClear}
+                  onClick={() => setClearDialogOpen(true)}
                   disabled={saving || testing}
                   className="flex items-center gap-2"
                 >
@@ -402,6 +404,25 @@ export function SettingsForm() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      <Dialog open={clearDialogOpen} onOpenChange={setClearDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Clear All Settings</DialogTitle>
+            <DialogDescription>
+              This will delete all AI provider settings and reset to default configuration. This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setClearDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={handleClear} disabled={saving || testing}>
+              {saving ? 'Clearing...' : 'Clear All Settings'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
