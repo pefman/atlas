@@ -125,6 +125,28 @@ export async function executeTask(taskId: number): Promise<void> {
   }
 }
 
+export async function processNextTask(): Promise<boolean> {
+  // Get next task in backlog
+  const task = db.prepare(`
+    SELECT * FROM tasks 
+    WHERE status = 'backlog' 
+    ORDER BY created_at ASC 
+    LIMIT 1
+  `).get() as any;
+
+  if (!task) {
+    return false; // No tasks in backlog
+  }
+
+  try {
+    await executeTask(task.id);
+    return true; // Successfully processed
+  } catch (error) {
+    console.error(`Error processing task ${task.id}:`, error);
+    return false; // Failed to process
+  }
+}
+
 export async function executeSubtask(subtaskId: number): Promise<void> {
   const subtask = db.prepare('SELECT * FROM subtasks WHERE id = ?').get(subtaskId) as any;
 

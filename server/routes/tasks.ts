@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { db } from '../db';
-import { executeTask } from '../executor';
+import { executeTask, processNextTask } from '../executor';
 
 const router = Router();
 
@@ -58,17 +58,53 @@ router.post('/', (req: Request, res: Response) => {
   }
   
   const result = db.prepare(`
-    INSERT INTO tasks (title, description, role_id)
-    VALUES (?, ?, ?)
+    INSERT INTO tasks (title, description, role_id, status)
+    VALUES (?, ?, ?, 'backlog')
   `).run(title, description, ceoRole.id);
   
   const task = db.prepare('SELECT * FROM tasks WHERE id = ?').get(result.lastInsertRowid);
   
-  executeTask(task.id).catch(error => {
-    console.error(`Error auto-executing task ${task.id}:`, error);
+  res.status(201).json(task);
+});
+
+// Pick up task from backlog (called by CEO)
+router.patch('/:id/pickup', (req: Request, res: Response) => {
+  const task = db.prepare('SELECT * FROM tasks WHERE id = ?').get(req.params.id);
+  
+  if (!task) {
+    res.status(404).json({ error: 'Task not found' });
+    return;
+  }
+  
+  if (task.status !== 'backlog') {
+    res.status(400).json({ error: 'Task is not in backlog' });
+    return;
+  }
+  
+  db.prepare(`
+    UPDATE tasks SET status = 'in_progress', updated_at = datetime('now') WHERE id = ?
+  `).run(req.params.id);
+  
+  executeTask(req.params.id).catch(error => {
+    console.error(`Error executing task ${req.params.id}:`, error);
   });
   
-  res.status(201).json(task);
+  res.json({ success: true });
+});
+
+// CEO: Process next task from backlog
+router.post('/process-next', async (req: Request, res: Response) => {
+  try {
+    const processed = await processNextTask();
+    if (processed) {
+      res.json({ success: true, message: 'Next task processed' });
+    } else {
+      res.json({ success: true, message: 'No tasks in backlog' });
+    }
+  } catch (error) {
+    console.error('Error processing next task:', error);
+    res.status(500).json({ error: 'Failed to process next task' });
+  }
 });
 
 // Update task status
