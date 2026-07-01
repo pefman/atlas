@@ -10,6 +10,7 @@ router.get('/', (req: Request, res: Response) => {
            CASE WHEN t.id IS NOT NULL THEN t.title ELSE NULL END as current_task_title,
            CASE WHEN t.id IS NOT NULL THEN 'executing' ELSE 'idle' END as status
     FROM roles r
+    INNER JOIN subtasks s ON s.assigned_by = 'ceo' AND s.role_id = r.id
     LEFT JOIN tasks t ON t.role_id = r.id AND t.status = 'in_progress'
     ORDER BY r.name ASC
   `).all();
