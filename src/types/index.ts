@@ -54,6 +54,15 @@ export interface ExecutionLog {
   created_at: string;
 }
 
+export interface Agent {
+  id: number;
+  name: string;
+  description: string;
+  system_prompt: string;
+  status: AgentStatus;
+  current_task?: string;
+}
+
 export interface Settings {
   id: number;
   provider: 'ollama' | 'openai' | 'custom';
