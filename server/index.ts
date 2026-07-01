@@ -8,6 +8,7 @@ import executeSubtaskRoutes from './routes/executeSubtask';
 import roleRoutes from './routes/roles';
 import agentRoutes from './routes/agents';
 import notificationsRouter from './routes/notifications';
+import notificationsStreamRouter from './routes/notificationsStream';
 import { db } from './db';
 import { startCEOWorker } from './executor';
 
@@ -29,6 +30,7 @@ app.use('/api/execute', executeSubtaskRoutes);
 app.use('/api/roles', roleRoutes);
 app.use('/api/agents', agentRoutes);
 app.use('/api/notifications', notificationsRouter);
+app.use('/api/notifications/stream', notificationsStreamRouter);
 
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
