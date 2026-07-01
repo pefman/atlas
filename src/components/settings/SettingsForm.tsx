@@ -54,17 +54,29 @@ export function SettingsForm() {
 
   const handleTest = async () => {
     setTesting(true);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
     try {
       const res = await fetch('/api/settings/test', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(settings),
+        signal: controller.signal,
       });
+      clearTimeout(timeoutId);
+      if (res.status === 408 || res.status === 0) {
+        throw new Error('Connection timed out');
+      }
       const data = await res.json();
       if (!data.success) throw new Error(data.error || 'Test failed');
       toast.success(`Connection successful! Response: ${data.response}`);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Test failed';
+      clearTimeout(timeoutId);
+      const message = err instanceof Error && err.name !== 'AbortError'
+        ? err.message
+        : err instanceof Error && err.name === 'AbortError'
+          ? 'Connection timed out'
+          : 'Test failed';
       toast.error(`Connection failed: ${message}`);
     } finally {
       setTesting(false);

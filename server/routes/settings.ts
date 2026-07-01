@@ -47,6 +47,14 @@ async function testSettings(req: Request, res: Response) {
   try {
     const { provider, endpoint, api_key, model } = req.body;
     
+    if (!provider || (provider !== 'ollama' && provider !== 'openai')) {
+      return res.status(400).json({ success: false, error: 'Unknown provider' });
+    }
+    
+    if (!model) {
+      return res.status(400).json({ success: false, error: 'model is required' });
+    }
+    
     let aiProvider: AIProvider;
     
     if (provider === 'openai') {
