@@ -12,8 +12,17 @@ import notificationsStreamRouter from './routes/notificationsStream';
 import { db } from './db';
 // CEO worker removed - tasks are manually picked up via UI
 
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+});
+
+process.on('uncaughtException', (error) => {
+  console.error('Uncaught Exception:', error);
+  process.exit(1);
+});
+
 const app = express();
-const PORT = 3001;
+const PORT = Number(process.env.PORT || 3101);
 
 app.use(cors());
 app.use(express.json());
@@ -32,7 +41,10 @@ app.use('/api/agents', agentRoutes);
 app.use('/api/notifications', notificationsRouter);
 app.use('/api/notifications/stream', notificationsStreamRouter);
 
-app.listen(PORT, () => {
-  console.log(`Server running on http://localhost:${PORT}`);
+app.listen(PORT, '0.0.0.0', () => {
+  console.log(`Server running on http://0.0.0.0:${PORT}`);
   // CEO worker removed - tasks are manually picked up via UI
 });
+
+// Keep process alive
+setInterval(() => {}, 1000 * 60 * 60);
