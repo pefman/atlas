@@ -3,6 +3,7 @@ import { OllamaProvider } from './ai/ollama';
 import { OpenAIProvider } from './ai/openai';
 import { Message, ChatResponse } from './ai/provider';
 import { execEventBus } from './events';
+import { logTask, logCEO, logCEOError, logSubtask, logSubtaskError } from './lib/logger';
 
 interface TaskContext {
   taskTitle: string;
@@ -163,6 +164,12 @@ async function decomposeTask(task: any): Promise<any[]> {
       VALUES (?, ?, ?, ?, 'ceo', ?)
     `).run(task.id, normalizedTitle, normalizedDescription, resolvedRole.id, resolvedPriority);
     
+    logSubtask('Assigned', { 
+      title: normalizedTitle, 
+      id: result.lastInsertRowid, 
+      role: resolvedRole.name 
+    });
+    
     const subtask = db.prepare('SELECT * FROM subtasks WHERE id = ?').get(result.lastInsertRowid) as any;
     insertedSubtasks.push(subtask);
 
@@ -188,6 +195,8 @@ async function decomposeTask(task: any): Promise<any[]> {
     UPDATE tasks SET ceo_status = 'decomposed', decomposed_at = datetime('now'), updated_at = datetime('now') WHERE id = ?
   `).run(task.id);
   
+  logCEO('Decomposed', { task_id: task.id, subtask_count: insertedSubtasks.length });
+  
   return insertedSubtasks;
 }
 
@@ -203,6 +212,8 @@ export async function executeTask(taskId: number): Promise<void> {
   
   // Update ceo_status to decomposing
   db.prepare(`UPDATE tasks SET ceo_status = 'decomposing', updated_at = datetime('now') WHERE id = ?`).run(taskId);
+
+  logCEO('Decomposing', { task_id: taskId, title: task.title });
 
   // Get or generate subtasks
   let subtasks = db.prepare(`
@@ -223,7 +234,7 @@ export async function executeTask(taskId: number): Promise<void> {
     try {
       subtasks = await decomposeTask(task);
     } catch (error) {
-      console.error(`Error decomposing task ${taskId}:`, error);
+      logCEOError(error, { task_id: taskId, title: task.title });
       db.prepare(`UPDATE tasks SET ceo_status = 'error', updated_at = datetime('now') WHERE id = ?`).run(taskId);
       throw error;
     }
@@ -241,6 +252,7 @@ export async function executeTask(taskId: number): Promise<void> {
 
   if (pendingSubtasks.count === 0) {
     db.prepare(`UPDATE tasks SET status = 'done', ceo_status = 'idle', updated_at = datetime('now') WHERE id = ?`).run(taskId);
+    logTask('Completed', { id: taskId, title: task.title });
   }
 }
 
@@ -283,6 +295,8 @@ export async function executeSubtask(subtaskId: number): Promise<void> {
   // Update status to in_progress
   db.prepare(`UPDATE subtasks SET status = 'in_progress', updated_at = datetime('now') WHERE id = ?`).run(subtaskId);
 
+  logSubtask('Started', { id: subtaskId, title: subtask.title });
+
   const provider = await getProvider();
   const role = db.prepare('SELECT * FROM roles WHERE id = ?').get(subtask.role_id) as any;
 
@@ -323,10 +337,11 @@ export async function executeSubtask(subtaskId: number): Promise<void> {
 
       // Mark subtask as done
       db.prepare(`UPDATE subtasks SET status = 'done', updated_at = datetime('now') WHERE id = ?`).run(subtaskId);
+      logSubtask('Completed', { id: subtaskId, title: subtask.title });
 
       break;
     } catch (error) {
-      console.error(`Error executing subtask ${subtaskId} step ${step}:`, error);
+      logSubtaskError(error, { id: subtaskId, title: subtask.title, step });
 
       // Update log with error
       db.prepare(`

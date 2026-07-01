@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { db } from '../db';
+import { logTask } from '../lib/logger';
 
 const router = Router();
 
@@ -81,6 +82,7 @@ router.patch('/:id/status', (req: Request, res: Response) => {
       SET status = 'done', updated_at = datetime('now')
       WHERE id = ?
     `).run(subtask.task_id);
+    logTask('Completed via Subtask', { task_id: subtask.task_id, subtask_id: subtask.id });
   } else {
     db.prepare(`
       UPDATE tasks
