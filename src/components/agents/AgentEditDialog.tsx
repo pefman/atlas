@@ -19,11 +19,11 @@ interface AgentEditDialogProps {
 }
 
 export function AgentEditDialog({ agent, isOpen, onClose, onSave }: AgentEditDialogProps) {
-  const [name, setName] = useState('');
-  const [description, setDescription] = useState('');
-  const [system_prompt, setSystem_prompt] = useState('');
-
   if (!agent) return null;
+
+  const [name, setName] = useState(agent.name);
+  const [description, setDescription] = useState(agent.description);
+  const [system_prompt, setSystem_prompt] = useState(agent.system_prompt);
 
   const handleSave = async () => {
     const res = await fetch(`/api/agents/${agent.id}`, {
