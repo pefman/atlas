@@ -2,10 +2,11 @@ import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Play, Loader2 } from 'lucide-react';
+import { ArrowLeft, Loader2, Play } from 'lucide-react';
 import { KanbanBoard } from '@/components/kanban/KanbanBoard';
 import { ExecutionLogs } from '@/components/execution/ExecutionLogs';
 import { TaskStatus } from '@/types';
+import { toast } from 'sonner';
 
 interface Subtask {
   id: number;
@@ -62,9 +63,11 @@ export function TaskDetail({ taskId, onBack }: TaskDetailProps) {
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}`);
       }
+      toast.success('Task execution started');
       await fetchTask();
     } catch (error) {
       console.error('Failed to execute task:', error);
+      toast.error('Failed to execute task');
     } finally {
       setExecuting(false);
     }

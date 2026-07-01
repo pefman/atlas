@@ -76,4 +76,21 @@ router.patch('/:id/status', (req: Request, res: Response) => {
   res.json({ success: true });
 });
 
+// Delete task
+router.delete('/:id', (req: Request, res: Response) => {
+  const task = db.prepare('SELECT * FROM tasks WHERE id = ?').get(req.params.id);
+  
+  if (!task) {
+    res.status(404).json({ error: 'Task not found' });
+    return;
+  }
+  
+  db.prepare('DELETE FROM execution_logs WHERE subtask_id IN (SELECT id FROM subtasks WHERE task_id = ?)').run(req.params.id);
+  db.prepare('DELETE FROM outputs WHERE subtask_id IN (SELECT id FROM subtasks WHERE task_id = ?)').run(req.params.id);
+  db.prepare('DELETE FROM subtasks WHERE task_id = ?').run(req.params.id);
+  db.prepare('DELETE FROM tasks WHERE id = ?').run(req.params.id);
+  
+  res.json({ success: true });
+});
+
 export default router;

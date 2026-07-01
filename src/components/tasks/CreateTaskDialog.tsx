@@ -5,7 +5,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Plus } from 'lucide-react';
+import { Loader2, Plus } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface Role {
   id: number;
@@ -30,19 +31,22 @@ export function CreateTaskDialog({ roles, onTaskCreated }: CreateTaskDialogProps
     setCreating(true);
     
     try {
-      await fetch('/api/tasks', {
+      const response = await fetch('/api/tasks', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ title, description, role_id: roleId ? parseInt(roleId) : undefined }),
       });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
       
+      toast.success('Task created successfully');
       setOpen(false);
       setTitle('');
       setDescription('');
-      setRoleId('');
+      setRoleId(null);
       onTaskCreated();
     } catch (error) {
       console.error('Failed to create task:', error);
+      toast.error('Failed to create task');
     } finally {
       setCreating(false);
     }
@@ -103,7 +107,13 @@ export function CreateTaskDialog({ roles, onTaskCreated }: CreateTaskDialogProps
           </div>
           
           <Button type="submit" disabled={creating || !title || !description || !roleId}>
-            {creating ? 'Creating...' : 'Create Task'}
+            {creating ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-1 animate-spin" /> Creating...
+              </>
+            ) : (
+              'Create Task'
+            )}
           </Button>
         </form>
       </DialogContent>

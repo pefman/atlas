@@ -6,6 +6,7 @@ import { DashboardPage } from '@/pages/DashboardPage';
 import { KanbanPage } from '@/pages/KanbanPage';
 import { SettingsPage } from '@/pages/SettingsPage';
 import { TaskDetail } from '@/components/tasks/TaskDetail';
+import { Toaster } from '@/components/ui/sonner';
 
 function TaskDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -28,6 +29,7 @@ function App() {
           </Routes>
         </SidebarInset>
       </SidebarProvider>
+      <Toaster />
     </Router>
   );
 }

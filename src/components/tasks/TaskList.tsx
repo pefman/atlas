@@ -2,7 +2,16 @@ import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Play, Trash2 } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Loader2, Play, Trash2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface Task {
   id: number;
@@ -19,7 +28,11 @@ interface TaskListProps {
 
 export function TaskList({ onTaskSelect }: TaskListProps) {
   const [tasks, setTasks] = useState<Task[]>([]);
+  const [loading, setLoading] = useState(true);
   const [executing, setExecuting] = useState<number | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [taskToDelete, setTaskToDelete] = useState<number | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     fetchTasks();
@@ -27,34 +40,54 @@ export function TaskList({ onTaskSelect }: TaskListProps) {
 
   const fetchTasks = async () => {
     try {
+      setLoading(true);
       const response = await fetch('/api/tasks');
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const data = await response.json();
       setTasks(data);
     } catch (error) {
       console.error('Failed to fetch tasks:', error);
+      toast.error('Failed to load tasks');
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleExecute = async (taskId: number) => {
     try {
       setExecuting(taskId);
-      await fetch(`/api/execute/task/${taskId}`, { method: 'POST' });
+      const response = await fetch(`/api/execute/task/${taskId}`, { method: 'POST' });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      toast.success('Task execution started');
       await fetchTasks();
     } catch (error) {
       console.error('Failed to execute task:', error);
+      toast.error('Failed to execute task');
     } finally {
       setExecuting(null);
     }
   };
 
-  const handleDelete = async (taskId: number) => {
-    if (!confirm('Delete this task?')) return;
-    
+  const openDeleteDialog = (taskId: number) => {
+    setTaskToDelete(taskId);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleDelete = async () => {
+    if (!taskToDelete) return;
     try {
-      await fetch(`/api/tasks/${taskId}`, { method: 'DELETE' });
-      fetchTasks();
+      setDeleting(true);
+      const response = await fetch(`/api/tasks/${taskToDelete}`, { method: 'DELETE' });
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      toast.success('Task deleted');
+      setDeleteDialogOpen(false);
+      setTaskToDelete(null);
+      await fetchTasks();
     } catch (error) {
       console.error('Failed to delete task:', error);
+      toast.error('Failed to delete task');
+    } finally {
+      setDeleting(false);
     }
   };
 
@@ -67,6 +100,14 @@ export function TaskList({ onTaskSelect }: TaskListProps) {
       default: return 'bg-slate-500';
     }
   };
+
+  if (loading) {
+    return (
+      <div className="flex-1 p-6 flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
@@ -95,7 +136,7 @@ export function TaskList({ onTaskSelect }: TaskListProps) {
                   <Button size="sm" onClick={() => handleExecute(task.id)} disabled={executing === task.id}>
                     <Play className="h-4 w-4 mr-1" /> {executing === task.id ? 'Running...' : 'Execute'}
                   </Button>
-                  <Button size="sm" variant="destructive" onClick={() => handleDelete(task.id)}>
+                  <Button size="sm" variant="destructive" onClick={() => openDeleteDialog(task.id)}>
                     <Trash2 className="h-4 w-4 mr-1" /> Delete
                   </Button>
                 </div>
@@ -104,6 +145,31 @@ export function TaskList({ onTaskSelect }: TaskListProps) {
           </Card>
         ))
       )}
+
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Task</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this task? This action cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)} disabled={deleting}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={handleDelete} disabled={deleting}>
+              {deleting ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-1 animate-spin" /> Deleting...
+                </>
+              ) : (
+                'Delete'
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
