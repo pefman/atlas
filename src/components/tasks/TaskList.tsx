@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -27,6 +28,7 @@ interface TaskListProps {
 }
 
 export function TaskList({ onTaskSelect }: TaskListProps) {
+  const navigate = useNavigate();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [executing, setExecuting] = useState<number | null>(null);
@@ -66,6 +68,11 @@ export function TaskList({ onTaskSelect }: TaskListProps) {
     } finally {
       setExecuting(null);
     }
+  };
+
+  const handleTaskClick = (taskId: number) => {
+    onTaskSelect(taskId);
+    navigate(`/task/${taskId}`);
   };
 
   const openDeleteDialog = (taskId: number) => {
@@ -119,7 +126,7 @@ export function TaskList({ onTaskSelect }: TaskListProps) {
         </Card>
       ) : (
         tasks.map((task) => (
-          <Card key={task.id}>
+          <Card key={task.id} className="cursor-pointer hover:bg-accent transition-colors" onClick={() => handleTaskClick(task.id)}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <div>
                 <CardTitle className="text-lg">{task.title}</CardTitle>

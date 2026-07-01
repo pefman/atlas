@@ -3,6 +3,18 @@ import { db } from '../db';
 
 const router = Router();
 
+// Get all subtasks (no task filter)
+router.get('/', (req: Request, res: Response) => {
+  const subtasks = db.prepare(`
+    SELECT s.*, r.name as role_name
+    FROM subtasks s
+    JOIN roles r ON s.role_id = r.id
+    ORDER BY s.created_at ASC
+  `).all();
+  
+  res.json(subtasks);
+});
+
 // Get subtasks for a task
 router.get('/task/:taskId', (req: Request, res: Response) => {
   const subtasks = db.prepare(`

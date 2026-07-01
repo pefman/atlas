@@ -21,16 +21,15 @@ export function KanbanBoard({ taskId }: KanbanBoardProps) {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (taskId) {
-      fetchSubtasks();
-    }
+    fetchSubtasks();
   }, [taskId]);
 
   const fetchSubtasks = async () => {
     try {
       setLoading(true);
       setError(null);
-      const response = await fetch(`/api/subtasks/task/${taskId}`);
+      const endpoint = taskId ? `/api/subtasks/task/${taskId}` : '/api/subtasks';
+      const response = await fetch(endpoint);
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const data = await response.json();
       setSubtasks(data);
@@ -64,16 +63,6 @@ export function KanbanBoard({ taskId }: KanbanBoardProps) {
     return (
       <div className="flex-1 p-6">
         <div className="text-center text-destructive">{error}</div>
-      </div>
-    );
-  }
-
-  if (!taskId) {
-    return (
-      <div className="flex-1 p-6">
-        <div className="text-center text-muted-foreground">
-          Select a task to view its kanban board
-        </div>
       </div>
     );
   }
