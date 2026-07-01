@@ -53,6 +53,16 @@ db.exec(`
     FOREIGN KEY (role_id) REFERENCES roles(id)
   );
 
+  CREATE TABLE IF NOT EXISTS notifications (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    sender_role TEXT NOT NULL,
+    message TEXT NOT NULL,
+    task_id INTEGER,
+    is_read INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    FOREIGN KEY (task_id) REFERENCES tasks(id)
+  );
+
   CREATE TABLE IF NOT EXISTS outputs (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     subtask_id INTEGER NOT NULL,
