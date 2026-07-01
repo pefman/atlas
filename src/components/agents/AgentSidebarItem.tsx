@@ -10,13 +10,13 @@ const getStatusColor = (status: string) => {
   switch (status) {
     case 'executing':
     case 'decomposing':
-      return 'bg-green-500';
+      return 'bg-[var(--status-success-foreground)]';
     case 'reviewing':
-      return 'bg-yellow-500';
+      return 'bg-[var(--status-warning-foreground)]';
     case 'error':
-      return 'bg-red-500';
+      return 'bg-[var(--status-danger-foreground)]';
     default:
-      return 'bg-blue-500';
+      return 'bg-[var(--status-info-foreground)]';
   }
 };
 

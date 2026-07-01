@@ -1,4 +1,5 @@
 import { KanbanBoard } from '@/components/kanban/KanbanBoard';
+import { AppPage } from '@/components/layout/AppPage';
 
 interface KanbanPageProps {
   taskId?: number;
@@ -6,8 +7,11 @@ interface KanbanPageProps {
 
 export function KanbanPage({ taskId }: KanbanPageProps) {
   return (
-    <div className="flex-1">
+    <AppPage
+      title="Kanban"
+      subtitle="Organize tasks and subtasks by execution status."
+    >
       <KanbanBoard taskId={taskId} />
-    </div>
+    </AppPage>
   );
 }

@@ -36,6 +36,7 @@ export interface Task {
 export interface Subtask {
   id: number;
   task_id: number;
+  task_title?: string;
   title: string;
   description: string;
   role_id: number;

@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import {
   Dialog,
   DialogContent,
@@ -34,6 +35,7 @@ import { TaskStatus } from '@/types';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import { priorityColors } from '@/lib/priority';
+import { AppPage } from '@/components/layout/AppPage';
 
 interface Subtask {
   id: number;
@@ -73,11 +75,11 @@ function getCeoStatusText(ceoStatus: string): string {
 function getCeoStatusColor(ceoStatus: string): string {
   switch (ceoStatus) {
     case 'decomposing':
-      return 'text-blue-500';
+      return 'text-[var(--status-info-foreground)]';
     case 'decomposed':
-      return 'text-green-500';
+      return 'text-[var(--status-success-foreground)]';
     case 'error':
-      return 'text-red-500';
+      return 'text-[var(--status-danger-foreground)]';
     default:
       return '';
   }
@@ -166,6 +168,27 @@ export function TaskDetail({ taskId, onBack }: TaskDetailProps) {
     }
   };
 
+  const handleStatusChange = async (newStatus: string | null) => {
+    if (!newStatus) return;
+    try {
+      const response = await fetch(`/api/tasks/${taskId}/status`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ status: newStatus }),
+      });
+      if (!response.ok) {
+        const errorBody = await response.json().catch(() => null);
+        const message = errorBody?.error || `HTTP ${response.status}`;
+        throw new Error(message);
+      }
+      setTask(t => t ? { ...t, status: newStatus as TaskStatus } : t);
+      toast.success('Status updated');
+    } catch (error) {
+      console.error('Failed to update status:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to update status');
+    }
+  };
+
   const getProgress = () => {
     if (!task || task.subtasks.length === 0) return 0;
     const done = task.subtasks.filter(s => s.status === 'done').length;
@@ -174,7 +197,7 @@ export function TaskDetail({ taskId, onBack }: TaskDetailProps) {
 
   if (loading) {
     return (
-      <div className="flex-1 p-6 flex items-center justify-center">
+      <div className="page-container flex items-center justify-center py-12">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
       </div>
     );
@@ -182,7 +205,7 @@ export function TaskDetail({ taskId, onBack }: TaskDetailProps) {
 
   if (!task) {
     return (
-      <div className="flex-1 p-6">
+      <div className="page-container">
         <Card>
           <CardContent className="flex items-center justify-center h-40">
             <p className="text-destructive">Task not found</p>
@@ -193,56 +216,64 @@ export function TaskDetail({ taskId, onBack }: TaskDetailProps) {
   }
 
   return (
-    <div className="flex-1 p-6 space-y-6">
-      {/* Breadcrumb */}
-      <Breadcrumb>
-        <BreadcrumbList>
-          <BreadcrumbItem>
-            <BreadcrumbLink href="/" className="cursor-pointer hover:text-primary">
-              Dashboard
-            </BreadcrumbLink>
-          </BreadcrumbItem>
-          <BreadcrumbSeparator />
-          <BreadcrumbItem>
-            <BreadcrumbPage>{task.title}</BreadcrumbPage>
-          </BreadcrumbItem>
-        </BreadcrumbList>
-      </Breadcrumb>
-
-      {/* Header */}
-      <div className="flex items-center justify-between flex-wrap gap-4">
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={onBack}>
+    <AppPage
+      top={
+        <Breadcrumb>
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              <BreadcrumbLink href="/" className="cursor-pointer hover:text-primary">
+                Dashboard
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbPage>{task.title}</BreadcrumbPage>
+            </BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>
+      }
+      title={
+        <span className="flex items-center gap-2">
+          <Button variant="ghost" size="icon" onClick={onBack} className="size-8">
             <ArrowLeft className="h-4 w-4" />
           </Button>
-          <div>
-            <h2 className="text-2xl font-bold flex items-center gap-2">
-              {task.title}
-              {getStatusIcon(task.status)}
-            </h2>
-            <div className="flex items-center gap-2 mt-1">
-              <Badge variant="secondary">{task.status}</Badge>
-              {task.ceo_status === 'decomposed' && (
-                <Badge>Decomposed</Badge>
-              )}
-            </div>
-          </div>
+          <span className="truncate">{task.title}</span>
+          {getStatusIcon(task.status)}
+        </span>
+      }
+      subtitle={
+        <div className="mt-1 flex flex-wrap items-center gap-2">
+          <Select value={task.status} onValueChange={handleStatusChange}>
+            <SelectTrigger className="h-6 w-[140px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="backlog">Backlog</SelectItem>
+              <SelectItem value="in_progress">In Progress</SelectItem>
+              <SelectItem value="review">Review</SelectItem>
+              <SelectItem value="done">Done</SelectItem>
+            </SelectContent>
+          </Select>
+          {task.ceo_status === 'decomposed' && <Badge>Decomposed</Badge>}
         </div>
+      }
+      actions={
         <div className="flex items-center gap-2">
           <Button size="sm" onClick={handleExecute} disabled={executing}>
-            <Play className="h-4 w-4 mr-1" />
+            <Play className="mr-1 h-4 w-4" />
             {executing ? 'Starting...' : 'Execute'}
           </Button>
           <Button size="sm" variant="destructive" onClick={() => setDeleteDialogOpen(true)}>
-            <Trash2 className="h-4 w-4 mr-1" /> Delete
+            <Trash2 className="mr-1 h-4 w-4" /> Delete
           </Button>
         </div>
-      </div>
+      }
+    >
 
       {/* CEO Status */}
       {task.ceo_status === 'decomposing' && (
-        <div className="flex items-center gap-3 p-4 bg-blue-50 dark:bg-blue-950 border border-blue-200 dark:border-blue-800 rounded-lg">
-          <div className="animate-spin h-5 w-5 border-2 border-blue-500 border-t-transparent rounded-full" />
+        <div className="status-banner status-banner-info flex items-center gap-3">
+          <div className="animate-spin h-5 w-5 border-2 border-current border-t-transparent rounded-full" />
           <div>
             <span className={`text-sm font-medium ${getCeoStatusColor(task.ceo_status)}`}>
               {getCeoStatusText(task.ceo_status)}
@@ -255,10 +286,10 @@ export function TaskDetail({ taskId, onBack }: TaskDetailProps) {
       )}
 
       {task.ceo_status === 'decomposed' && (
-        <div className="flex items-center gap-3 p-4 bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg">
-          <CheckCircle2 className="h-5 w-5 text-green-500" />
+        <div className="status-banner status-banner-success flex items-center gap-3">
+          <CheckCircle2 className="h-5 w-5" />
           <div>
-            <span className="text-sm font-medium text-green-700 dark:text-green-300">
+            <span className="text-sm font-medium">
               Task decomposed successfully
             </span>
             <p className="text-xs text-muted-foreground mt-1">
@@ -271,10 +302,10 @@ export function TaskDetail({ taskId, onBack }: TaskDetailProps) {
 
       {/* Progress */}
       {task.subtasks.length > 0 && (
-        <Card>
+        <Card size="sm">
           <CardHeader>
             <CardTitle className="text-base flex items-center justify-between">
-              <span>Progress</span>
+              <span className="tracking-tight">Progress</span>
               <span className="text-sm font-normal text-muted-foreground">
                 {task.subtasks.filter(s => s.status === 'done').length} / {task.subtasks.length} subtasks
               </span>
@@ -288,7 +319,7 @@ export function TaskDetail({ taskId, onBack }: TaskDetailProps) {
 
       {/* Tabs */}
       <Tabs defaultValue="overview" className="space-y-4">
-        <TabsList>
+        <TabsList className="w-full justify-start overflow-x-auto">
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="subtasks">Subtasks</TabsTrigger>
           <TabsTrigger value="logs">Execution Logs</TabsTrigger>
@@ -296,23 +327,23 @@ export function TaskDetail({ taskId, onBack }: TaskDetailProps) {
 
         {/* Overview Tab */}
         <TabsContent value="overview" className="space-y-4">
-          <Card>
+          <Card size="sm">
             <CardHeader>
-              <CardTitle className="text-lg">Task Details</CardTitle>
+              <CardTitle className="text-base tracking-tight">Task Details</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="prose dark:prose-invert max-w-none">
                 <p className="text-muted-foreground">{task.description}</p>
               </div>
               <Separator />
-              <div className="grid grid-cols-2 gap-4 text-sm">
+              <div className="grid grid-cols-1 gap-4 text-sm sm:grid-cols-2">
                 <div>
                   <span className="text-muted-foreground">Assigned Role:</span>
                   <p className="font-medium">{task.role_name}</p>
                 </div>
                 <div>
                   <span className="text-muted-foreground">Status:</span>
-                  <p className="font-medium">{task.status}</p>
+                  <Badge variant="secondary">{task.status}</Badge>
                 </div>
                 {task.decomposed_at && (
                   <div>
@@ -337,7 +368,7 @@ export function TaskDetail({ taskId, onBack }: TaskDetailProps) {
         {/* Subtasks Tab */}
         <TabsContent value="subtasks">
           {task.subtasks.length === 0 ? (
-            <Card>
+            <Card size="sm">
               <CardContent className="flex items-center justify-center h-40">
                 <div className="text-center">
                   <Brain className="h-12 w-12 text-muted-foreground/50 mx-auto mb-2" />
@@ -356,7 +387,7 @@ export function TaskDetail({ taskId, onBack }: TaskDetailProps) {
         {/* Execution Logs Tab */}
         <TabsContent value="logs">
           {task.subtasks.length === 0 ? (
-            <Card>
+            <Card size="sm">
               <CardContent className="flex items-center justify-center h-40">
                 <div className="text-center">
                   <ListTodo className="h-12 w-12 text-muted-foreground/50 mx-auto mb-2" />
@@ -398,6 +429,6 @@ export function TaskDetail({ taskId, onBack }: TaskDetailProps) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </AppPage>
   );
 }

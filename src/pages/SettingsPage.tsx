@@ -1,10 +1,13 @@
 import { SettingsForm } from '@/components/settings/SettingsForm';
+import { AppPage } from '@/components/layout/AppPage';
 
 export function SettingsPage() {
   return (
-    <div className="flex-1 p-6">
-      <h2 className="text-2xl font-bold mb-4">Settings</h2>
+    <AppPage
+      title="Settings"
+      subtitle="Configure AI providers and application settings."
+    >
       <SettingsForm />
-    </div>
+    </AppPage>
   );
 }

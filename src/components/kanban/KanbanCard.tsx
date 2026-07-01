@@ -1,5 +1,6 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Play } from 'lucide-react';
 import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
@@ -11,10 +12,10 @@ interface KanbanCardProps {
   subtask?: Subtask;
   onExecute?: (subtaskId: number) => void;
   onTaskClick?: (taskId: number) => void;
-  onTaskPickup?: (taskId: number) => void;
+  onTaskStatusChange?: (taskId: number, status: Task['status']) => void;
 }
 
-export function KanbanCard({ task, subtask, onExecute, onTaskClick, onTaskPickup }: KanbanCardProps) {
+export function KanbanCard({ task, subtask, onExecute, onTaskClick, onTaskStatusChange }: KanbanCardProps) {
   const item = task || subtask;
   if (!item) return null;
 
@@ -37,14 +38,24 @@ export function KanbanCard({ task, subtask, onExecute, onTaskClick, onTaskPickup
       style={style}
       {...attributes}
       {...listeners}
-      className="bg-card border border-border rounded-lg p-3 shadow-sm hover:shadow-md transition-shadow cursor-pointer group"
+      className={`group cursor-pointer rounded-lg border bg-card p-3 shadow-sm transition-shadow hover:shadow-md ${
+        isTask ? 'border-l-4 border-l-primary' : 'border-dashed border-l-4 border-l-muted-foreground/40 bg-muted/30'
+      }`}
       onClick={() => isTask && onTaskClick?.(task!.id)}
     >
-      <div className="flex items-start justify-between mb-2 gap-2">
-        <h4 className="font-medium text-sm flex-1 leading-tight">{item.title}</h4>
-        {isTask && <Badge variant="secondary" className="text-xs shrink-0">Role #{(item as Task).role_id}</Badge>}
+      <div className="mb-2 flex items-center gap-2">
+        <Badge variant={isTask ? 'default' : 'secondary'} className="text-[10px] uppercase tracking-wide">
+          {isTask ? 'Task' : 'Subtask'}
+        </Badge>
+        {!isTask && subtask?.task_title && (
+          <span className="line-clamp-1 text-[11px] text-muted-foreground">Parent: {subtask.task_title}</span>
+        )}
       </div>
-      <p className="text-xs text-muted-foreground mb-3 line-clamp-2">{item.description}</p>
+      <div className="flex items-start justify-between mb-2 gap-2">
+        <h4 className="flex-1 text-sm font-semibold leading-tight tracking-tight">{item.title}</h4>
+        {isTask && <Badge variant="secondary" className="text-xs shrink-0">Main</Badge>}
+      </div>
+      <p className="mb-3 line-clamp-2 text-xs leading-relaxed text-muted-foreground">{item.description}</p>
       
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
@@ -53,15 +64,26 @@ export function KanbanCard({ task, subtask, onExecute, onTaskClick, onTaskPickup
               {(item as Subtask).priority}
             </Badge>
           )}
+          {isTask && (
+            <Select
+              value={task.status}
+              onValueChange={(newStatus) => onTaskStatusChange?.(task.id, newStatus as Task['status'])}
+            >
+              <SelectTrigger className="h-6 w-[96px] text-xs">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="backlog">Backlog</SelectItem>
+                <SelectItem value="in_progress">In Progress</SelectItem>
+                <SelectItem value="review">Review</SelectItem>
+                <SelectItem value="done">Done</SelectItem>
+              </SelectContent>
+            </Select>
+          )}
         </div>
         
         {isTask ? (
-          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-            {task.status === 'backlog' && (
-              <Button size="sm" variant="secondary" className="h-6 text-xs px-2" onClick={(e) => { e.stopPropagation(); onTaskPickup?.(task.id); }}>
-                <Play className="h-3 w-3 mr-1" /> Pick Up
-              </Button>
-            )}
+          <div className="flex items-center gap-1 opacity-100 transition-opacity sm:opacity-0 sm:group-hover:opacity-100">
           </div>
         ) : (
           onExecute && subtask && (

@@ -5,6 +5,15 @@ import { DataTable } from './data-table';
 import { taskTableColumns } from './task-table-columns';
 import { toast } from 'sonner';
 import { Loader2 } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
 
 interface TaskListProps {
   onTaskSelect: (taskId: number) => void;
@@ -76,7 +85,7 @@ export function TaskList({ onTaskSelect }: TaskListProps) {
 
   if (loading) {
     return (
-      <div className="flex-1 p-6 flex items-center justify-center">
+      <div className="flex items-center justify-center py-12">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
       </div>
     );
@@ -85,36 +94,29 @@ export function TaskList({ onTaskSelect }: TaskListProps) {
   return (
     <>
       <DataTable
-        columns={taskTableColumns({ onExecute: handleExecute, onDelete: setDeleteTaskId, onView: handleView })}
+        columns={taskTableColumns({})}
         data={tasks}
         onRowClick={(task) => handleView(task.id)}
       />
 
-      {deleteTaskId && (
-        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="bg-card border border-border rounded-lg p-6 max-w-md w-full mx-4">
-            <h2 className="text-lg font-semibold mb-4">Delete Task</h2>
-            <p className="text-muted-foreground mb-6">
+      <Dialog open={deleteTaskId !== null} onOpenChange={(open) => !open && setDeleteTaskId(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Task</DialogTitle>
+            <DialogDescription>
               Are you sure you want to delete this task? This action cannot be undone.
-            </p>
-            <div className="flex justify-end gap-2">
-              <button
-                onClick={() => setDeleteTaskId(null)}
-                className="px-4 py-2 border border-border rounded-md hover:bg-accent transition-colors"
-              >
-                Cancel
-              </button>
-              <button
-                onClick={handleDelete}
-                disabled={deleting}
-                className="px-4 py-2 bg-destructive text-destructive-foreground rounded-md hover:bg-destructive/90 transition-colors disabled:opacity-50"
-              >
-                {deleting ? 'Deleting...' : 'Delete'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteTaskId(null)}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={handleDelete} disabled={deleting}>
+              {deleting ? 'Deleting...' : 'Delete'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

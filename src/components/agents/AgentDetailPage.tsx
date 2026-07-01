@@ -10,11 +10,18 @@ type ExecEvent =
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Separator } from '@/components/ui/separator';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { ArrowLeft, Brain, Loader2, Pencil, Trash2, CheckCircle2, Clock, AlertCircle } from 'lucide-react';
 import { AgentEditDialog } from './AgentEditDialog';
 import { useEventSource } from '@/hooks/useEventSource';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
 
 export function AgentDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -24,6 +31,7 @@ export function AgentDetailPage() {
   const [loading, setLoading] = useState(true);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const outputEndRef = useRef<HTMLDivElement>(null);
 
   const streamUrl = id ? `/api/execute/stream?taskId=0` : null;
@@ -70,7 +78,7 @@ export function AgentDetailPage() {
   }, [events]);
 
   const handleDelete = async () => {
-    if (!id || !confirm('Delete this agent?')) return;
+    if (!id) return;
     
     try {
       setDeleting(true);
@@ -80,6 +88,7 @@ export function AgentDetailPage() {
       console.error('Failed to delete agent:', error);
     } finally {
       setDeleting(false);
+      setDeleteDialogOpen(false);
     }
   };
 
@@ -118,7 +127,7 @@ export function AgentDetailPage() {
 
   if (loading) {
     return (
-      <div className="flex-1 p-6 flex items-center justify-center">
+      <div className="page-container flex items-center justify-center py-12">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
       </div>
     );
@@ -126,7 +135,7 @@ export function AgentDetailPage() {
 
   if (!agent) {
     return (
-      <div className="flex-1 p-6">
+      <div className="page-container">
         <Card>
           <CardContent className="flex items-center justify-center h-40">
             <p className="text-destructive">Agent not found</p>
@@ -136,13 +145,12 @@ export function AgentDetailPage() {
     );
   }
 
-  const activeSubtasks = subtasks.filter(s => s.status === 'in_progress' || s.status === 'backlog');
   const completedSubtasks = subtasks.filter(s => s.status === 'done' || s.status === 'review');
 
   return (
-    <div className="flex-1 p-6 space-y-6">
+    <div className="page-container page-stack">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="page-header">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" onClick={() => navigate('/')}>
             <ArrowLeft className="h-4 w-4" />
@@ -161,7 +169,7 @@ export function AgentDetailPage() {
           <Button size="sm" onClick={() => setIsEditOpen(true)}>
             <Pencil className="h-4 w-4 mr-1" /> Edit Prompt
           </Button>
-          <Button size="sm" variant="destructive" onClick={handleDelete} disabled={deleting}>
+          <Button size="sm" variant="destructive" onClick={() => setDeleteDialogOpen(true)} disabled={deleting}>
             <Trash2 className="h-4 w-4 mr-1" /> Delete
           </Button>
         </div>
@@ -169,10 +177,10 @@ export function AgentDetailPage() {
 
       {/* Connection Status */}
       {connected && (
-        <div className="flex items-center gap-3 p-4 bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg">
-          <div className="animate-spin h-5 w-5 border-2 border-green-500 border-t-transparent rounded-full" />
+        <div className="status-banner status-banner-success flex items-center gap-3">
+          <div className="animate-spin h-5 w-5 border-2 border-current border-t-transparent rounded-full" />
           <div>
-            <span className="text-sm font-medium text-green-700 dark:text-green-300">
+            <span className="text-sm font-medium">
               Live stream active
             </span>
             <p className="text-xs text-muted-foreground mt-1">
@@ -224,9 +232,9 @@ export function AgentDetailPage() {
                 >
                   <div className="mt-1">
                     {subtask.status === 'done' ? (
-                      <CheckCircle2 className="h-5 w-5 text-green-500" />
+                      <CheckCircle2 className="h-5 w-5 text-[var(--status-success-foreground)]" />
                     ) : subtask.status === 'in_progress' ? (
-                      <Loader2 className="h-5 w-5 text-blue-500 animate-spin" />
+                      <Loader2 className="h-5 w-5 text-[var(--status-info-foreground)] animate-spin" />
                     ) : (
                       <Clock className="h-5 w-5 text-muted-foreground" />
                     )}
@@ -264,20 +272,20 @@ export function AgentDetailPage() {
                 return (
                   <div
                     key={idx}
-                    className={`p-3 rounded-md border ${
+                    className={`status-banner p-3 ${
                       summary.type === 'error'
-                        ? 'border-red-200 bg-red-50 dark:bg-red-950'
+                        ? 'status-banner-danger'
                         : summary.type === 'complete'
-                        ? 'border-green-200 bg-green-50 dark:bg-green-950'
-                        : 'border-blue-200 bg-blue-50 dark:bg-blue-950'
+                        ? 'status-banner-success'
+                        : 'status-banner-info'
                     }`}
                   >
                     <div className="flex items-center justify-between mb-2">
                       <div className="flex items-center gap-2">
-                        {summary.type === 'start' && <Brain className="h-4 w-4 text-blue-500" />}
-                        {summary.type === 'progress' && <Loader2 className="h-4 w-4 text-blue-500 animate-spin" />}
-                        {summary.type === 'complete' && <CheckCircle2 className="h-4 w-4 text-green-500" />}
-                        {summary.type === 'error' && <AlertCircle className="h-4 w-4 text-red-500" />}
+                        {summary.type === 'start' && <Brain className="h-4 w-4" />}
+                        {summary.type === 'progress' && <Loader2 className="h-4 w-4 animate-spin" />}
+                        {summary.type === 'complete' && <CheckCircle2 className="h-4 w-4" />}
+                        {summary.type === 'error' && <AlertCircle className="h-4 w-4" />}
                         <span className="text-sm font-medium capitalize">
                           {summary.type === 'start' ? `${summary.role} started` : 
                            summary.type === 'progress' ? 'Progress' :
@@ -302,7 +310,7 @@ export function AgentDetailPage() {
                     )}
                     
                     {summary.type === 'error' && (
-                      <p className="text-sm text-red-600 dark:text-red-400">{(summary as any).error}</p>
+                      <p className="text-sm">{(summary as any).error}</p>
                     )}
                   </div>
                 );
@@ -312,6 +320,25 @@ export function AgentDetailPage() {
           </CardContent>
         </Card>
       )}
+
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Agent</DialogTitle>
+            <DialogDescription>
+              This will remove the agent and related assignments from the workspace.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={handleDelete} disabled={deleting}>
+              {deleting ? 'Deleting...' : 'Delete Agent'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <AgentEditDialog
         agent={agent}

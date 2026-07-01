@@ -5,6 +5,7 @@ import { CreateTaskDialog } from './CreateTaskDialog';
 import { Loader2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import type { Task, Subtask } from '@/types';
+import { toast } from 'sonner';
 
 interface KanbanBoardProps {
   taskId?: number;
@@ -49,16 +50,6 @@ export function KanbanBoard({ taskId }: KanbanBoardProps) {
     navigate(`/task/${taskId}`);
   };
 
-  const handleTaskPickup = async (taskId: number) => {
-    try {
-      const response = await fetch(`/api/tasks/${taskId}/pickup`, { method: 'PATCH' });
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
-      await fetchData();
-    } catch (error) {
-      console.error('Failed to pickup task:', error);
-    }
-  };
-
   const handleSubtaskExecute = async (subtaskId: number) => {
     try {
       const response = await fetch(`/api/execute/subtask/${subtaskId}`, { method: 'POST' });
@@ -90,19 +81,24 @@ export function KanbanBoard({ taskId }: KanbanBoardProps) {
         body: JSON.stringify({ status: newStatus })
       });
 
-      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      if (!response.ok) {
+        const errorBody = await response.json().catch(() => null);
+        const message = errorBody?.error || `HTTP ${response.status}`;
+        throw new Error(message);
+      }
 
       await fetchData();
     } catch (error) {
       console.error('Failed to update item status:', error);
       setTasks(prevTasks);
       setSubtasks(prevSubtasks);
+      toast.error(error instanceof Error ? error.message : 'Failed to update item status');
     }
   };
 
   if (loading) {
     return (
-      <div className="flex-1 p-6 flex items-center justify-center">
+      <div className="flex items-center justify-center py-12">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
       </div>
     );
@@ -110,8 +106,14 @@ export function KanbanBoard({ taskId }: KanbanBoardProps) {
 
   if (error) {
     return (
-      <div className="flex-1 p-6">
-        <div className="text-center text-destructive">{error}</div>
+      <div className="status-banner status-banner-danger text-center">{error}</div>
+    );
+  }
+
+  if (tasks.length === 0 && subtasks.length === 0) {
+    return (
+      <div className="status-banner status-banner-info text-sm">
+        No work items yet. Create a task to start building your execution board.
       </div>
     );
   }
@@ -126,60 +128,81 @@ export function KanbanBoard({ taskId }: KanbanBoardProps) {
   const reviewSubtasks = subtasks.filter(s => s.status === 'review');
   const doneSubtasks = subtasks.filter(s => s.status === 'done');
 
+  const totalItems = tasks.length + subtasks.length;
+  const activeItems = inProgressTasks.length + reviewTasks.length + inProgressSubtasks.length + reviewSubtasks.length;
+  const completedItems = doneTasks.length + doneSubtasks.length;
+
   return (
-    <div className="flex gap-4 p-6 overflow-x-auto">
-      <KanbanDndProvider
-        items={[
-          ...backlogTasks.map(t => ({ id: `task-${t.id}`, status: t.status })),
-          ...inProgressTasks.map(t => ({ id: `task-${t.id}`, status: t.status })),
-          ...reviewTasks.map(t => ({ id: `task-${t.id}`, status: t.status })),
-          ...doneTasks.map(t => ({ id: `task-${t.id}`, status: t.status })),
-          ...backlogSubtasks.map(s => ({ id: `subtask-${s.id}`, status: s.status })),
-          ...inProgressSubtasks.map(s => ({ id: `subtask-${s.id}`, status: s.status })),
-          ...reviewSubtasks.map(s => ({ id: `subtask-${s.id}`, status: s.status })),
-          ...doneSubtasks.map(s => ({ id: `subtask-${s.id}`, status: s.status }))
-        ]}
-        onDrop={handleDrop}
-      >
-        <KanbanColumn
-          title="Backlog"
-          status="backlog"
-          tasks={backlogTasks}
-          subtasks={backlogSubtasks}
-          onCreateTask={() => setCreateDialogOpen(true)}
-          onTaskClick={handleTaskClick}
-          onTaskPickup={handleTaskPickup}
-          onSubtaskExecute={handleSubtaskExecute}
-        />
-        <KanbanColumn
-          title="In Progress"
-          status="in_progress"
-          tasks={inProgressTasks}
-          subtasks={inProgressSubtasks}
-          onTaskClick={handleTaskClick}
-          onSubtaskExecute={handleSubtaskExecute}
-        />
-        <KanbanColumn
-          title="Review"
-          status="review"
-          tasks={reviewTasks}
-          subtasks={reviewSubtasks}
-          onTaskClick={handleTaskClick}
-          onSubtaskExecute={handleSubtaskExecute}
-        />
-        <KanbanColumn
-          title="Done"
-          status="done"
-          tasks={doneTasks}
-          subtasks={doneSubtasks}
-          onTaskClick={handleTaskClick}
-        />
-        <CreateTaskDialog
-          open={createDialogOpen}
-          onOpenChange={setCreateDialogOpen}
-          onCreated={fetchData}
-        />
-      </KanbanDndProvider>
+    <div className="space-y-3">
+      <div className="grid grid-cols-3 gap-2 text-xs sm:max-w-md sm:gap-3 sm:text-sm">
+        <div className="rounded-md border bg-card px-2 py-1.5 text-muted-foreground sm:px-3 sm:py-2">
+          Total: <span className="font-medium text-foreground">{totalItems}</span>
+        </div>
+        <div className="rounded-md border bg-card px-2 py-1.5 text-muted-foreground sm:px-3 sm:py-2">
+          Active: <span className="font-medium text-foreground">{activeItems}</span>
+        </div>
+        <div className="rounded-md border bg-card px-2 py-1.5 text-muted-foreground sm:px-3 sm:py-2">
+          Done: <span className="font-medium text-foreground">{completedItems}</span>
+        </div>
+      </div>
+
+      <div className="flex snap-x snap-mandatory gap-3 overflow-x-auto pb-2 sm:gap-4">
+        <KanbanDndProvider
+          items={[
+            ...backlogTasks.map(t => ({ id: `task-${t.id}`, status: t.status })),
+            ...inProgressTasks.map(t => ({ id: `task-${t.id}`, status: t.status })),
+            ...reviewTasks.map(t => ({ id: `task-${t.id}`, status: t.status })),
+            ...doneTasks.map(t => ({ id: `task-${t.id}`, status: t.status })),
+            ...backlogSubtasks.map(s => ({ id: `subtask-${s.id}`, status: s.status })),
+            ...inProgressSubtasks.map(s => ({ id: `subtask-${s.id}`, status: s.status })),
+            ...reviewSubtasks.map(s => ({ id: `subtask-${s.id}`, status: s.status })),
+            ...doneSubtasks.map(s => ({ id: `subtask-${s.id}`, status: s.status }))
+          ]}
+          onDrop={handleDrop}
+        >
+          <KanbanColumn
+            title="Backlog"
+            status="backlog"
+            tasks={backlogTasks}
+            subtasks={backlogSubtasks}
+            onCreateTask={() => setCreateDialogOpen(true)}
+            onTaskClick={handleTaskClick}
+            onSubtaskExecute={handleSubtaskExecute}
+            onTaskStatusChange={(taskId, status) => handleDrop(`task-${taskId}`, status)}
+          />
+          <KanbanColumn
+            title="In Progress"
+            status="in_progress"
+            tasks={inProgressTasks}
+            subtasks={inProgressSubtasks}
+            onTaskClick={handleTaskClick}
+            onSubtaskExecute={handleSubtaskExecute}
+            onTaskStatusChange={(taskId, status) => handleDrop(`task-${taskId}`, status)}
+          />
+          <KanbanColumn
+            title="Review"
+            status="review"
+            tasks={reviewTasks}
+            subtasks={reviewSubtasks}
+            onTaskClick={handleTaskClick}
+            onSubtaskExecute={handleSubtaskExecute}
+            onTaskStatusChange={(taskId, status) => handleDrop(`task-${taskId}`, status)}
+          />
+          <KanbanColumn
+            title="Done"
+            status="done"
+            tasks={doneTasks}
+            subtasks={doneSubtasks}
+            onTaskClick={handleTaskClick}
+            onTaskStatusChange={(taskId, status) => handleDrop(`task-${taskId}`, status)}
+          />
+          <CreateTaskDialog
+            open={createDialogOpen}
+            onOpenChange={setCreateDialogOpen}
+            onCreated={fetchData}
+          />
+        </KanbanDndProvider>
+      </div>
     </div>
   );
 }

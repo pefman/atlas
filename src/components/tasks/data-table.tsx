@@ -84,8 +84,8 @@ export function DataTable<TData, TValue>({
   });
 
   return (
-    <div>
-      <div className="flex items-center py-4 gap-4">
+    <div className="rounded-xl border bg-card p-3 shadow-sm sm:p-4">
+      <div className="flex flex-wrap items-center gap-3 py-1">
         <Input
           placeholder="Filter tasks..."
           value={(table.getColumn("title")?.getFilterValue() as string) ?? ""}
@@ -97,11 +97,9 @@ export function DataTable<TData, TValue>({
         <DropdownMenu>
           <MenuPrimitive.Trigger
             render={(_renderProps) => (
-              <button
-                className="group/button inline-flex shrink-0 items-center justify-center rounded-lg border border-border bg-background text-sm font-medium whitespace-nowrap transition-all outline-none select-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50 active:not-aria-[haspopup]:translate-y-px disabled:pointer-events-none disabled:opacity-50 hover:bg-muted hover:text-foreground h-8 gap-1.5 px-2.5 ml-auto"
-              >
+              <Button variant="outline" size="sm" className="ml-auto">
                 Columns
-              </button>
+              </Button>
             )}
           />
           <DropdownMenuContent align="end">
@@ -125,7 +123,7 @@ export function DataTable<TData, TValue>({
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
-      <div className="rounded-md border">
+      <div className="rounded-md border bg-background">
         <Table>
           <TableHeader>
             {table.getHeaderGroups().map((headerGroup: any) => (
@@ -174,7 +172,7 @@ export function DataTable<TData, TValue>({
           </TableBody>
         </Table>
       </div>
-      <div className="flex items-center justify-between px-2 py-4">
+      <div className="flex flex-wrap items-center justify-between gap-3 px-2 py-4">
         <div className="flex-1 text-sm text-muted-foreground">
           {table.getFilteredSelectedRowModel().rows.length} of{" "}
           {table.getFilteredRowModel().rows.length} row(s) selected.

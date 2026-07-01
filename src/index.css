@@ -5,72 +5,6 @@
 
 @custom-variant dark (&:is(.dark *));
 
-@layer base {
-  :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
-    --radius: 0.5rem;
-  }
-
-  .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-  }
-  * {
-    @apply border-border outline-ring/50;
-  }
-  body {
-    @apply bg-background text-foreground;
-  }
-  html {
-    @apply font-sans;
-  }
-}
-
-@layer base {
-  * {
-    border-color: hsl(var(--border));
-  }
-  body {
-    background-color: hsl(var(--background));
-    color: hsl(var(--foreground));
-  }
-}
-
 @theme inline {
   --font-heading: var(--font-sans);
   --font-sans: 'Geist Variable', sans-serif;
@@ -147,6 +81,18 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+  --status-info-surface: oklch(0.97 0.015 244);
+  --status-info-border: oklch(0.88 0.04 244);
+  --status-info-foreground: oklch(0.42 0.08 244);
+  --status-success-surface: oklch(0.975 0.03 145);
+  --status-success-border: oklch(0.9 0.06 145);
+  --status-success-foreground: oklch(0.42 0.1 145);
+  --status-warning-surface: oklch(0.98 0.03 85);
+  --status-warning-border: oklch(0.91 0.06 85);
+  --status-warning-foreground: oklch(0.5 0.1 85);
+  --status-danger-surface: oklch(0.97 0.03 25);
+  --status-danger-border: oklch(0.88 0.08 25);
+  --status-danger-foreground: oklch(0.48 0.12 25);
 }
 
 .dark {
@@ -181,4 +127,113 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
+  --status-info-surface: oklch(0.25 0.02 244);
+  --status-info-border: oklch(0.4 0.05 244);
+  --status-info-foreground: oklch(0.84 0.04 244);
+  --status-success-surface: oklch(0.24 0.03 145);
+  --status-success-border: oklch(0.38 0.06 145);
+  --status-success-foreground: oklch(0.84 0.05 145);
+  --status-warning-surface: oklch(0.24 0.03 85);
+  --status-warning-border: oklch(0.4 0.06 85);
+  --status-warning-foreground: oklch(0.87 0.05 85);
+  --status-danger-surface: oklch(0.24 0.035 25);
+  --status-danger-border: oklch(0.4 0.08 25);
+  --status-danger-foreground: oklch(0.86 0.06 25);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  html {
+    @apply font-sans;
+  }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-feature-settings: "cv11", "ss01";
+  }
+}
+
+@layer components {
+  .page-shell {
+    @apply flex-1;
+  }
+
+  .page-container {
+    @apply mx-auto w-full max-w-[1400px] px-3 py-4 sm:px-6 sm:py-6 lg:px-8;
+  }
+
+  .page-stack {
+    @apply space-y-4 sm:space-y-6;
+  }
+
+  .page-header {
+    @apply flex flex-wrap items-start justify-between gap-3 sm:gap-4;
+  }
+
+  .page-title {
+    @apply text-xl font-semibold tracking-tight sm:text-2xl;
+  }
+
+  .page-subtitle {
+    @apply text-sm leading-relaxed text-muted-foreground;
+  }
+
+  .section-title {
+    @apply text-sm font-semibold tracking-wide text-muted-foreground;
+  }
+
+  .status-banner {
+    @apply rounded-lg border px-4 py-3;
+  }
+
+  .status-banner-info {
+    background-color: var(--status-info-surface);
+    border-color: var(--status-info-border);
+    color: var(--status-info-foreground);
+  }
+
+  .status-banner-success {
+    background-color: var(--status-success-surface);
+    border-color: var(--status-success-border);
+    color: var(--status-success-foreground);
+  }
+
+  .status-banner-warning {
+    background-color: var(--status-warning-surface);
+    border-color: var(--status-warning-border);
+    color: var(--status-warning-foreground);
+  }
+
+  .status-banner-danger {
+    background-color: var(--status-danger-surface);
+    border-color: var(--status-danger-border);
+    color: var(--status-danger-foreground);
+  }
+
+  .status-surface-info {
+    background-color: color-mix(in oklab, var(--status-info-surface) 65%, transparent);
+    border-color: var(--status-info-border);
+    color: var(--status-info-foreground);
+  }
+
+  .status-surface-success {
+    background-color: color-mix(in oklab, var(--status-success-surface) 65%, transparent);
+    border-color: var(--status-success-border);
+    color: var(--status-success-foreground);
+  }
+
+  .status-surface-warning {
+    background-color: color-mix(in oklab, var(--status-warning-surface) 65%, transparent);
+    border-color: var(--status-warning-border);
+    color: var(--status-warning-foreground);
+  }
+
+  .status-surface-danger {
+    background-color: color-mix(in oklab, var(--status-danger-surface) 65%, transparent);
+    border-color: var(--status-danger-border);
+    color: var(--status-danger-foreground);
+  }
 }

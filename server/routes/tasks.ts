@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { db } from '../db';
-import { executeTask, processNextInProgress } from '../executor';
+import { processNextTask } from '../executor';
 
 const router = Router();
 
@@ -95,39 +95,14 @@ router.post('/', (req: Request, res: Response) => {
   res.status(201).json(task);
 });
 
-// Pick up task (called by CEO) - can pickup from backlog or in_progress
-router.patch('/:id/pickup', (req: Request, res: Response) => {
-  const task = db.prepare('SELECT * FROM tasks WHERE id = ?').get(req.params.id);
-  
-  if (!task) {
-    res.status(404).json({ error: 'Task not found' });
-    return;
-  }
-  
-  if (task.status !== 'backlog' && task.status !== 'in_progress') {
-    res.status(400).json({ error: 'Task is not in backlog or in_progress' });
-    return;
-  }
-  
-  db.prepare(`
-    UPDATE tasks SET status = 'in_progress', updated_at = datetime('now') WHERE id = ?
-  `).run(req.params.id);
-  
-  executeTask(req.params.id).catch(error => {
-    console.error(`Error executing task ${req.params.id}:`, error);
-  });
-  
-  res.json({ success: true });
-});
-
-// CEO: Process next task from in_progress
+// CEO: Process next task from backlog
 router.post('/process-next', async (req: Request, res: Response) => {
   try {
-    const processed = await processNextInProgress();
+    const processed = await processNextTask();
     if (processed) {
       res.json({ success: true, message: 'Next task processed' });
     } else {
-      res.json({ success: true, message: 'No tasks in in_progress' });
+      res.json({ success: true, message: 'No tasks in backlog' });
     }
   } catch (error) {
     console.error('Error processing next task:', error);
@@ -143,6 +118,28 @@ router.patch('/:id/status', (req: Request, res: Response) => {
   if (!validStatuses.includes(status)) {
     res.status(400).json({ error: 'Invalid status' });
     return;
+  }
+
+  const task = db.prepare('SELECT id FROM tasks WHERE id = ?').get(req.params.id) as { id: number } | undefined;
+  if (!task) {
+    res.status(404).json({ error: 'Task not found' });
+    return;
+  }
+
+  if (status === 'done') {
+    const pendingSubtasks = db.prepare(`
+      SELECT COUNT(*) as count
+      FROM subtasks
+      WHERE task_id = ? AND status NOT IN ('done', 'review')
+    `).get(req.params.id) as { count: number };
+
+    if (pendingSubtasks.count > 0) {
+      res.status(409).json({
+        error: 'Cannot mark task as done until all subtasks are done or review',
+        pendingSubtasks: pendingSubtasks.count,
+      });
+      return;
+    }
   }
   
   db.prepare(`

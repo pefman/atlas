@@ -2,6 +2,15 @@ import { useState } from 'react';
 import { Agent } from '@/types';
 import { Button } from '@/components/ui/button';
 import { AgentEditDialog } from './AgentEditDialog';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { X } from 'lucide-react';
 
 interface AgentDetailProps {
   agent: Agent | null;
@@ -10,17 +19,30 @@ interface AgentDetailProps {
 
 export function AgentDetail({ agent, onClose }: AgentDetailProps) {
   const [isEditOpen, setIsEditOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   if (!agent) return null;
+
+  const handleDelete = async () => {
+    try {
+      setDeleting(true);
+      await fetch(`/api/agents/${agent.id}`, { method: 'DELETE' });
+      onClose();
+    } finally {
+      setDeleting(false);
+      setDeleteDialogOpen(false);
+    }
+  };
 
   return (
     <>
       <div className="p-4 border-t">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-semibold">{agent.name}</h3>
-          <button onClick={onClose} className="text-muted-foreground hover:text-foreground">
-            ✕
-          </button>
+          <Button variant="ghost" size="icon" onClick={onClose} aria-label="Close agent details">
+            <X className="h-4 w-4" />
+          </Button>
         </div>
 
         <div className="space-y-3">
@@ -50,15 +72,31 @@ export function AgentDetail({ agent, onClose }: AgentDetailProps) {
         <div className="flex gap-2 mt-4">
           <Button size="sm" onClick={() => setIsEditOpen(true)}>Edit</Button>
           {agent.name !== 'ceo' && (
-            <Button size="sm" variant="destructive" onClick={() => {
-              if (confirm('Delete this agent?')) {
-                fetch(`/api/agents/${agent.id}`, { method: 'DELETE' });
-                onClose();
-              }
-            }}>Delete</Button>
+            <Button size="sm" variant="destructive" onClick={() => setDeleteDialogOpen(true)}>
+              Delete
+            </Button>
           )}
         </div>
       </div>
+
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Agent</DialogTitle>
+            <DialogDescription>
+              This will remove the agent and cannot be undone.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={handleDelete} disabled={deleting}>
+              {deleting ? 'Deleting...' : 'Delete Agent'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <AgentEditDialog
         agent={agent}

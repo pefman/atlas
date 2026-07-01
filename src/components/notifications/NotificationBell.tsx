@@ -8,6 +8,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { formatDistanceToNow } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
 
 export function NotificationBell() {
   const { notifications, unreadCount, markAsRead } = useNotifications();
@@ -25,11 +26,11 @@ export function NotificationBell() {
   return (
     <Popover>
       <PopoverTrigger>
-        <span
-          className="relative inline-flex items-center justify-center gap-2 whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:size-5 [&_svg]:shrink-0 text-muted-foreground hover:text-foreground cursor-pointer"
+        <Button
+          variant="ghost"
+          size="icon"
+          className="relative text-muted-foreground hover:text-foreground"
           aria-label="Notifications"
-          role="button"
-          tabIndex={0}
         >
           <Bell className="h-5 w-5" />
           {unreadCount > 0 && (
@@ -37,7 +38,7 @@ export function NotificationBell() {
               {unreadCount}
             </Badge>
           )}
-        </span>
+        </Button>
       </PopoverTrigger>
       <PopoverContent className="w-80" align="end">
         <div className="space-y-2">

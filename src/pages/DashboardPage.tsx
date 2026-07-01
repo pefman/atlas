@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { TaskList } from '@/components/tasks/TaskList';
 import { CreateTaskDialog } from '@/components/tasks/CreateTaskDialog';
+import { AppPage } from '@/components/layout/AppPage';
 
 export function DashboardPage() {
   const navigate = useNavigate();
@@ -16,12 +17,12 @@ export function DashboardPage() {
   };
 
   return (
-    <div className="flex-1 p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold">Tasks</h2>
-        <CreateTaskDialog onTaskCreated={handleTaskCreated} />
-      </div>
+    <AppPage
+      title="Tasks"
+      subtitle="Track and manage all execution work in one place."
+      actions={<CreateTaskDialog onTaskCreated={handleTaskCreated} />}
+    >
       <TaskList key={refreshKey} onTaskSelect={handleTaskSelect} />
-    </div>
+    </AppPage>
   );
 }
