@@ -45,6 +45,7 @@ db.exec(`
     description TEXT NOT NULL,
     role_id INTEGER NOT NULL,
     status TEXT NOT NULL DEFAULT 'backlog',
+    assigned_by TEXT NOT NULL DEFAULT 'ceo',
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
     updated_at TEXT NOT NULL DEFAULT (datetime('now')),
     FOREIGN KEY (task_id) REFERENCES tasks(id),
