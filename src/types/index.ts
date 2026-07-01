@@ -74,8 +74,4 @@ export interface Settings {
   updated_at: string;
 }
 
-export type ExecEvent =
-  | { type: 'subtask_start'; subtaskId: number; role: string; title: string }
-  | { type: 'subtask_progress'; subtaskId: number; output: string }
-  | { type: 'subtask_complete'; subtaskId: number; role: string; output: string }
-  | { type: 'error'; subtaskId: number; error: string };
+

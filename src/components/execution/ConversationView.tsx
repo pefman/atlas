@@ -16,6 +16,7 @@ interface SubtaskMessage {
   subtaskTitle: string;
   subtaskStatus: string;
   roleInitials: string;
+  priority?: string;
   messages: ConversationMessage[];
 }
 
@@ -25,10 +26,12 @@ interface ConversationViewProps {
     title: string;
     status: string;
     role_name: string;
+    priority?: string;
   }>;
+  priorityColors?: Record<string, string>;
 }
 
-export function ConversationView({ subtasks }: ConversationViewProps) {
+export function ConversationView({ subtasks, priorityColors }: ConversationViewProps) {
   const [logs, setLogs] = useState<Map<number, any[]>>(new Map());
   const [error, setError] = useState<string | null>(null);
 
@@ -76,6 +79,7 @@ export function ConversationView({ subtasks }: ConversationViewProps) {
     subtaskTitle: subtask.title,
     subtaskStatus: subtask.status,
     roleInitials: getRoleInitials(subtask.role_name),
+    priority: subtask.priority,
     messages: transformLogsToConversation(logs.get(subtask.id) || []),
   }));
 
@@ -105,7 +109,7 @@ export function ConversationView({ subtasks }: ConversationViewProps) {
     <div className="space-y-6">
       {conversationData.map((subtask) => (
         <div key={subtask.subtaskId}>
-          <SubtaskHeader subtask={subtask} />
+          <SubtaskHeader subtask={subtask} priorityColors={priorityColors} />
           <ScrollArea className="h-[400px] w-full rounded-md border p-4">
             <div className="space-y-3">
               {subtask.messages.map((msg, idx) => (
@@ -129,7 +133,7 @@ function getRoleInitials(roleName: string): string {
   return initials || roleName[0].toUpperCase();
 }
 
-function SubtaskHeader({ subtask }: { subtask: SubtaskMessage }) {
+function SubtaskHeader({ subtask, priorityColors }: { subtask: SubtaskMessage; priorityColors?: Record<string, string> }) {
   return (
     <div className="flex items-center justify-between p-3 bg-secondary rounded-lg border border-border">
       <div className="flex items-center gap-2">
@@ -139,6 +143,11 @@ function SubtaskHeader({ subtask }: { subtask: SubtaskMessage }) {
           </AvatarFallback>
         </Avatar>
         <span className="font-medium text-sm">{subtask.subtaskTitle}</span>
+        {subtask.priority && priorityColors && (
+          <Badge variant="secondary" className={`text-xs shrink-0 ${priorityColors[subtask.priority]}`}>
+            {subtask.priority}
+          </Badge>
+        )}
       </div>
       <Badge variant="secondary">{subtask.subtaskStatus}</Badge>
     </div>

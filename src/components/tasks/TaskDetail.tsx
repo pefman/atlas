@@ -34,6 +34,12 @@ import { TaskStatus } from '@/types';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 
+const priorityColors: Record<string, string> = {
+  high: 'bg-red-500/10 text-red-600 dark:text-red-400 border-red-200 dark:border-red-800',
+  medium: 'bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-800',
+  low: 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-200 dark:border-blue-800',
+};
+
 interface Subtask {
   id: number;
   title: string;
@@ -367,7 +373,7 @@ export function TaskDetail({ taskId, onBack }: TaskDetailProps) {
               </CardContent>
             </Card>
           ) : (
-            <ConversationView subtasks={task.subtasks} />
+            <ConversationView subtasks={task.subtasks} priorityColors={priorityColors} />
           )}
         </TabsContent>
       </Tabs>
