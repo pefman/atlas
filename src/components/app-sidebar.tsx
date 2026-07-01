@@ -109,11 +109,11 @@ export function AppSidebar({ openCommandPalette }: AppSidebarProps) {
             <div className="flex items-center justify-between mb-2">
               <h3 className="text-xs font-semibold text-muted-foreground">Management</h3>
               <Badge variant="secondary" className="text-xs">
-                {agents.filter(a => ['ceo', 'planner'].includes(a.name)).length}
+                {agents.filter(a => a.name === 'ceo').length}
               </Badge>
             </div>
             <div className="space-y-1">
-              {agents.filter(a => ['ceo', 'planner'].includes(a.name)).map((agent) => (
+              {agents.filter(a => a.name === 'ceo').map((agent) => (
                 <AgentSidebarItem
                   key={agent.id}
                   agent={agent}

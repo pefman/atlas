@@ -4,7 +4,7 @@ export type AgentStatus = 'idle' | 'decomposing' | 'executing' | 'reviewing' | '
 
 export type StepType = 'decompose' | 'assign' | 'execute' | 'review';
 
-export type RoleName = 'planner' | 'researcher' | 'writer' | 'reviewer' | 'ceo';
+export type RoleName = 'researcher' | 'writer' | 'reviewer' | 'ceo';
 
 export interface Role {
   id: number;

@@ -91,8 +91,7 @@ if (roleCount.count === 0) {
     INSERT INTO roles (name, description, system_prompt) VALUES (?, ?, ?)
   `);
   
-  insertRole.run('planner', 'Plans and decomposes tasks into subtasks', 
-    'You are a Planner. Your job is to analyze the task and break it down into clear, actionable subtasks. Return a JSON array of subtasks with title, description, and recommended role.');
+
   
   insertRole.run('researcher', 'Gathers information and researches topics', 
     'You are a Researcher. Your job is to gather relevant information, facts, and data about the given topic. Provide comprehensive, well-organized research output.');
