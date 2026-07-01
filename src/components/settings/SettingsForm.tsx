@@ -181,9 +181,9 @@ export function SettingsForm() {
             </div>
           )}
 
-          <div className="space-y-2">
-            <Label htmlFor="model">Model</Label>
-            {models.length > 0 ? (
+          {models.length > 0 && (
+            <div className="space-y-2">
+              <Label htmlFor="model">Model</Label>
               <Select
                 value={settings.model}
                 onValueChange={(value: string | null) => setSettings((s) => ({ ...s, model: value || '' }))}
@@ -199,17 +199,12 @@ export function SettingsForm() {
                   ))}
                 </SelectContent>
               </Select>
-            ) : (
-              <Input
-                id="model"
-                value={settings.model}
-                onChange={(e) => setSettings((s) => ({ ...s, model: e.target.value }))}
-                placeholder="llama3"
-                disabled={fetchingModels}
-              />
-            )}
-            {fetchingModels && <p className="text-xs text-muted-foreground">Fetching models...</p>}
-          </div>
+              {fetchingModels && <p className="text-xs text-muted-foreground">Fetching models...</p>}
+            </div>
+          )}
+          {fetchingModels && !models.length && (
+            <p className="text-xs text-muted-foreground">Fetching models...</p>
+          )}
 
           <div className="flex gap-2">
             <Button type="button" variant="secondary" onClick={handleTest} disabled={saving || testing}>
