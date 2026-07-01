@@ -195,3 +195,11 @@
 [ 2190744ms] [ERROR] Failed to load resource: the server responded with a status of 502 (Bad Gateway) @ http://localhost:5173/api/agents:0
 [ 2193744ms] [ERROR] Failed to load resource: the server responded with a status of 502 (Bad Gateway) @ http://localhost:5173/api/agents:0
 [ 2196745ms] [ERROR] Failed to load resource: the server responded with a status of 502 (Bad Gateway) @ http://localhost:5173/api/agents:0
+[ 2398917ms] [LOG] [vite] server connection lost. Polling for restart... @ http://localhost:5173/@vite/client:992
+[ 2401219ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=a03c3e33:14335
+[ 2401249ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5173/api/tasks/9:0
+[ 2401249ms] [ERROR] Failed to fetch task: Error: HTTP 404
+    at fetchTask (http://localhost:5173/src/components/tasks/TaskDetail.tsx:80:11) @ http://localhost:5173/src/components/tasks/TaskDetail.tsx:84
+[ 2401250ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5173/api/tasks/9:0
+[ 2401250ms] [ERROR] Failed to fetch task: Error: HTTP 404
+    at fetchTask (http://localhost:5173/src/components/tasks/TaskDetail.tsx:80:11) @ http://localhost:5173/src/components/tasks/TaskDetail.tsx:84

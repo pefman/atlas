@@ -20,13 +20,8 @@ import { Badge } from '@/components/ui/badge';
 
 const items = [
   {
-    title: 'Dashboard',
-    url: '/',
-    icon: ListTodo,
-  },
-  {
     title: 'Kanban Board',
-    url: '/kanban',
+    url: '/',
     icon: Kanban,
   },
   {

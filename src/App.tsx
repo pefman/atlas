@@ -13,7 +13,7 @@ import { CommandPalette } from '@/components/ui/command-palette';
 function TaskDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  return <TaskDetail taskId={parseInt(id!)} onBack={() => navigate('/')} />;
+  return <TaskDetail taskId={parseInt(id!)} onBack={() => navigate('/kanban')} />;
 }
 
 function App() {
@@ -26,7 +26,7 @@ function App() {
         <SidebarInset>
           <SiteHeader />
           <Routes>
-            <Route path="/" element={<DashboardPage />} />
+            <Route path="/" element={<KanbanPage />} />
             <Route path="/kanban" element={<KanbanPage />} />
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="/task/:id" element={<TaskDetailPage />} />
