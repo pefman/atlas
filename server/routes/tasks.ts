@@ -43,17 +43,24 @@ router.get('/:id', (req: Request, res: Response) => {
 
 // Create task
 router.post('/', (req: Request, res: Response) => {
-  const { title, description, role_id } = req.body;
+  const { title, description } = req.body;
   
-  if (!title || !description || !role_id) {
+  if (!title || !description) {
     res.status(400).json({ error: 'Missing required fields' });
+    return;
+  }
+  
+  // Get CEO role ID for task assignment
+  const ceoRole = db.prepare('SELECT id FROM roles WHERE name = ?').get('ceo') as { id: number } | undefined;
+  if (!ceoRole) {
+    res.status(500).json({ error: 'CEO role not found' });
     return;
   }
   
   const result = db.prepare(`
     INSERT INTO tasks (title, description, role_id)
     VALUES (?, ?, ?)
-  `).run(title, description, role_id);
+  `).run(title, description, ceoRole.id);
   
   const task = db.prepare('SELECT * FROM tasks WHERE id = ?').get(result.lastInsertRowid);
   

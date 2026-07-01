@@ -8,22 +8,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Loader2, Plus } from 'lucide-react';
 import { toast } from 'sonner';
 
-interface Role {
-  id: number;
-  name: string;
-  description: string;
-}
-
 interface CreateTaskDialogProps {
-  roles: Role[];
   onTaskCreated: () => void;
 }
 
-export function CreateTaskDialog({ roles, onTaskCreated }: CreateTaskDialogProps) {
+export function CreateTaskDialog({ onTaskCreated }: CreateTaskDialogProps) {
   const [open, setOpen] = useState(false);
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
-  const [roleId, setRoleId] = useState<string | null>(null);
   const [creating, setCreating] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -34,7 +26,7 @@ export function CreateTaskDialog({ roles, onTaskCreated }: CreateTaskDialogProps
       const response = await fetch('/api/tasks', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title, description, role_id: roleId ? parseInt(roleId) : undefined }),
+        body: JSON.stringify({ title, description }),
       });
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       
@@ -42,7 +34,6 @@ export function CreateTaskDialog({ roles, onTaskCreated }: CreateTaskDialogProps
       setOpen(false);
       setTitle('');
       setDescription('');
-      setRoleId(null);
       onTaskCreated();
     } catch (error) {
       console.error('Failed to create task:', error);
@@ -63,7 +54,7 @@ export function CreateTaskDialog({ roles, onTaskCreated }: CreateTaskDialogProps
         <DialogHeader>
           <DialogTitle>Create New Task</DialogTitle>
           <DialogDescription>
-            Define a task for the AI to execute.
+            Define a task for the AI to execute. The CEO will automatically assign work to appropriate agents.
           </DialogDescription>
         </DialogHeader>
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -90,23 +81,7 @@ export function CreateTaskDialog({ roles, onTaskCreated }: CreateTaskDialogProps
             />
           </div>
           
-          <div className="space-y-2">
-            <Label htmlFor="role">Assigned Role</Label>
-            <Select value={roleId} onValueChange={setRoleId} required>
-              <SelectTrigger>
-                <SelectValue placeholder="Select role" />
-              </SelectTrigger>
-              <SelectContent>
-                {roles.map((role) => (
-                  <SelectItem key={role.id} value={role.id.toString()}>
-                    {role.name} - {role.description}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          
-          <Button type="submit" disabled={creating || !title || !description || !roleId}>
+          <Button type="submit" disabled={creating || !title || !description}>
             {creating ? (
               <>
                 <Loader2 className="h-4 w-4 mr-1 animate-spin" /> Creating...
