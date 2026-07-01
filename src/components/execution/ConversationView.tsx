@@ -1,3 +1,4 @@
+import { useEffect, useState } from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -28,12 +29,34 @@ interface ConversationViewProps {
 }
 
 export function ConversationView({ subtasks }: ConversationViewProps) {
+  const [logs, setLogs] = useState<Map<number, any[]>>(new Map());
+
+  useEffect(() => {
+    const fetchLogs = async () => {
+      const newLogs = new Map<number, any[]>();
+      for (const subtask of subtasks) {
+        try {
+          const response = await fetch(`/api/execute/logs/${subtask.id}`);
+          if (response.ok) {
+            const data = await response.json();
+            newLogs.set(subtask.id, data);
+          }
+        } catch (error) {
+          console.error(`Failed to fetch logs for subtask ${subtask.id}:`, error);
+        }
+      }
+      setLogs(newLogs);
+    };
+
+    fetchLogs();
+  }, [subtasks]);
+
   const conversationData: SubtaskMessage[] = subtasks.map(subtask => ({
     subtaskId: subtask.id,
     subtaskTitle: subtask.title,
     subtaskStatus: subtask.status,
     roleInitials: getRoleInitials(subtask.role_name),
-    messages: [],
+    messages: transformLogsToConversation(logs.get(subtask.id) || []),
   }));
 
   if (subtasks.length === 0) {
