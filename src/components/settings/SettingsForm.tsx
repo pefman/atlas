@@ -104,6 +104,26 @@ export function SettingsForm() {
     }
   };
 
+  const handleClear = async () => {
+    if (!confirm('Are you sure you want to clear all settings? This cannot be undone.')) {
+      return;
+    }
+    setSaving(true);
+    try {
+      const res = await fetch('/api/settings', {
+        method: 'DELETE',
+      });
+      if (!res.ok) throw new Error('Failed to clear settings');
+      setSettings(defaultSettings);
+      setModels([]);
+      toast.success('Settings cleared');
+    } catch (err) {
+      toast.error('Failed to clear settings');
+    } finally {
+      setSaving(false);
+    }
+  };
+
   if (loading) {
     return (
       <Card>
@@ -197,6 +217,9 @@ export function SettingsForm() {
             </Button>
             <Button type="submit" disabled={saving || testing}>
               {saving ? 'Saving...' : 'Save settings'}
+            </Button>
+            <Button type="button" variant="destructive" onClick={handleClear} disabled={saving || testing || !settings.provider}>
+              Clear Settings
             </Button>
           </div>
         </CardContent>

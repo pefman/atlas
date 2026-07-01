@@ -91,7 +91,7 @@ router.get('/models', async (req: Request, res: Response) => {
     let aiProvider: AIProvider;
     
     if (settings.provider === 'openai') {
-      aiProvider = new OpenAIProvider(settings.api_key || '', settings.model, settings.endpoint);
+      aiProvider = new OpenAIProvider(settings.api_key || '', settings.model);
     } else {
       aiProvider = new OllamaProvider(settings.endpoint || 'http://localhost:11434', settings.model);
     }
@@ -102,6 +102,12 @@ router.get('/models', async (req: Request, res: Response) => {
     const errorMessage = error instanceof Error ? error.message : 'Failed to fetch models';
     res.status(500).json({ error: errorMessage });
   }
+});
+
+// Clear settings
+router.delete('/', (req: Request, res: Response) => {
+  db.prepare('DELETE FROM settings').run();
+  res.json({ success: true });
 });
 
 export default router;
