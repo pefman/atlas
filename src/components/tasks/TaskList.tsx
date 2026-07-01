@@ -140,10 +140,10 @@ export function TaskList({ onTaskSelect }: TaskListProps) {
                   Role: {task.role_name} | Created: {new Date(task.created_at).toLocaleDateString()}
                 </div>
                 <div className="flex gap-2">
-                  <Button size="sm" onClick={() => handleExecute(task.id)} disabled={executing === task.id}>
+                  <Button size="sm" onClick={(e) => { e.stopPropagation(); handleExecute(task.id); }} disabled={executing === task.id}>
                     <Play className="h-4 w-4 mr-1" /> {executing === task.id ? 'Running...' : 'Execute'}
                   </Button>
-                  <Button size="sm" variant="destructive" onClick={() => openDeleteDialog(task.id)}>
+                  <Button size="sm" variant="destructive" onClick={(e) => { e.stopPropagation(); openDeleteDialog(task.id); }}>
                     <Trash2 className="h-4 w-4 mr-1" /> Delete
                   </Button>
                 </div>
