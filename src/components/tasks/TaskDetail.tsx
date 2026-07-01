@@ -205,10 +205,12 @@ export function TaskDetail({ taskId, onBack }: TaskDetailProps) {
         </div>
       )}
 
-      <div>
-        <h3 className="text-lg font-semibold mb-4">Subtasks</h3>
-        <KanbanBoard taskId={taskId} />
-      </div>
+      {task.subtasks.length > 0 && (
+        <div>
+          <h3 className="text-lg font-semibold mb-4">Subtasks</h3>
+          <KanbanBoard taskId={taskId} />
+        </div>
+      )}
 
       {task.subtasks.length > 0 && (
         <div>
