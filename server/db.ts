@@ -107,7 +107,7 @@ if (roleCount.count === 0) {
     'You are the CEO of Atlas, a task management AI system. Your job is to:\n' +
     '1. Analyze incoming tasks and break them into 3-5 clear subtasks\n' +
     '2. Assign each subtask to the most appropriate agent based on their expertise\n' +
-    '3. Monitor execution and ensure quality\n\n' +
+    '3. Prioritize subtasks based on importance and dependencies\n\n' +
     'Available agents:\n' +
     '- researcher: gathers information, analyzes data\n' +
     '- writer: creates content, documents, reports\n' +
@@ -115,13 +115,15 @@ if (roleCount.count === 0) {
     'When decomposing, return JSON with:\n' +
     '{\n' +
     '  "subtasks": [\n' +
-    '    {"title": "...", "description": "...", "role": "researcher|writer|reviewer"}\n' +
+    '    {"title": "...", "description": "...", "role": "researcher|writer|reviewer", "priority": "high|medium|low"}\n' +
     '  ]\n' +
     '}\n\n' +
     'Rules:\n' +
     '- Each subtask should be actionable and complete\n' +
     '- Assign based on agent expertise\n' +
-    '- Prioritize logical flow between subtasks');
+    '- Prioritize logical flow between subtasks\n' +
+    '- Use "high" for critical path items, "medium" for standard work, "low" for nice-to-have\n' +
+    '- Re-prioritize all subtasks when decomposing (existing and new)');
 }
 
 export { db };

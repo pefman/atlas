@@ -2,6 +2,7 @@ import { db } from './db';
 import { OllamaProvider } from './ai/ollama';
 import { OpenAIProvider } from './ai/openai';
 import { Message } from './ai/provider';
+import { execEventBus } from './events';
 
 interface TaskContext {
   taskTitle: string;
@@ -24,8 +25,22 @@ async function decomposeTask(task: any): Promise<any[]> {
     throw new Error('CEO role not found in database');
   }
   
+  // Get existing subtasks for this task (if any)
+  const existingSubtasks = db.prepare('SELECT * FROM subtasks WHERE task_id = ?').all(task.id) as any[];
+  
+  // Build context about existing assignments
+  let existingContext = '';
+  if (existingSubtasks.length > 0) {
+    const rolesUsed = existingSubtasks.map((s: any) => s.role_id);
+    const roleNames = rolesUsed.map((roleId: number) => {
+      const role = db.prepare('SELECT name FROM roles WHERE id = ?').get(roleId) as any;
+      return role?.name;
+    }).filter(Boolean).join(', ');
+    existingContext = `\n\nExisting subtasks for this task: ${existingSubtasks.length}\nRoles already assigned: ${roleNames}\nDO NOT create duplicate subtasks with the same role.`;
+  }
+  
   const messages: Message[] = [
-    { role: 'system', content: ceoRole.system_prompt },
+    { role: 'system', content: ceoRole.system_prompt + existingContext },
     { role: 'user', content: `Task: ${task.title}\n\nDescription: ${task.description}` },
   ];
   
@@ -53,9 +68,9 @@ async function decomposeTask(task: any): Promise<any[]> {
   const insertedSubtasks = [];
   for (const st of subtaskData) {
     const result = db.prepare(`
-      INSERT INTO subtasks (task_id, title, description, role_id, assigned_by)
-      VALUES (?, ?, ?, (SELECT id FROM roles WHERE name = ?), 'ceo')
-    `).run(task.id, st.title, st.description, st.role);
+      INSERT INTO subtasks (task_id, title, description, role_id, assigned_by, priority)
+      VALUES (?, ?, ?, (SELECT id FROM roles WHERE name = ?), 'ceo', ?)
+    `).run(task.id, st.title, st.description, st.role, st.priority || 'medium');
     
     const subtask = db.prepare('SELECT * FROM subtasks WHERE id = ?').get(result.lastInsertRowid) as any;
     insertedSubtasks.push(subtask);
@@ -97,7 +112,18 @@ export async function executeTask(taskId: number): Promise<void> {
   db.prepare(`UPDATE tasks SET ceo_status = 'decomposing', updated_at = datetime('now') WHERE id = ?`).run(taskId);
 
   // Get or generate subtasks
-  let subtasks = db.prepare('SELECT * FROM subtasks WHERE task_id = ?').all(taskId) as any[];
+  let subtasks = db.prepare(`
+    SELECT * FROM subtasks 
+    WHERE task_id = ? 
+    ORDER BY 
+      CASE priority 
+        WHEN 'high' THEN 1 
+        WHEN 'medium' THEN 2 
+        WHEN 'low' THEN 3 
+        ELSE 2 
+      END ASC,
+      created_at ASC
+  `).all(taskId) as any[];
 
   if (subtasks.length === 0) {
     // Generate subtasks using CEO agent
@@ -160,6 +186,9 @@ export async function executeSubtask(subtaskId: number): Promise<void> {
   const provider = await getProvider();
   const role = db.prepare('SELECT * FROM roles WHERE id = ?').get(subtask.role_id) as any;
 
+  execEventBus.emitSubtaskStart(subtaskId, role.name, subtask.title);
+
+  // Initialize conversation with system prompt and task
   const messages: Message[] = [
     { role: 'system', content: role.system_prompt },
     { role: 'user', content: subtask.description },
@@ -170,6 +199,7 @@ export async function executeSubtask(subtaskId: number): Promise<void> {
   let output = '';
 
   while (step <= 3) {
+    // Log the full conversation context
     const logEntry = db.prepare(`
       INSERT INTO execution_logs (subtask_id, step, role_id, input, output)
       VALUES (?, ?, ?, ?, ?)
@@ -177,6 +207,9 @@ export async function executeSubtask(subtaskId: number): Promise<void> {
 
     try {
       output = await provider.chat(messages);
+
+      // Emit progress event with output
+      execEventBus.emitSubtaskProgress(subtaskId, output);
 
       // Store output
       db.prepare(`
@@ -189,8 +222,14 @@ export async function executeSubtask(subtaskId: number): Promise<void> {
         UPDATE execution_logs SET output = ? WHERE id = ?
       `).run(output, logEntry.lastInsertRowid);
 
+      // Add assistant response to conversation history
+      messages.push({ role: 'assistant', content: output });
+
       // Mark subtask as done
       db.prepare(`UPDATE subtasks SET status = 'done', updated_at = datetime('now') WHERE id = ?`).run(subtaskId);
+
+      // Emit complete event
+      execEventBus.emitSubtaskComplete(subtaskId, role.name, output);
 
       break;
     } catch (error) {
@@ -206,6 +245,7 @@ export async function executeSubtask(subtaskId: number): Promise<void> {
       if (step > 3) {
         // Mark as done after exhausting retries (will be reviewed later)
         db.prepare(`UPDATE subtasks SET status = 'done', updated_at = datetime('now') WHERE id = ?`).run(subtaskId);
+        execEventBus.emitError(subtaskId, `Error after ${step - 1} retries: ${error}`);
       }
     }
   }
