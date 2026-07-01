@@ -1,5 +1,6 @@
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { Separator } from '@/components/ui/separator';
+import { NotificationBell } from '@/components/notifications/NotificationBell';
 
 export function SiteHeader() {
   return (
@@ -7,6 +8,9 @@ export function SiteHeader() {
       <SidebarTrigger />
       <Separator orientation="vertical" className="mr-2 h-4" />
       <h1 className="text-lg font-semibold">AI Task Executor</h1>
+      <div className="ml-auto">
+        <NotificationBell />
+      </div>
     </header>
   );
 }
