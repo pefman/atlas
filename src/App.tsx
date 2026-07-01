@@ -22,7 +22,7 @@ function App() {
   return (
     <Router>
       <SidebarProvider>
-        <AppSidebar />
+        <AppSidebar openCommandPalette={() => setCommandPaletteOpen(true)} />
         <SidebarInset>
           <SiteHeader />
           <Routes>

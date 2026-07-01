@@ -1,4 +1,4 @@
-import { Brain, Kanban, Settings, ListTodo, Moon, Sun } from 'lucide-react';
+import { Brain, Kanban, Settings, ListTodo, Moon, Sun, Command, User, ChevronRight } from 'lucide-react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { Switch } from '@/components/ui/switch';
 import {
@@ -8,12 +8,15 @@ import {
   SidebarHeader,
   SidebarMenu,
   SidebarMenuItem,
+  SidebarTrigger,
 } from '@/components/ui/sidebar';
+import { Button } from '@/components/ui/button';
 import { useTheme } from '@/context/ThemeProvider';
 import { Agent } from '@/types';
 import { AgentSidebarItem } from './agents/AgentSidebarItem';
 import { AgentDetail } from './agents/AgentDetail';
 import { useState, useEffect } from 'react';
+import { Badge } from '@/components/ui/badge';
 
 const items = [
   {
@@ -33,7 +36,11 @@ const items = [
   },
 ];
 
-export function AppSidebar() {
+interface AppSidebarProps {
+  openCommandPalette: () => void;
+}
+
+export function AppSidebar({ openCommandPalette }: AppSidebarProps) {
   const location = useLocation();
   const { isDark, toggleTheme } = useTheme();
   const [agents, setAgents] = useState<Agent[]>([]);
@@ -63,7 +70,17 @@ export function AppSidebar() {
             <Brain className="h-6 w-6" />
             <span className="text-lg font-semibold">AI Task Executor</span>
           </div>
-          <Switch checked={isDark} onCheckedChange={toggleTheme} aria-label="Toggle dark mode" />
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={openCommandPalette}
+              className="h-8 w-8"
+            >
+              <Command className="h-4 w-4" />
+            </Button>
+            <Switch checked={isDark} onCheckedChange={toggleTheme} aria-label="Toggle dark mode" />
+          </div>
         </div>
       </SidebarHeader>
       <SidebarContent>
@@ -88,7 +105,12 @@ export function AppSidebar() {
         </SidebarMenu>
 
         <div className="px-4 py-2">
-          <h3 className="text-xs font-semibold text-muted-foreground mb-2">Agents</h3>
+          <div className="flex items-center justify-between mb-2">
+            <h3 className="text-xs font-semibold text-muted-foreground">Agents</h3>
+            <Badge variant="secondary" className="text-xs">
+              {agents.length}
+            </Badge>
+          </div>
           <div className="space-y-1">
             {agents.map((agent) => (
               <AgentSidebarItem
@@ -101,7 +123,18 @@ export function AppSidebar() {
         </div>
       </SidebarContent>
       <SidebarFooter>
-        <p className="text-xs text-muted-foreground px-4">
+        <div className="flex items-center gap-2 px-4 py-2 border-t">
+          <div className="flex items-center gap-2 flex-1">
+            <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center">
+              <User className="h-4 w-4 text-primary-foreground" />
+            </div>
+            <div className="flex flex-col">
+              <span className="text-sm font-medium">Admin User</span>
+              <span className="text-xs text-muted-foreground">admin@example.com</span>
+            </div>
+          </div>
+        </div>
+        <p className="text-xs text-muted-foreground px-4 py-2">
           MVP v0.1
         </p>
       </SidebarFooter>
