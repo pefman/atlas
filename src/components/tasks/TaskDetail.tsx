@@ -23,7 +23,34 @@ interface Task {
   role_name: string;
   role_description: string;
   status: TaskStatus;
+  ceo_status?: string;
   subtasks: Subtask[];
+}
+
+function getCeoStatusText(ceoStatus: string): string {
+  switch (ceoStatus) {
+    case 'decomposing':
+      return 'CEO is analyzing task...';
+    case 'decomposed':
+      return 'Task decomposed';
+    case 'error':
+      return 'Decomposition failed';
+    default:
+      return '';
+  }
+}
+
+function getCeoStatusColor(ceoStatus: string): string {
+  switch (ceoStatus) {
+    case 'decomposing':
+      return 'text-blue-500';
+    case 'decomposed':
+      return 'text-green-500';
+    case 'error':
+      return 'text-red-500';
+    default:
+      return '';
+  }
 }
 
 interface TaskDetailProps {
@@ -126,6 +153,24 @@ export function TaskDetail({ taskId, onBack }: TaskDetailProps) {
           </div>
         </CardContent>
       </Card>
+
+      {task.ceo_status === 'decomposing' && (
+        <div className="flex items-center gap-2 p-3 bg-blue-50 dark:bg-blue-950 rounded-md">
+          <div className="animate-spin h-4 w-4 border-2 border-blue-500 border-t-transparent rounded-full" />
+          <span className={`text-sm ${getCeoStatusColor(task.ceo_status)}`}>
+            {getCeoStatusText(task.ceo_status)}
+          </span>
+        </div>
+      )}
+
+      {task.ceo_status === 'decomposed' && (
+        <div className="flex items-center gap-2 p-3 bg-green-50 dark:bg-green-950 rounded-md">
+          <span className="text-green-500">✓</span>
+          <span className="text-sm text-green-700 dark:text-green-300">
+            Task decomposed into {task.subtasks.length} subtasks
+          </span>
+        </div>
+      )}
 
       <div>
         <h3 className="text-lg font-semibold mb-4">Subtasks</h3>
