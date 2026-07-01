@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, useParams, useNavigate } from 'react-router-dom';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/app-sidebar';
@@ -7,6 +8,7 @@ import { KanbanPage } from '@/pages/KanbanPage';
 import { SettingsPage } from '@/pages/SettingsPage';
 import { TaskDetail } from '@/components/tasks/TaskDetail';
 import { Toaster } from '@/components/ui/sonner';
+import { CommandPalette } from '@/components/ui/command-palette';
 
 function TaskDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -15,6 +17,8 @@ function TaskDetailPage() {
 }
 
 function App() {
+  const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
+
   return (
     <Router>
       <SidebarProvider>
@@ -30,6 +34,7 @@ function App() {
         </SidebarInset>
       </SidebarProvider>
       <Toaster />
+      <CommandPalette open={commandPaletteOpen} setOpen={setCommandPaletteOpen} />
     </Router>
   );
 }
