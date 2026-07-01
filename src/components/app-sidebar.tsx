@@ -10,6 +10,10 @@ import {
   SidebarMenuItem,
 } from '@/components/ui/sidebar';
 import { useTheme } from '@/context/ThemeProvider';
+import { Agent } from '@/types';
+import { AgentSidebarItem } from './agents/AgentSidebarItem';
+import { AgentDetail } from './agents/AgentDetail';
+import { useState, useEffect } from 'react';
 
 const items = [
   {
@@ -32,6 +36,20 @@ const items = [
 export function AppSidebar() {
   const location = useLocation();
   const { isDark, toggleTheme } = useTheme();
+  const [agents, setAgents] = useState<Agent[]>([]);
+  const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
+
+  useEffect(() => {
+    const fetchAgents = async () => {
+      const res = await fetch('/api/agents');
+      const data = await res.json();
+      setAgents(data);
+    };
+
+    fetchAgents();
+    const interval = setInterval(fetchAgents, 3000);
+    return () => clearInterval(interval);
+  }, []);
 
   return (
     <Sidebar>
@@ -64,12 +82,30 @@ export function AppSidebar() {
             </SidebarMenuItem>
           ))}
         </SidebarMenu>
+
+        <div className="px-4 py-2">
+          <h3 className="text-xs font-semibold text-muted-foreground mb-2">Agents</h3>
+          <div className="space-y-1">
+            {agents.map((agent) => (
+              <AgentSidebarItem
+                key={agent.id}
+                agent={agent}
+                onClick={setSelectedAgent}
+              />
+            ))}
+          </div>
+        </div>
       </SidebarContent>
       <SidebarFooter>
         <p className="text-xs text-muted-foreground px-4">
           MVP v0.1
         </p>
       </SidebarFooter>
+      {selectedAgent && (
+        <div className="border-t">
+          <AgentDetail agent={selectedAgent} onClose={() => setSelectedAgent(null)} />
+        </div>
+      )}
     </Sidebar>
   );
 }
