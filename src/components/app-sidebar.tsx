@@ -41,9 +41,13 @@ export function AppSidebar() {
 
   useEffect(() => {
     const fetchAgents = async () => {
-      const res = await fetch('/api/agents');
-      const data = await res.json();
-      setAgents(data);
+      try {
+        const res = await fetch('/api/agents');
+        const data = await res.json();
+        setAgents(data);
+      } catch {
+        setAgents([]);
+      }
     };
 
     fetchAgents();
