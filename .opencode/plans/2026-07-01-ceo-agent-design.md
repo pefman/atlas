@@ -61,7 +61,7 @@ CEO monitors progress → Task marked complete
 
 **`tasks` table:**
 - Add `decomposed_at` TIMESTAMP (when CEO finished decomposition)
-- Add `ceo_status` VARCHAR (default: 'idle')
+- Add `ceo_status` VARCHAR (default: 'idle', values: 'idle', 'decomposing', 'decomposed', 'error')
 
 **`subtasks` table:**
 - Add `assigned_by` VARCHAR (default: 'ceo')
