@@ -150,6 +150,23 @@ export function SettingsForm() {
     }
   };
 
+  const handleReset = async () => {
+    setSaving(true);
+    setTestResult(null);
+    try {
+      // Delete existing settings and reset to defaults
+      await fetch('/api/settings', { method: 'DELETE' });
+      setSettings(defaultSettings);
+      setModels([]);
+      toast.success('Settings reset to defaults');
+    } catch (err) {
+      toast.error('Failed to reset settings');
+      console.error(err);
+    } finally {
+      setSaving(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -288,6 +305,25 @@ export function SettingsForm() {
                 )}
 
                 <div className="flex gap-2 pt-4">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={handleReset}
+                    disabled={saving || testing || fetchingModels}
+                    className="flex items-center gap-2"
+                  >
+                    {saving ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Resetting...
+                      </>
+                    ) : (
+                      <>
+                        <Trash2 className="h-4 w-4" />
+                        Reset to Defaults
+                      </>
+                    )}
+                  </Button>
                   <Button
                     type="button"
                     variant="secondary"
