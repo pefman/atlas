@@ -1,6 +1,6 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Play, ExternalLink } from 'lucide-react';
+import { Play } from 'lucide-react';
 import { ProgressRing } from '@/components/ui/progress-ring';
 import type { Subtask, Task as TaskType } from '@/types';
 
@@ -63,9 +63,6 @@ export function KanbanCard({ task, subtask, onExecute, onTaskClick, onTaskPickup
                 <Play className="h-3 w-3 mr-1" /> Pick Up
               </Button>
             )}
-            <Button size="sm" variant="secondary" className="h-6 text-xs px-2" onClick={(e) => { e.stopPropagation(); onTaskClick?.(task.id); }}>
-              <ExternalLink className="h-3 w-3 mr-1" /> View
-            </Button>
           </div>
         ) : (
           onExecute && subtask && (
