@@ -105,20 +105,40 @@ export function AppSidebar({ openCommandPalette }: AppSidebarProps) {
         </SidebarMenu>
 
         <div className="px-4 py-2">
-          <div className="flex items-center justify-between mb-2">
-            <h3 className="text-xs font-semibold text-muted-foreground">Agents</h3>
-            <Badge variant="secondary" className="text-xs">
-              {agents.length}
-            </Badge>
+          <div className="mb-3">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-xs font-semibold text-muted-foreground">Management</h3>
+              <Badge variant="secondary" className="text-xs">
+                {agents.filter(a => ['ceo', 'planner'].includes(a.name)).length}
+              </Badge>
+            </div>
+            <div className="space-y-1">
+              {agents.filter(a => ['ceo', 'planner'].includes(a.name)).map((agent) => (
+                <AgentSidebarItem
+                  key={agent.id}
+                  agent={agent}
+                  onClick={setSelectedAgent}
+                />
+              ))}
+            </div>
           </div>
-          <div className="space-y-1">
-            {agents.map((agent) => (
-              <AgentSidebarItem
-                key={agent.id}
-                agent={agent}
-                onClick={setSelectedAgent}
-              />
-            ))}
+          
+          <div className="mb-3">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-xs font-semibold text-muted-foreground">Agents</h3>
+              <Badge variant="secondary" className="text-xs">
+                {agents.filter(a => !['ceo', 'planner'].includes(a.name)).length}
+              </Badge>
+            </div>
+            <div className="space-y-1">
+              {agents.filter(a => !['ceo', 'planner'].includes(a.name)).map((agent) => (
+                <AgentSidebarItem
+                  key={agent.id}
+                  agent={agent}
+                  onClick={setSelectedAgent}
+                />
+              ))}
+            </div>
           </div>
         </div>
       </SidebarContent>
