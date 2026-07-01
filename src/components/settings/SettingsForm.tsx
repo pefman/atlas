@@ -3,8 +3,22 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from '@/components/ui/tabs';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { Badge } from '@/components/ui/badge';
 import { toast } from 'sonner';
+import { Loader2, TestTube, Save, Trash2, Wifi, WifiOff } from 'lucide-react';
 
 type Settings = {
   provider: 'ollama' | 'openai';
@@ -26,6 +40,7 @@ export function SettingsForm() {
   const [loading, setLoading] = useState(true);
   const [models, setModels] = useState<{ id: string; name: string }[]>([]);
   const [fetchingModels, setFetchingModels] = useState(false);
+  const [testResult, setTestResult] = useState<{ success: boolean; message: string } | null>(null);
 
   useEffect(() => {
     fetch('/api/settings')
@@ -57,6 +72,7 @@ export function SettingsForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setSaving(true);
+    setTestResult(null);
     try {
       const res = await fetch('/api/settings', {
         method: 'PUT',
@@ -75,6 +91,7 @@ export function SettingsForm() {
 
   const handleTest = async () => {
     setTesting(true);
+    setTestResult(null);
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 15000);
     try {
@@ -90,6 +107,7 @@ export function SettingsForm() {
       }
       const data = await res.json();
       if (!data.success) throw new Error(data.error || 'Test failed');
+      setTestResult({ success: true, message: `Connection successful! Response: ${data.response}` });
       toast.success(`Connection successful! Response: ${data.response}`);
     } catch (err) {
       clearTimeout(timeoutId);
@@ -98,6 +116,7 @@ export function SettingsForm() {
         : err instanceof Error && err.name === 'AbortError'
           ? 'Connection timed out'
           : 'Test failed';
+      setTestResult({ success: false, message: `Connection failed: ${message}` });
       toast.error(`Connection failed: ${message}`);
     } finally {
       setTesting(false);
@@ -116,6 +135,7 @@ export function SettingsForm() {
       if (!res.ok) throw new Error('Failed to clear settings');
       setSettings(defaultSettings);
       setModels([]);
+      setTestResult(null);
       toast.success('Settings cleared');
     } catch (err) {
       toast.error('Failed to clear settings');
@@ -126,99 +146,262 @@ export function SettingsForm() {
 
   if (loading) {
     return (
-      <Card>
-        <CardContent className="p-6">
-          <p className="text-muted-foreground">Loading settings...</p>
-        </CardContent>
-      </Card>
+      <div className="flex-1 p-6 flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
     );
   }
 
   return (
-    <form onSubmit={handleSubmit}>
-      <Card>
-        <CardHeader>
-          <CardTitle>AI Provider</CardTitle>
-          <CardDescription>Configure the AI provider for task execution.</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="provider">Provider</Label>
-            <Select
-              value={settings.provider}
-              onValueChange={(value: 'ollama' | 'openai' | null) => setSettings((s) => ({ ...s, provider: value ?? 'ollama' }))}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select provider" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="ollama">Ollama</SelectItem>
-                <SelectItem value="openai">OpenAI</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+    <div className="flex-1 p-6 space-y-6">
+      <div>
+        <h2 className="text-2xl font-bold">Settings</h2>
+        <p className="text-muted-foreground mt-1">Configure AI providers and application settings</p>
+      </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="endpoint">Endpoint</Label>
-            <Input
-              id="endpoint"
-              value={settings.endpoint}
-              onChange={(e) => setSettings((s) => ({ ...s, endpoint: e.target.value }))}
-              placeholder="http://localhost:11434"
-            />
-          </div>
+      <Tabs defaultValue="provider" className="space-y-4">
+        <TabsList>
+          <TabsTrigger value="provider">AI Provider</TabsTrigger>
+          <TabsTrigger value="general">General</TabsTrigger>
+          <TabsTrigger value="advanced">Advanced</TabsTrigger>
+        </TabsList>
 
-          {settings.provider === 'openai' && (
-            <div className="space-y-2">
-              <Label htmlFor="api_key">API Key</Label>
-              <Input
-                id="api_key"
-                type="password"
-                value={settings.api_key || ''}
-                onChange={(e) => setSettings((s) => ({ ...s, api_key: e.target.value }))}
-                placeholder="sk-..."
-              />
-            </div>
-          )}
+        {/* AI Provider Tab */}
+        <TabsContent value="provider">
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <TestTube className="h-5 w-5" />
+                  AI Provider Configuration
+                </CardTitle>
+                <CardDescription>
+                  Configure the AI provider for task execution and decomposition
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="grid gap-4 md:grid-cols-2">
+                  <div className="space-y-2">
+                    <Label htmlFor="provider">Provider</Label>
+                    <Select
+                      value={settings.provider}
+                      onValueChange={(value: 'ollama' | 'openai' | null) => setSettings((s) => ({ ...s, provider: value ?? 'ollama' }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select provider" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="ollama">
+                          <div className="flex items-center gap-2">
+                            <Wifi className="h-4 w-4" />
+                            <span>Ollama</span>
+                          </div>
+                        </SelectItem>
+                        <SelectItem value="openai">
+                          <div className="flex items-center gap-2">
+                            <Wifi className="h-4 w-4" />
+                            <span>OpenAI</span>
+                          </div>
+                        </SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground">
+                      {settings.provider === 'ollama' 
+                        ? 'Local AI model running on your machine' 
+                        : 'Cloud-based AI model via OpenAI-compatible endpoint'}
+                    </p>
+                  </div>
 
-          {models.length > 0 && (
-            <div className="space-y-2">
-              <Label htmlFor="model">Model</Label>
-              <Select
-                value={settings.model}
-                onValueChange={(value: string | null) => setSettings((s) => ({ ...s, model: value || '' }))}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select model" />
-                </SelectTrigger>
-                <SelectContent>
-                  {models.map((m) => (
-                    <SelectItem key={m.id} value={m.id}>
-                      {m.name}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              {fetchingModels && <p className="text-xs text-muted-foreground">Fetching models...</p>}
-            </div>
-          )}
-          {fetchingModels && !models.length && (
-            <p className="text-xs text-muted-foreground">Fetching models...</p>
-          )}
+                  <div className="space-y-2">
+                    <Label htmlFor="endpoint">Endpoint URL</Label>
+                    <Input
+                      id="endpoint"
+                      value={settings.endpoint}
+                      onChange={(e) => setSettings((s) => ({ ...s, endpoint: e.target.value }))}
+                      placeholder="http://localhost:11434"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      {settings.provider === 'ollama'
+                        ? 'Default Ollama endpoint'
+                        : 'OpenAI-compatible API endpoint (e.g., https://ai.example.com/v1)'}
+                    </p>
+                  </div>
+                </div>
 
-          <div className="flex gap-2">
-            <Button type="button" variant="secondary" onClick={handleTest} disabled={saving || testing}>
-              {testing ? 'Testing...' : 'Test Connection'}
-            </Button>
-            <Button type="submit" disabled={saving || testing}>
-              {saving ? 'Saving...' : 'Save settings'}
-            </Button>
-            <Button type="button" variant="destructive" onClick={handleClear} disabled={saving || testing || !settings.provider}>
-              Clear Settings
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-    </form>
+                {settings.provider === 'openai' && (
+                  <div className="space-y-2">
+                    <Label htmlFor="api_key">API Key</Label>
+                    <Input
+                      id="api_key"
+                      type="password"
+                      value={settings.api_key || ''}
+                      onChange={(e) => setSettings((s) => ({ ...s, api_key: e.target.value }))}
+                      placeholder="sk-..."
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      Your API key for authentication. Leave empty to use environment variable.
+                    </p>
+                  </div>
+                )}
+
+                {models.length > 0 && (
+                  <div className="space-y-2">
+                    <Label htmlFor="model">Model</Label>
+                    <Select
+                      value={settings.model}
+                      onValueChange={(value: string | null) => setSettings((s) => ({ ...s, model: value || '' }))}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select model" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {models.map((m) => (
+                          <SelectItem key={m.id} value={m.id}>
+                            {m.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {fetchingModels && (
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <Loader2 className="h-3 w-3 animate-spin" />
+                        Fetching models...
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {testResult && (
+                  <div className={`p-4 rounded-lg border ${testResult.success ? 'bg-green-50 dark:bg-green-950 border-green-200 dark:border-green-800' : 'bg-red-50 dark:bg-red-950 border-red-200 dark:border-red-800'}`}>
+                    <div className="flex items-center gap-2">
+                      {testResult.success ? (
+                        <Wifi className="h-4 w-4 text-green-500" />
+                      ) : (
+                        <WifiOff className="h-4 w-4 text-red-500" />
+                      )}
+                      <span className={`text-sm font-medium ${testResult.success ? 'text-green-700 dark:text-green-300' : 'text-red-700 dark:text-red-300'}`}>
+                        {testResult.message}
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex gap-2 pt-4">
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    onClick={handleTest}
+                    disabled={saving || testing || fetchingModels}
+                    className="flex items-center gap-2"
+                  >
+                    {testing ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Testing...
+                      </>
+                    ) : (
+                      <>
+                        <TestTube className="h-4 w-4" />
+                        Test Connection
+                      </>
+                    )}
+                  </Button>
+                  <Button
+                    type="submit"
+                    disabled={saving || testing || fetchingModels}
+                    className="flex items-center gap-2"
+                  >
+                    {saving ? (
+                      <>
+                        <Loader2 className="h-4 w-4 animate-spin" />
+                        Saving...
+                      </>
+                    ) : (
+                      <>
+                        <Save className="h-4 w-4" />
+                        Save Settings
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </form>
+        </TabsContent>
+
+        {/* General Tab */}
+        <TabsContent value="general">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Save className="h-5 w-5" />
+                General Settings
+              </CardTitle>
+              <CardDescription>
+                Application-wide settings and preferences
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="p-4 rounded-lg border bg-muted/50">
+                <h3 className="font-medium mb-2">Task Execution</h3>
+                <p className="text-sm text-muted-foreground">
+                  Tasks are automatically decomposed and executed by the CEO agent. 
+                  The CEO processes one task at a time from the backlog.
+                </p>
+              </div>
+              <div className="p-4 rounded-lg border bg-muted/50">
+                <h3 className="font-medium mb-2">Real-time Updates</h3>
+                <p className="text-sm text-muted-foreground">
+                  The interface polls for updates every 3 seconds to keep task and agent 
+                  statuses current.
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* Advanced Tab */}
+        <TabsContent value="advanced">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 text-destructive">
+                <Trash2 className="h-5 w-5" />
+                Advanced Settings
+              </CardTitle>
+              <CardDescription>
+                Warning: These actions cannot be undone
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="p-4 rounded-lg border border-destructive/50 bg-destructive/5">
+                <h3 className="font-medium text-destructive mb-2">Reset All Settings</h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  This will delete all AI provider settings and reset to default configuration. 
+                  Task and agent data will be preserved.
+                </p>
+                <Button
+                  variant="destructive"
+                  onClick={handleClear}
+                  disabled={saving || testing}
+                  className="flex items-center gap-2"
+                >
+                  {saving ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Clearing...
+                    </>
+                  ) : (
+                    <>
+                      <Trash2 className="h-4 w-4" />
+                      Clear All Settings
+                    </>
+                  )}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+    </div>
   );
 }
