@@ -1,5 +1,5 @@
 import { Router, Request, Response } from 'express';
-import { executeTask } from '../executor';
+import { scheduler } from '../scheduler';
 import { db } from '../db';
 
 const router = Router();
@@ -8,15 +8,33 @@ const router = Router();
 router.post('/task/:id', async (req: Request, res: Response) => {
   try {
     const taskId = parseInt(req.params.id);
+    const task = db.prepare('SELECT * FROM tasks WHERE id = ?').get(taskId) as any;
 
-    // Start execution in background
-    executeTask(taskId).catch(error => {
-      console.error(`Error executing task ${taskId}:`, error);
-    });
+    if (!task) {
+      return res.status(404).json({ error: 'Task not found' });
+    }
 
-    res.json({ success: true, message: 'Task execution started' });
+    // Move to in_progress if still in backlog
+    if (task.status === 'backlog') {
+      db.prepare(`UPDATE tasks SET status = 'in_progress', updated_at = datetime('now') WHERE id = ?`).run(taskId);
+    }
+
+    // If not yet decomposed, the scheduler will pick it up on its next poll
+    // If already decomposed, enqueue existing subtasks
+    if (task.ceo_status === 'decomposed') {
+      const subtasks = db.prepare(`
+        SELECT * FROM subtasks WHERE task_id = ? AND status = 'backlog'
+        ORDER BY CASE priority WHEN 'high' THEN 1 WHEN 'medium' THEN 2 WHEN 'low' THEN 3 ELSE 2 END ASC
+      `).all(taskId) as any[];
+
+      for (const subtask of subtasks) {
+        scheduler.enqueue(subtask.id, subtask.title, subtask.priority as 'high' | 'medium' | 'low');
+      }
+    }
+
+    res.json({ success: true, message: 'Task queued for execution' });
   } catch (error) {
-    res.status(500).json({ error: 'Failed to start execution' });
+    res.status(500).json({ error: 'Failed to queue task' });
   }
 });
 

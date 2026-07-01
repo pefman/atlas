@@ -2,6 +2,11 @@ export type ServerEvent =
   | { type: 'subtask_start'; data: any }
   | { type: 'subtask_progress'; data: any }
   | { type: 'subtask_complete'; data: any }
+  | { type: 'subtask_failed'; data: any }
+  | { type: 'task_decomposed'; data: any }
+  | { type: 'task_completed'; data: any }
+  | { type: 'task_status_changed'; data: any }
+  | { type: 'subtask_status_changed'; data: any }
   | { type: 'error'; data: any }
   | { type: 'notification'; data: any };
 

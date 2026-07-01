@@ -23,6 +23,71 @@ export function KanbanBoard({ taskId }: KanbanBoardProps) {
     fetchData();
   }, [taskId]);
 
+  useEffect(() => {
+    const eventSource = new EventSource('/api/kanban/stream');
+
+    const handleSubtaskStart = (e: MessageEvent) => {
+      const data = JSON.parse(e.data);
+      setSubtasks(prev => prev.map((s: Subtask) =>
+        s.id === data.subtask_id ? { ...s, status: 'in_progress' as const, updated_at: new Date().toISOString() } : s
+      ));
+    };
+
+    const handleSubtaskComplete = (e: MessageEvent) => {
+      const data = JSON.parse(e.data);
+      setSubtasks(prev => prev.map((s: Subtask) =>
+        s.id === data.subtask_id ? { ...s, status: 'done' as const, updated_at: new Date().toISOString() } : s
+      ));
+      if (data.task_id) {
+        setTasks(prev => prev.map((t: Task) =>
+          t.id === data.task_id ? { ...t, status: 'done' as const, updated_at: new Date().toISOString() } : t
+        ));
+      }
+    };
+
+    const handleSubtaskFailed = (e: MessageEvent) => {
+      const data = JSON.parse(e.data);
+      setSubtasks(prev => prev.map((s: Subtask) =>
+        s.id === data.subtask_id ? { ...s, status: 'done' as const, updated_at: new Date().toISOString() } : s
+      ));
+    };
+
+    const handleTaskDecomposed = (e: MessageEvent) => {
+      const data = JSON.parse(e.data);
+      if (data.task_id) {
+        setTasks(prev => prev.map((t: Task) =>
+          t.id === data.task_id ? { ...t, ceo_status: 'decomposed' as const, decomposed_at: new Date().toISOString(), updated_at: new Date().toISOString() } : t
+        ));
+      }
+    };
+
+    const handleTaskCompleted = (e: MessageEvent) => {
+      const data = JSON.parse(e.data);
+      setTasks(prev => prev.map((t: Task) =>
+        t.id === data.task_id ? { ...t, status: 'done' as const, ceo_status: 'idle' as const, updated_at: new Date().toISOString() } : t
+      ));
+    };
+
+    eventSource.addEventListener('subtask_start', handleSubtaskStart);
+    eventSource.addEventListener('subtask_complete', handleSubtaskComplete);
+    eventSource.addEventListener('subtask_failed', handleSubtaskFailed);
+    eventSource.addEventListener('task_decomposed', handleTaskDecomposed);
+    eventSource.addEventListener('task_completed', handleTaskCompleted);
+
+    eventSource.onerror = () => {
+      console.error('EventSource connection failed');
+    };
+
+    return () => {
+      eventSource.removeEventListener('subtask_start', handleSubtaskStart);
+      eventSource.removeEventListener('subtask_complete', handleSubtaskComplete);
+      eventSource.removeEventListener('subtask_failed', handleSubtaskFailed);
+      eventSource.removeEventListener('task_decomposed', handleTaskDecomposed);
+      eventSource.removeEventListener('task_completed', handleTaskCompleted);
+      eventSource.close();
+    };
+  }, []);
+
   const fetchData = async () => {
     try {
       setLoading(true);

@@ -8,24 +8,28 @@ export function logTaskError(error: Error, details: Record<string, any> = {}) {
   console.error(`[${timestamp}] [Task] Error:`, formatError(error), formatDetails(details));
 }
 
-export function logSubtask(action: string, details: Record<string, any>) {
+export function logSubtask(action: string, details: Record<string, any>, provider?: string) {
   const timestamp = new Date().toISOString().split('T').join(' ').slice(0, 19);
-  console.log(`[${timestamp}] [Subtask] ${action}:`, formatDetails(details));
+  const tag = provider ? `[${provider}] ` : '';
+  console.log(`[${timestamp}] ${tag}[Subtask] ${action}:`, formatDetails(details));
 }
 
-export function logSubtaskError(error: Error, details: Record<string, any> = {}) {
+export function logSubtaskError(error: Error, details: Record<string, any> = {}, provider?: string) {
   const timestamp = new Date().toISOString().split('T').join(' ').slice(0, 19);
-  console.error(`[${timestamp}] [Subtask] Error:`, formatError(error), formatDetails(details));
+  const tag = provider ? `[${provider}] ` : '';
+  console.error(`[${timestamp}] ${tag}[Subtask] Error:`, formatError(error), formatDetails(details));
 }
 
-export function logCEO(action: string, details: Record<string, any>) {
+export function logCEO(action: string, details: Record<string, any>, provider?: string) {
   const timestamp = new Date().toISOString().split('T').join(' ').slice(0, 19);
-  console.log(`[${timestamp}] [CEO] ${action}:`, formatDetails(details));
+  const tag = provider ? `[${provider}] ` : '';
+  console.log(`[${timestamp}] ${tag}[CEO] ${action}:`, formatDetails(details));
 }
 
-export function logCEOError(error: Error, details: Record<string, any> = {}) {
+export function logCEOError(error: Error, details: Record<string, any> = {}, provider?: string) {
   const timestamp = new Date().toISOString().split('T').join(' ').slice(0, 19);
-  console.error(`[${timestamp}] [CEO] Error:`, formatError(error), formatDetails(details));
+  const tag = provider ? `[${provider}] ` : '';
+  console.error(`[${timestamp}] ${tag}[CEO] Error:`, formatError(error), formatDetails(details));
 }
 
 export function logSystem(message: string) {

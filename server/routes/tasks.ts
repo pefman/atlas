@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { db } from '../db';
-import { processNextTask } from '../executor';
+import { scheduler } from '../scheduler';
 import { logTask, logTaskError } from '../lib/logger';
 
 const router = Router();
@@ -104,18 +104,14 @@ router.post('/', (req: Request, res: Response) => {
   }
 });
 
-// CEO: Process next task from backlog
+// Trigger: tell scheduler to check for backlog tasks
 router.post('/process-next', async (req: Request, res: Response) => {
   try {
-    const processed = await processNextTask();
-    if (processed) {
-      res.json({ success: true, message: 'Next task processed' });
-    } else {
-      res.json({ success: true, message: 'No tasks in backlog' });
-    }
+    const pending = scheduler.pendingCount;
+    res.json({ success: true, message: 'Scheduler is running', pending_subtasks: pending });
   } catch (error) {
-    console.error('Error processing next task:', error);
-    res.status(500).json({ error: 'Failed to process next task' });
+    console.error('Error triggering scheduler:', error);
+    res.status(500).json({ error: 'Failed to trigger scheduler' });
   }
 });
 

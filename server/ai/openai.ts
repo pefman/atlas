@@ -22,9 +22,6 @@ export class OpenAIProvider implements AIProvider {
       headers['Authorization'] = `Bearer ${this.apiKey}`;
     }
     
-    console.log('[OpenAI] Requesting:', url);
-    console.log('[OpenAI] Headers:', JSON.stringify({ ...headers, Authorization: headers.Authorization ? 'Bearer ***' : undefined }));
-    
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
     
@@ -49,7 +46,6 @@ export class OpenAIProvider implements AIProvider {
       }
 
       const data = await response.json();
-      console.log('[OpenAI] Response from server received');
       
       const usage = data.usage ? {
         input: data.usage.prompt_tokens || 0,
@@ -77,9 +73,6 @@ export class OpenAIProvider implements AIProvider {
       headers['Authorization'] = `Bearer ${this.apiKey}`;
     }
     
-    console.log('[OpenAI] Fetching models from:', url);
-    console.log('[OpenAI] Headers:', JSON.stringify({ ...headers, Authorization: headers.Authorization ? 'Bearer ***' : undefined }));
-    
     const response = await fetch(url, {
       headers,
     });
@@ -97,7 +90,6 @@ export class OpenAIProvider implements AIProvider {
       id: m.id,
       name: m.id,
     }));
-    console.log('[OpenAI] Found', models.length, 'models:', models.map(m => m.id));
     return models;
   }
 }
