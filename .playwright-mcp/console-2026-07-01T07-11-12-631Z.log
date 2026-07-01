@@ -1,0 +1,80 @@
+[  361541ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=4bee179d:14335
+[  361580ms] [ERROR] In HTML, %s cannot be a descendant of <%s>.
+This will cause a hydration error.%s <button> button 
+
+  ...
+    <main data-slot="sidebar-inset" className="relative f...">
+      <SiteHeader>
+      <Routes>
+        <RenderedRoute match={{params:{}, ...}} routeContext={{outlet:null, ...}}>
+          <DashboardPage>
+            <div className="flex-1 p-6...">
+              <div className="flex items...">
+                <h2>
+                <CreateTaskDialog onTaskCreated={function handleTaskCreated}>
+                  <Dialog open={false} onOpenChange={function bound dispatchSetState}>
+                    <DialogRoot data-slot="dialog" open={false} onOpenChange={function bound dispatchSetState}>
+                      <DialogTrigger>
+                        <DialogTrigger data-slot="dialog-tri...">
+>                         <button
+>                           type="button"
+>                           onClick={function}
+>                           onMouseDown={function}
+>                           onKeyDown={function}
+>                           onKeyUp={function}
+>                           onPointerDown={function}
+>                           tabIndex={0}
+>                           disabled={false}
+>                           data-base-ui-click-trigger=""
+>                           id="base-ui-_r_4_"
+>                           aria-haspopup="dialog"
+>                           aria-expanded={false}
+>                           aria-controls={undefined}
+>                           data-slot="dialog-trigger"
+>                           ref={function}
+>                         >
+                            <Button>
+                              <Button data-slot="button" className={"group/bu..."}>
+>                               <button
+>                                 type="button"
+>                                 onClick={function}
+>                                 onMouseDown={function}
+>                                 onKeyDown={function}
+>                                 onKeyUp={function}
+>                                 onPointerDown={function}
+>                                 tabIndex={0}
+>                                 disabled={false}
+>                                 data-slot="button"
+>                                 ref={function}
+>                                 className={"group/button inline-flex shrink-0 items-center justify-center rounded-l..."}
+>                               >
+                      ...
+              ...
+ @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=4bee179d:1772
+[  361580ms] [ERROR] <%s> cannot contain a nested %s.
+See this log for the ancestor stack trace. button <button> @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=4bee179d:1774
+[  361616ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ http://localhost:5173/favicon.ico:0
+[  412539ms] [LOG] [vite] server connection lost. Polling for restart... @ http://localhost:5173/@vite/client:992
+[  412590ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:5173/api/agents:0
+[  415589ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:5173/api/agents:0
+[  418591ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:5173/api/agents:0
+[  421590ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:5173/api/agents:0
+[  424590ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:5173/api/agents:0
+[  427589ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:5173/api/agents:0
+[  430590ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:5173/api/agents:0
+[  433589ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:5173/api/agents:0
+[  436589ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:5173/api/agents:0
+[  439590ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:5173/api/agents:0
+[  442589ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:5173/api/agents:0
+[  445591ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:5173/api/agents:0
+[  448591ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:5173/api/agents:0
+[  451588ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:5173/api/agents:0
+[  454595ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:5173/api/agents:0
+[  457593ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:5173/api/agents:0
+[  460594ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:5173/api/agents:0
+[  463593ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:5173/api/agents:0
+[  466594ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:5173/api/agents:0
+[  469592ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:5173/api/agents:0
+[  472591ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:5173/api/agents:0
+[  475594ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:5173/api/agents:0
+[  480534ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:5173/node_modules/.vite/deps/react-dom_client.js?v=4bee179d:14335

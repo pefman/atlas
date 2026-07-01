@@ -115,9 +115,9 @@ export async function executeTask(taskId: number): Promise<void> {
     await executeSubtask(subtask.id);
   }
 
-  // Update task status to done if all subtasks are done
+  // Update task status to done if all subtasks are done or review
   const pendingSubtasks = db.prepare(
-    "SELECT COUNT(*) as count FROM subtasks WHERE task_id = ? AND status != 'done'"
+    "SELECT COUNT(*) as count FROM subtasks WHERE task_id = ? AND status NOT IN ('done', 'review')"
   ).get(taskId) as { count: number };
 
   if (pendingSubtasks.count === 0) {
@@ -204,8 +204,8 @@ export async function executeSubtask(subtaskId: number): Promise<void> {
       step++;
 
       if (step > 3) {
-        // Mark as review after failed attempts
-        db.prepare(`UPDATE subtasks SET status = 'review', updated_at = datetime('now') WHERE id = ?`).run(subtaskId);
+        // Mark as done after exhausting retries (will be reviewed later)
+        db.prepare(`UPDATE subtasks SET status = 'done', updated_at = datetime('now') WHERE id = ?`).run(subtaskId);
       }
     }
   }

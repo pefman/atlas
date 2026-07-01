@@ -25,26 +25,39 @@ export class OpenAIProvider implements AIProvider {
     console.log('[OpenAI] Requesting:', url);
     console.log('[OpenAI] Headers:', JSON.stringify({ ...headers, Authorization: headers.Authorization ? 'Bearer ***' : undefined }));
     
-    const response = await fetch(url, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({
-        model: this.model,
-        messages,
-      }),
-    });
-
-    console.log('[OpenAI] Response status:', response.status);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
     
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('[OpenAI] Request failed:', errorText);
-      throw new Error(`OpenAI API error: ${response.status}`);
-    }
+    try {
+      const response = await fetch(url, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          model: this.model,
+          messages,
+        }),
+        signal: controller.signal,
+      });
 
-    const data = await response.json();
-    console.log('[OpenAI] Response from server received');
-    return data.choices[0].message.content;
+      clearTimeout(timeoutId);
+      console.log('[OpenAI] Response status:', response.status);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('[OpenAI] Request failed:', errorText);
+        throw new Error(`OpenAI API error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log('[OpenAI] Response from server received');
+      return data.choices[0].message.content;
+    } catch (error) {
+      clearTimeout(timeoutId);
+      if (error instanceof Error && error.name === 'AbortError') {
+        throw new Error('Request timed out after 30 seconds');
+      }
+      throw error;
+    }
   }
 
   async getModels(): Promise<AIModel[]> {
