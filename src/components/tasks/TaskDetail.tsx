@@ -2,11 +2,20 @@ import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Loader2, Play } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { ArrowLeft, Loader2, Play, Trash2 } from 'lucide-react';
 import { KanbanBoard } from '@/components/kanban/KanbanBoard';
 import { ExecutionLogs } from '@/components/execution/ExecutionLogs';
 import { TaskStatus } from '@/types';
 import { toast } from 'sonner';
+import { useNavigate } from 'react-router-dom';
 
 interface Subtask {
   id: number;
@@ -59,9 +68,12 @@ interface TaskDetailProps {
 }
 
 export function TaskDetail({ taskId, onBack }: TaskDetailProps) {
+  const navigate = useNavigate();
   const [task, setTask] = useState<Task | null>(null);
   const [loading, setLoading] = useState(true);
   const [executing, setExecuting] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     fetchTask();
@@ -100,6 +112,24 @@ export function TaskDetail({ taskId, onBack }: TaskDetailProps) {
     }
   };
 
+  const handleDelete = async () => {
+    try {
+      setDeleting(true);
+      const response = await fetch(`/api/tasks/${taskId}`, { method: 'DELETE' });
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+      toast.success('Task deleted');
+      navigate('/');
+    } catch (error) {
+      console.error('Failed to delete task:', error);
+      toast.error('Failed to delete task');
+    } finally {
+      setDeleting(false);
+      setDeleteDialogOpen(false);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex-1 p-6 flex items-center justify-center">
@@ -131,6 +161,9 @@ export function TaskDetail({ taskId, onBack }: TaskDetailProps) {
         <Button size="sm" onClick={handleExecute} disabled={executing}>
           <Play className="h-4 w-4 mr-1" />
           {executing ? 'Starting...' : 'Execute'}
+        </Button>
+        <Button size="sm" variant="destructive" onClick={() => setDeleteDialogOpen(true)}>
+          <Trash2 className="h-4 w-4 mr-1" /> Delete
         </Button>
       </div>
 
@@ -190,6 +223,31 @@ export function TaskDetail({ taskId, onBack }: TaskDetailProps) {
           ))}
         </div>
       )}
+
+      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Delete Task</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to delete this task? This action cannot be undone and will delete all associated subtasks and execution logs.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)} disabled={deleting}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={handleDelete} disabled={deleting}>
+              {deleting ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-1 animate-spin" /> Deleting...
+                </>
+              ) : (
+                'Delete'
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
