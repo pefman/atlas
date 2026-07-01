@@ -3,9 +3,19 @@ export interface AIModel {
   name: string;
 }
 
+export interface TokenUsage {
+  input: number;
+  output: number;
+}
+
+export interface ChatResponse {
+  content: string;
+  usage?: TokenUsage;
+}
+
 export interface AIProvider {
   name: string;
-  chat(messages: Message[]): Promise<string>;
+  chat(messages: Message[]): Promise<ChatResponse>;
   getModels(): Promise<AIModel[]>;
 }
 

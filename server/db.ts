@@ -84,6 +84,15 @@ db.exec(`
     FOREIGN KEY (role_id) REFERENCES roles(id)
   );
 
+  CREATE TABLE IF NOT EXISTS agent_stats (
+    role_id INTEGER PRIMARY KEY,
+    total_input_tokens INTEGER DEFAULT 0,
+    total_output_tokens INTEGER DEFAULT 0,
+    total_calls INTEGER DEFAULT 0,
+    updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+    FOREIGN KEY (role_id) REFERENCES roles(id)
+  );
+
   CREATE TABLE IF NOT EXISTS settings (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     provider TEXT NOT NULL DEFAULT 'ollama',

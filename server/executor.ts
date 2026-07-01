@@ -1,7 +1,7 @@
 import { db } from './db';
 import { OllamaProvider } from './ai/ollama';
 import { OpenAIProvider } from './ai/openai';
-import { Message } from './ai/provider';
+import { Message, ChatResponse } from './ai/provider';
 import { execEventBus } from './events';
 
 interface TaskContext {
@@ -30,7 +30,10 @@ async function decomposeTask(task: any): Promise<any[]> {
     { role: 'user', content: `Task: ${task.title}\n\nDescription: ${task.description}` },
   ];
   
-  const response = await provider.chat(messages);
+  const response: ChatResponse = await provider.chat(messages);
+  
+  // Update agent stats
+  await updateAgentStats(ceoRole.id, response.usage);
   
   // Parse JSON response
   let subtaskData;
@@ -190,7 +193,11 @@ export async function executeSubtask(subtaskId: number): Promise<void> {
     `).run(subtaskId, step, role.id, JSON.stringify(messages), '');
 
     try {
-      output = await provider.chat(messages);
+      const chatResponse: ChatResponse = await provider.chat(messages);
+      output = chatResponse.content;
+
+      // Update agent stats
+      await updateAgentStats(role.id, chatResponse.usage);
 
       // Store output
       db.prepare(`
@@ -258,6 +265,28 @@ async function notifyUser(message: string, taskId?: number): Promise<void> {
     execEventBus.emit('notification', notification);
   } catch (error) {
     console.error('Failed to send notification:', error);
+  }
+}
+
+async function updateAgentStats(roleId: number, usage?: { input: number; output: number }): Promise<void> {
+  if (!usage) return;
+  
+  const existing = db.prepare('SELECT * FROM agent_stats WHERE role_id = ?').get(roleId) as any;
+  
+  if (existing) {
+    db.prepare(`
+      UPDATE agent_stats 
+      SET total_input_tokens = total_input_tokens + ?,
+          total_output_tokens = total_output_tokens + ?,
+          total_calls = total_calls + 1,
+          updated_at = datetime('now')
+      WHERE role_id = ?
+    `).run(usage.input, usage.output, roleId);
+  } else {
+    db.prepare(`
+      INSERT INTO agent_stats (role_id, total_input_tokens, total_output_tokens, total_calls, updated_at)
+      VALUES (?, ?, ?, 1, datetime('now'))
+    `).run(roleId, usage.input, usage.output);
   }
 }
 

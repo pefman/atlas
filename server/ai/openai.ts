@@ -1,4 +1,4 @@
-import { AIProvider, Message, AIModel } from './provider';
+import { AIProvider, Message, AIModel, ChatResponse } from './provider';
 
 export class OpenAIProvider implements AIProvider {
   name = 'openai';
@@ -12,7 +12,7 @@ export class OpenAIProvider implements AIProvider {
     this.endpoint = (endpoint || 'https://api.openai.com').replace(/\/$/, '');
   }
 
-  async chat(messages: Message[]): Promise<string> {
+  async chat(messages: Message[]): Promise<ChatResponse> {
     const path = this.endpoint.endsWith('/v1') ? '/chat/completions' : '/v1/chat/completions';
     const url = `${this.endpoint}${path}`;
     const headers: Record<string, string> = {
@@ -50,7 +50,16 @@ export class OpenAIProvider implements AIProvider {
 
       const data = await response.json();
       console.log('[OpenAI] Response from server received');
-      return data.choices[0].message.content;
+      
+      const usage = data.usage ? {
+        input: data.usage.prompt_tokens || 0,
+        output: data.usage.completion_tokens || 0,
+      } : undefined;
+      
+      return {
+        content: data.choices[0].message.content,
+        usage,
+      };
     } catch (error) {
       clearTimeout(timeoutId);
       if (error instanceof Error && error.name === 'AbortError') {

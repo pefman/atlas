@@ -1,4 +1,4 @@
-import { AIProvider, Message, AIModel } from './provider';
+import { AIProvider, Message, AIModel, ChatResponse } from './provider';
 
 export class OllamaProvider implements AIProvider {
   name = 'ollama';
@@ -10,7 +10,7 @@ export class OllamaProvider implements AIProvider {
     this.model = model;
   }
 
-  async chat(messages: Message[]): Promise<string> {
+  async chat(messages: Message[]): Promise<ChatResponse> {
     const url = `${this.endpoint}/api/chat`;
     console.log('[Ollama] Requesting:', url);
     console.log('[Ollama] Model:', this.model);
@@ -35,7 +35,16 @@ export class OllamaProvider implements AIProvider {
 
     const data = await response.json();
     console.log('[Ollama] Response received');
-    return data.message.content;
+    
+    const usage = data.usage ? {
+      input: data.usage.prompt_eval_count || 0,
+      output: data.usage.eval_count || 0,
+    } : undefined;
+    
+    return {
+      content: data.message.content,
+      usage,
+    };
   }
 
   async getModels(): Promise<AIModel[]> {

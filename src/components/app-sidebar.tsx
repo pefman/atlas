@@ -14,7 +14,6 @@ import { Button } from '@/components/ui/button';
 import { useTheme } from '@/context/ThemeProvider';
 import { Agent } from '@/types';
 import { AgentSidebarItem } from './agents/AgentSidebarItem';
-import { AgentDetail } from './agents/AgentDetail';
 import { useState, useEffect } from 'react';
 import { Badge } from '@/components/ui/badge';
 
@@ -33,13 +32,14 @@ const items = [
 
 interface AppSidebarProps {
   openCommandPalette: () => void;
+  selectedAgent: Agent | null;
+  onAgentSelect: (agent: Agent | null) => void;
 }
 
-export function AppSidebar({ openCommandPalette }: AppSidebarProps) {
+export function AppSidebar({ openCommandPalette, selectedAgent, onAgentSelect }: AppSidebarProps) {
   const location = useLocation();
   const { isDark, toggleTheme } = useTheme();
   const [agents, setAgents] = useState<Agent[]>([]);
-  const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
 
   useEffect(() => {
     const fetchAgents = async () => {
@@ -53,7 +53,7 @@ export function AppSidebar({ openCommandPalette }: AppSidebarProps) {
     };
 
     fetchAgents();
-    const interval = setInterval(fetchAgents, 3000);
+    const interval = setInterval(fetchAgents, 2000);
     return () => clearInterval(interval);
   }, []);
 
@@ -112,7 +112,7 @@ export function AppSidebar({ openCommandPalette }: AppSidebarProps) {
                 <AgentSidebarItem
                   key={agent.id}
                   agent={agent}
-                  onClick={setSelectedAgent}
+                  onClick={(a) => onAgentSelect(a)}
                 />
               ))}
             </div>
@@ -130,7 +130,7 @@ export function AppSidebar({ openCommandPalette }: AppSidebarProps) {
                 <AgentSidebarItem
                   key={agent.id}
                   agent={agent}
-                  onClick={setSelectedAgent}
+                  onClick={(a) => onAgentSelect(a)}
                 />
               ))}
             </div>
@@ -153,11 +153,6 @@ export function AppSidebar({ openCommandPalette }: AppSidebarProps) {
           MVP v0.1
         </p>
       </SidebarFooter>
-      {selectedAgent && (
-        <div className="border-t">
-          <AgentDetail agent={selectedAgent} onClose={() => setSelectedAgent(null)} />
-        </div>
-      )}
     </Sidebar>
   );
 }

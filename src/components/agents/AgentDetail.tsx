@@ -49,12 +49,14 @@ export function AgentDetail({ agent, onClose }: AgentDetailProps) {
 
         <div className="flex gap-2 mt-4">
           <Button size="sm" onClick={() => setIsEditOpen(true)}>Edit</Button>
-          <Button size="sm" variant="destructive" onClick={() => {
-            if (confirm('Delete this agent?')) {
-              fetch(`/api/agents/${agent.id}`, { method: 'DELETE' });
-              onClose();
-            }
-          }}>Delete</Button>
+          {agent.name !== 'ceo' && (
+            <Button size="sm" variant="destructive" onClick={() => {
+              if (confirm('Delete this agent?')) {
+                fetch(`/api/agents/${agent.id}`, { method: 'DELETE' });
+                onClose();
+              }
+            }}>Delete</Button>
+          )}
         </div>
       </div>
 

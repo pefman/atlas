@@ -13,7 +13,38 @@ router.get('/', (req: Request, res: Response) => {
     ORDER BY r.name ASC
   `).all();
   
-  res.json(agents);
+  // Enrich each agent with stats and latest activity
+  const enrichedAgents = agents.map((agent: any) => {
+    const stats = db.prepare(`
+      SELECT * FROM agent_stats WHERE role_id = ?
+    `).get(agent.id) as any;
+    
+    const latestLog = db.prepare(`
+      SELECT el.*, r.name as role_name
+      FROM execution_logs el
+      JOIN roles r ON el.role_id = r.id
+      WHERE el.role_id = ?
+      ORDER BY el.created_at DESC
+      LIMIT 1
+    `).get(agent.id) as any;
+    
+    return {
+      ...agent,
+      stats: stats ? {
+        inputTokens: stats.total_input_tokens,
+        outputTokens: stats.total_output_tokens,
+        totalCalls: stats.total_calls,
+      } : null,
+      latestActivity: latestLog ? {
+        step_type: latestLog.step_type,
+        output: latestLog.output,
+        created_at: latestLog.created_at,
+        role_name: latestLog.role_name,
+      } : null,
+    };
+  });
+  
+  res.json(enrichedAgents);
 });
 
 // Get agent by ID

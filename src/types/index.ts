@@ -55,6 +55,19 @@ export interface ExecutionLog {
   created_at: string;
 }
 
+export interface AgentStats {
+  inputTokens: number;
+  outputTokens: number;
+  totalCalls: number;
+}
+
+export interface LatestActivity {
+  step_type: StepType;
+  output: string;
+  created_at: string;
+  role_name: string;
+}
+
 export interface Agent {
   id: number;
   name: string;
@@ -62,6 +75,8 @@ export interface Agent {
   system_prompt: string;
   status: AgentStatus;
   current_task?: string;
+  stats?: AgentStats | null;
+  latestActivity?: LatestActivity | null;
 }
 
 export interface Settings {
