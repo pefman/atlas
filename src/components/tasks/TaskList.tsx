@@ -1,27 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import { Loader2, Play, Trash2 } from 'lucide-react';
+import { Task } from '@/types';
+import { DataTable } from './data-table';
+import { taskTableColumns } from './task-table-columns';
 import { toast } from 'sonner';
-
-interface Task {
-  id: number;
-  title: string;
-  description: string;
-  role_name: string;
-  status: 'backlog' | 'in_progress' | 'review' | 'done';
-  created_at: string;
-}
+import { Loader2 } from 'lucide-react';
 
 interface TaskListProps {
   onTaskSelect: (taskId: number) => void;
@@ -32,8 +15,7 @@ export function TaskList({ onTaskSelect }: TaskListProps) {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
   const [executing, setExecuting] = useState<number | null>(null);
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-  const [taskToDelete, setTaskToDelete] = useState<number | null>(null);
+  const [deleteTaskId, setDeleteTaskId] = useState<number | null>(null);
   const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
@@ -70,25 +52,14 @@ export function TaskList({ onTaskSelect }: TaskListProps) {
     }
   };
 
-  const handleTaskClick = (taskId: number) => {
-    onTaskSelect(taskId);
-    navigate(`/task/${taskId}`);
-  };
-
-  const openDeleteDialog = (taskId: number) => {
-    setTaskToDelete(taskId);
-    setDeleteDialogOpen(true);
-  };
-
   const handleDelete = async () => {
-    if (!taskToDelete) return;
+    if (!deleteTaskId) return;
     try {
       setDeleting(true);
-      const response = await fetch(`/api/tasks/${taskToDelete}`, { method: 'DELETE' });
+      const response = await fetch(`/api/tasks/${deleteTaskId}`, { method: 'DELETE' });
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       toast.success('Task deleted');
-      setDeleteDialogOpen(false);
-      setTaskToDelete(null);
+      setDeleteTaskId(null);
       await fetchTasks();
     } catch (error) {
       console.error('Failed to delete task:', error);
@@ -98,14 +69,9 @@ export function TaskList({ onTaskSelect }: TaskListProps) {
     }
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'backlog': return 'bg-slate-500';
-      case 'in_progress': return 'bg-blue-500';
-      case 'review': return 'bg-yellow-500';
-      case 'done': return 'bg-green-500';
-      default: return 'bg-slate-500';
-    }
+  const handleView = (taskId: number) => {
+    onTaskSelect(taskId);
+    navigate(`/task/${taskId}`);
   };
 
   if (loading) {
@@ -117,66 +83,37 @@ export function TaskList({ onTaskSelect }: TaskListProps) {
   }
 
   return (
-    <div className="space-y-4">
-      {tasks.length === 0 ? (
-        <Card>
-          <CardContent className="flex items-center justify-center h-40">
-            <p className="text-muted-foreground">No tasks yet. Create one to get started.</p>
-          </CardContent>
-        </Card>
-      ) : (
-        tasks.map((task) => (
-          <Card key={task.id} className="cursor-pointer hover:bg-accent transition-colors" onClick={() => handleTaskClick(task.id)}>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <div>
-                <CardTitle className="text-lg">{task.title}</CardTitle>
-                <p className="text-sm text-muted-foreground mt-1">{task.description}</p>
-              </div>
-              <Badge className={getStatusColor(task.status)}>{task.status}</Badge>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center justify-between">
-                <div className="text-sm text-muted-foreground">
-                  Role: {task.role_name} | Created: {new Date(task.created_at).toLocaleDateString()}
-                </div>
-                <div className="flex gap-2">
-                  <Button size="sm" onClick={(e) => { e.stopPropagation(); handleExecute(task.id); }} disabled={executing === task.id}>
-                    <Play className="h-4 w-4 mr-1" /> {executing === task.id ? 'Running...' : 'Execute'}
-                  </Button>
-                  <Button size="sm" variant="destructive" onClick={(e) => { e.stopPropagation(); openDeleteDialog(task.id); }}>
-                    <Trash2 className="h-4 w-4 mr-1" /> Delete
-                  </Button>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))
-      )}
+    <>
+      <DataTable
+        columns={taskTableColumns({ onExecute: handleExecute, onDelete: setDeleteTaskId, onView: handleView })}
+        data={tasks}
+      />
 
-      <Dialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Delete Task</DialogTitle>
-            <DialogDescription>
+      {deleteTaskId && (
+        <div className="fixed inset-0 bg-background/80 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-card border border-border rounded-lg p-6 max-w-md w-full mx-4">
+            <h2 className="text-lg font-semibold mb-4">Delete Task</h2>
+            <p className="text-muted-foreground mb-6">
               Are you sure you want to delete this task? This action cannot be undone.
-            </DialogDescription>
-          </DialogHeader>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setDeleteDialogOpen(false)} disabled={deleting}>
-              Cancel
-            </Button>
-            <Button variant="destructive" onClick={handleDelete} disabled={deleting}>
-              {deleting ? (
-                <>
-                  <Loader2 className="h-4 w-4 mr-1 animate-spin" /> Deleting...
-                </>
-              ) : (
-                'Delete'
-              )}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-    </div>
+            </p>
+            <div className="flex justify-end gap-2">
+              <button
+                onClick={() => setDeleteTaskId(null)}
+                className="px-4 py-2 border border-border rounded-md hover:bg-accent transition-colors"
+              >
+                Cancel
+              </button>
+              <button
+                onClick={handleDelete}
+                disabled={deleting}
+                className="px-4 py-2 bg-destructive text-destructive-foreground rounded-md hover:bg-destructive/90 transition-colors disabled:opacity-50"
+              >
+                {deleting ? 'Deleting...' : 'Delete'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </>
   );
 }
