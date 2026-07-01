@@ -31,6 +31,8 @@ db.exec(`
     description TEXT NOT NULL,
     role_id INTEGER NOT NULL,
     status TEXT NOT NULL DEFAULT 'backlog',
+    ceo_status TEXT NOT NULL DEFAULT 'idle',
+    decomposed_at TEXT,
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
     updated_at TEXT NOT NULL DEFAULT (datetime('now')),
     FOREIGN KEY (role_id) REFERENCES roles(id)
@@ -61,6 +63,7 @@ db.exec(`
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     subtask_id INTEGER NOT NULL,
     step INTEGER NOT NULL,
+    step_type TEXT NOT NULL DEFAULT 'execute',
     role_id INTEGER NOT NULL,
     input TEXT NOT NULL,
     output TEXT NOT NULL,
@@ -97,6 +100,26 @@ if (roleCount.count === 0) {
   
   insertRole.run('reviewer', 'Reviews and quality assurance', 
     'You are a Reviewer. Your job is to review the work for quality, accuracy, and completeness. Provide constructive feedback and approval status.');
+
+  insertRole.run('ceo', 'Task orchestrator and manager', 
+    'You are the CEO of Atlas, a task management AI system. Your job is to:\n' +
+    '1. Analyze incoming tasks and break them into 3-5 clear subtasks\n' +
+    '2. Assign each subtask to the most appropriate agent based on their expertise\n' +
+    '3. Monitor execution and ensure quality\n\n' +
+    'Available agents:\n' +
+    '- researcher: gathers information, analyzes data\n' +
+    '- writer: creates content, documents, reports\n' +
+    '- reviewer: validates outputs, ensures quality\n\n' +
+    'When decomposing, return JSON with:\n' +
+    '{\n' +
+    '  "subtasks": [\n' +
+    '    {"title": "...", "description": "...", "role": "researcher|writer|reviewer"}\n' +
+    '  ]\n' +
+    '}\n\n' +
+    'Rules:\n' +
+    '- Each subtask should be actionable and complete\n' +
+    '- Assign based on agent expertise\n' +
+    '- Prioritize logical flow between subtasks');
 }
 
 export { db };
