@@ -76,6 +76,12 @@ router.delete('/:id', (req: Request, res: Response) => {
     return;
   }
   
+  // Prevent deletion of CEO role
+  if (agent.name === 'ceo') {
+    res.status(400).json({ error: 'Cannot delete the CEO role' });
+    return;
+  }
+
   // Check if agent has active tasks
   const activeTasks = db.prepare(
     "SELECT COUNT(*) as count FROM tasks WHERE role_id = ? AND status IN ('backlog', 'in_progress')"

@@ -26,7 +26,7 @@ export function AgentSidebarItem({ agent, onClick }: AgentSidebarItemProps) {
     <div
       className={`flex items-center justify-between p-2 rounded-md cursor-pointer transition-colors ${
         isHovered ? 'bg-sidebar-accent' : ''
-      } ${agent.status !== 'idle' ? 'border-l-2 border-l-green-500' : ''}`}
+      } ${agent.status !== 'idle' ? `border-l-2 ${getStatusColor().replace('bg-', 'border-l-')}` : ''}`}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       onClick={() => onClick(agent)}

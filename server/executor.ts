@@ -101,7 +101,13 @@ export async function executeTask(taskId: number): Promise<void> {
 
   if (subtasks.length === 0) {
     // Generate subtasks using CEO agent
-    subtasks = await decomposeTask(task);
+    try {
+      subtasks = await decomposeTask(task);
+    } catch (error) {
+      console.error(`Error decomposing task ${taskId}:`, error);
+      db.prepare(`UPDATE tasks SET ceo_status = 'error', updated_at = datetime('now') WHERE id = ?`).run(taskId);
+      throw error;
+    }
   }
 
   // Execute each subtask
