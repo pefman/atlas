@@ -1,6 +1,8 @@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Play } from 'lucide-react';
+import { useSortable } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import type { Subtask, Task } from '@/types';
 import { priorityColors } from '@/lib/priority';
 
@@ -17,9 +19,24 @@ export function KanbanCard({ task, subtask, onExecute, onTaskClick, onTaskPickup
   if (!item) return null;
 
   const isTask = !!task;
+  const itemId = isTask ? `task-${task.id}` : `subtask-${subtask!.id}`;
+
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ 
+    id: itemId 
+  });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
 
   return (
     <div
+      ref={setNodeRef}
+      style={style}
+      {...attributes}
+      {...listeners}
       className="bg-card border border-border rounded-lg p-3 shadow-sm hover:shadow-md transition-shadow cursor-pointer group"
       onClick={() => isTask && onTaskClick?.(task!.id)}
     >
