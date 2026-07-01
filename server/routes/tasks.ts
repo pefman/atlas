@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { db } from '../db';
-import { executeTask, processNextTask } from '../executor';
+import { executeTask, processNextInProgress } from '../executor';
 
 const router = Router();
 
@@ -82,10 +82,13 @@ router.post('/', (req: Request, res: Response) => {
     taskStatus = status;
   }
   
+  // Default priority to medium if not provided
+  const taskPriority = priority || 'medium';
+  
   const result = db.prepare(`
     INSERT INTO tasks (title, description, role_id, priority, status)
     VALUES (?, ?, ?, ?, ?)
-  `).run(title, description, assignedRoleId, priority || null, taskStatus);
+  `).run(title, description, assignedRoleId, taskPriority, taskStatus);
   
   const task = db.prepare('SELECT * FROM tasks WHERE id = ?').get(result.lastInsertRowid);
   
@@ -117,14 +120,14 @@ router.patch('/:id/pickup', (req: Request, res: Response) => {
   res.json({ success: true });
 });
 
-// CEO: Process next task from backlog
+// CEO: Process next task from in_progress
 router.post('/process-next', async (req: Request, res: Response) => {
   try {
-    const processed = await processNextTask();
+    const processed = await processNextInProgress();
     if (processed) {
       res.json({ success: true, message: 'Next task processed' });
     } else {
-      res.json({ success: true, message: 'No tasks in backlog' });
+      res.json({ success: true, message: 'No tasks in in_progress' });
     }
   } catch (error) {
     console.error('Error processing next task:', error);

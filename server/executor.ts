@@ -401,7 +401,7 @@ async function updateAgentStats(roleId: number, usage?: { input: number; output:
   }
 }
 
-// CEO background worker - periodically checks for backlog tasks
+// CEO background worker - periodically checks for in_progress tasks
 let ceoInterval: NodeJS.Timeout | null = null;
 
 export function startCEOWorker() {
@@ -409,10 +409,10 @@ export function startCEOWorker() {
     clearInterval(ceoInterval);
   }
   
-  // Check every 5 seconds for new tasks
+  // Check every 5 seconds for in_progress tasks
   ceoInterval = setInterval(async () => {
     try {
-      const hasTasks = await processNextTask();
+      const hasTasks = await processNextInProgress();
       if (!hasTasks) {
         // No tasks, but keep checking
         return;
@@ -423,7 +423,29 @@ export function startCEOWorker() {
     }
   }, 5000);
   
-  console.log('CEO worker started - checking for backlog tasks every 5 seconds');
+  console.log('CEO worker started - checking for in_progress tasks every 5 seconds');
+}
+
+export async function processNextInProgress(): Promise<boolean> {
+  // Get next task in in_progress
+  const task = db.prepare(`
+    SELECT * FROM tasks 
+    WHERE status = 'in_progress' 
+    ORDER BY created_at ASC 
+    LIMIT 1
+  `).get() as any;
+
+  if (!task) {
+    return false; // No tasks in in_progress
+  }
+
+  try {
+    await executeTask(task.id);
+    return true; // Successfully processed
+  } catch (error) {
+    console.error(`Error processing task ${task.id}:`, error);
+    return false; // Failed to process
+  }
 }
 
 export function stopCEOWorker() {

@@ -10,7 +10,7 @@ import agentRoutes from './routes/agents';
 import notificationsRouter from './routes/notifications';
 import notificationsStreamRouter from './routes/notificationsStream';
 import { db } from './db';
-// CEO worker removed - tasks are manually picked up via UI
+import { startCEOWorker } from './executor';
 
 process.on('unhandledRejection', (reason, promise) => {
   console.error('Unhandled Rejection at:', promise, 'reason:', reason);
@@ -43,7 +43,7 @@ app.use('/api/notifications/stream', notificationsStreamRouter);
 
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server running on http://0.0.0.0:${PORT}`);
-  // CEO worker removed - tasks are manually picked up via UI
+  startCEOWorker();
 });
 
 // Keep process alive
