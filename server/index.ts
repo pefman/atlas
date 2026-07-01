@@ -10,7 +10,7 @@ import agentRoutes from './routes/agents';
 import notificationsRouter from './routes/notifications';
 import notificationsStreamRouter from './routes/notificationsStream';
 import { db } from './db';
-import { startCEOWorker } from './executor';
+// CEO worker removed - tasks are manually picked up via UI
 
 const app = express();
 const PORT = 3001;
@@ -34,5 +34,5 @@ app.use('/api/notifications/stream', notificationsStreamRouter);
 
 app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
-  startCEOWorker();
+  // CEO worker removed - tasks are manually picked up via UI
 });
