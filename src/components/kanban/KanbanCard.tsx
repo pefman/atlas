@@ -34,26 +34,26 @@ export function KanbanCard({ task, subtask, onExecute, onTaskClick, onTaskPickup
   const isTask = !!task;
 
   return (
-    <div className="bg-card border border-border rounded-lg p-3 shadow-sm">
-      <div className="flex items-start justify-between mb-2">
-        <h4 className="font-medium text-sm">{item.title}</h4>
-        <Badge className="text-xs border-border">{item.role_name}</Badge>
+    <div className="bg-card border border-border rounded-lg p-3 shadow-sm hover:shadow-md transition-shadow cursor-pointer">
+      <div className="flex items-start justify-between mb-2 gap-2">
+        <h4 className="font-medium text-sm flex-1 leading-tight">{item.title}</h4>
+        <Badge variant="secondary" className="text-xs shrink-0">{item.role_name}</Badge>
       </div>
       <p className="text-xs text-muted-foreground mb-3 line-clamp-2">{item.description}</p>
       {isTask && task && (
-        <div className="flex gap-2">
+        <div className="flex gap-1.5">
           {task.status === 'backlog' && (
-            <Button size="sm" variant="ghost" className="flex-1" onClick={() => onTaskPickup?.(task.id)}>
+            <Button size="sm" variant="secondary" className="flex-1 h-7 text-xs" onClick={(e) => { e.stopPropagation(); onTaskPickup?.(task.id); }}>
               <Play className="h-3 w-3 mr-1" /> Pick Up
             </Button>
           )}
-          <Button size="sm" variant="ghost" className="flex-1" onClick={() => onTaskClick?.(task.id)}>
+          <Button size="sm" variant="secondary" className="flex-1 h-7 text-xs" onClick={(e) => { e.stopPropagation(); onTaskClick?.(task.id); }}>
             <ExternalLink className="h-3 w-3 mr-1" /> View
           </Button>
         </div>
       )}
       {!isTask && subtask && onExecute && (
-        <Button size="sm" variant="ghost" className="w-full" onClick={() => onExecute(subtask.id)}>
+        <Button size="sm" variant="secondary" className="w-full h-7 text-xs" onClick={(e) => { e.stopPropagation(); onExecute(subtask.id); }}>
           <Play className="h-3 w-3 mr-1" /> Execute
         </Button>
       )}
