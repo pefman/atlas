@@ -246,6 +246,22 @@ async function getProvider(): Promise<any> {
   return new OllamaProvider(settings.endpoint, settings.model);
 }
 
+async function notifyUser(message: string, taskId?: number): Promise<void> {
+  try {
+    await fetch('/api/notifications', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        sender_role: 'ceo',
+        message,
+        task_id: taskId || null
+      })
+    });
+  } catch (error) {
+    console.error('Failed to send notification:', error);
+  }
+}
+
 // CEO background worker - periodically checks for backlog tasks
 let ceoInterval: NodeJS.Timeout | null = null;
 
