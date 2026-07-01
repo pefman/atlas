@@ -74,4 +74,13 @@ export interface Settings {
   updated_at: string;
 }
 
+export interface Notification {
+  id: number;
+  sender_role: string;
+  message: string;
+  task_id?: number;
+  is_read: boolean;
+  created_at: string;
+}
+
 

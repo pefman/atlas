@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, useParams, useNavigate } from 'react-router-dom';
+import { NotificationProvider } from '@/components/notifications/NotificationProvider';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
 import { AppSidebar } from '@/components/app-sidebar';
 import { SiteHeader } from '@/components/site-header';
@@ -20,22 +21,24 @@ function App() {
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
 
   return (
-    <Router>
-      <SidebarProvider>
-        <AppSidebar openCommandPalette={() => setCommandPaletteOpen(true)} />
-        <SidebarInset>
-          <SiteHeader />
-          <Routes>
-            <Route path="/" element={<KanbanPage />} />
-            <Route path="/kanban" element={<KanbanPage />} />
-            <Route path="/settings" element={<SettingsPage />} />
-            <Route path="/task/:id" element={<TaskDetailPage />} />
-          </Routes>
-        </SidebarInset>
-      </SidebarProvider>
-      <Toaster />
-      <CommandPalette open={commandPaletteOpen} setOpen={setCommandPaletteOpen} />
-    </Router>
+    <NotificationProvider>
+      <Router>
+        <SidebarProvider>
+          <AppSidebar openCommandPalette={() => setCommandPaletteOpen(true)} />
+          <SidebarInset>
+            <SiteHeader />
+            <Routes>
+              <Route path="/" element={<KanbanPage />} />
+              <Route path="/kanban" element={<KanbanPage />} />
+              <Route path="/settings" element={<SettingsPage />} />
+              <Route path="/task/:id" element={<TaskDetailPage />} />
+            </Routes>
+          </SidebarInset>
+        </SidebarProvider>
+        <Toaster />
+        <CommandPalette open={commandPaletteOpen} setOpen={setCommandPaletteOpen} />
+      </Router>
+    </NotificationProvider>
   );
 }
 
