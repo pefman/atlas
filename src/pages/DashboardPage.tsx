@@ -1,12 +1,18 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { TaskList } from '@/components/tasks/TaskList';
 import { CreateTaskDialog } from '@/components/tasks/CreateTaskDialog';
 
 export function DashboardPage() {
+  const navigate = useNavigate();
   const [refreshKey, setRefreshKey] = useState(0);
 
   const handleTaskCreated = () => {
     setRefreshKey(k => k + 1);
+  };
+
+  const handleTaskSelect = (taskId: number) => {
+    navigate(`/task/${taskId}`);
   };
 
   return (
@@ -15,7 +21,7 @@ export function DashboardPage() {
         <h2 className="text-2xl font-bold">Tasks</h2>
         <CreateTaskDialog onTaskCreated={handleTaskCreated} />
       </div>
-      <TaskList key={refreshKey} onTaskSelect={() => {}} />
+      <TaskList key={refreshKey} onTaskSelect={handleTaskSelect} />
     </div>
   );
 }

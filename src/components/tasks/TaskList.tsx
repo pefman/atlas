@@ -87,6 +87,7 @@ export function TaskList({ onTaskSelect }: TaskListProps) {
       <DataTable
         columns={taskTableColumns({ onExecute: handleExecute, onDelete: setDeleteTaskId, onView: handleView })}
         data={tasks}
+        onRowClick={(task) => handleView(task.id)}
       />
 
       {deleteTaskId && (
