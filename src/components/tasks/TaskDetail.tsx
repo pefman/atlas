@@ -40,6 +40,7 @@ interface Subtask {
   description: string;
   role_name: string;
   status: TaskStatus;
+  priority: 'high' | 'medium' | 'low';
 }
 
 interface Task {

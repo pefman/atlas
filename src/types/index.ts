@@ -32,6 +32,7 @@ export interface Subtask {
   description: string;
   role_id: number;
   status: TaskStatus;
+  priority: 'high' | 'medium' | 'low';
   created_at: string;
   updated_at: string;
 }
@@ -72,3 +73,9 @@ export interface Settings {
   created_at: string;
   updated_at: string;
 }
+
+export type ExecEvent =
+  | { type: 'subtask_start'; subtaskId: number; role: string; title: string }
+  | { type: 'subtask_progress'; subtaskId: number; output: string }
+  | { type: 'subtask_complete'; subtaskId: number; role: string; output: string }
+  | { type: 'error'; subtaskId: number; error: string };

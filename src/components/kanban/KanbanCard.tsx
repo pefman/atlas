@@ -53,7 +53,11 @@ export function KanbanCard({ task, subtask, onExecute, onTaskClick, onTaskPickup
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <ProgressRing progress={100} size={16} strokeWidth={1.5} />
-          <Badge variant="secondary" className={`text-xs ${priorityColors.high}`}>High</Badge>
+          {!isTask && (
+            <Badge variant="secondary" className={`text-xs shrink-0 ${priorityColors[(item as Subtask).priority]}`}>
+              {(item as Subtask).priority}
+            </Badge>
+          )}
         </div>
         
         {isTask ? (
