@@ -1,5 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { db } from '../db';
+import { executeTask } from '../executor';
 
 const router = Router();
 
@@ -55,6 +56,10 @@ router.post('/', (req: Request, res: Response) => {
   `).run(title, description, role_id);
   
   const task = db.prepare('SELECT * FROM tasks WHERE id = ?').get(result.lastInsertRowid);
+  
+  executeTask(task.id).catch(error => {
+    console.error(`Error auto-executing task ${task.id}:`, error);
+  });
   
   res.status(201).json(task);
 });
