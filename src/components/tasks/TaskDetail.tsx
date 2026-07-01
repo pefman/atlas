@@ -29,7 +29,7 @@ import { Progress } from '@/components/ui/progress';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { ArrowLeft, Loader2, Play, Trash2, Brain, ListTodo, CheckCircle2, Clock } from 'lucide-react';
 import { KanbanBoard } from '@/components/kanban/KanbanBoard';
-import { ExecutionLogs } from '@/components/execution/ExecutionLogs';
+import { ConversationView } from '@/components/execution/ConversationView';
 import { TaskStatus } from '@/types';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
@@ -366,26 +366,7 @@ export function TaskDetail({ taskId, onBack }: TaskDetailProps) {
               </CardContent>
             </Card>
           ) : (
-            <div className="space-y-6">
-              {task.subtasks.map((subtask) => (
-                <Card key={subtask.id}>
-                  <CardHeader>
-                    <CardTitle className="text-base flex items-center justify-between">
-                      <span className="flex items-center gap-2">
-                        {getStatusIcon(subtask.status)}
-                        {subtask.title}
-                      </span>
-                      <Badge variant="secondary">{subtask.status}</Badge>
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <ScrollArea className="h-[300px] w-full rounded-md border p-4">
-                      <ExecutionLogs subtaskId={subtask.id} />
-                    </ScrollArea>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
+            <ConversationView subtasks={task.subtasks} />
           )}
         </TabsContent>
       </Tabs>
