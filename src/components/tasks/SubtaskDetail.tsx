@@ -71,7 +71,7 @@ function getStatusIcon(status: SubtaskStatus) {
 export function SubtaskDetail({ subtaskId, onBack }: SubtaskDetailProps) {
   const [data, setData] = useState<SubtaskDetailData | null>(null);
   const [loading, setLoading] = useState(true);
-  const { useKanbanEvent } = useKanbanStream();
+  const { registerEvent } = useKanbanStream();
 
   const fetchSubtask = useCallback(async () => {
     try {
@@ -93,17 +93,20 @@ export function SubtaskDetail({ subtaskId, onBack }: SubtaskDetailProps) {
     fetchSubtask();
   }, [fetchSubtask]);
 
-  useKanbanEvent('subtask_start', (e: any) => {
-    if (e.subtask_id === subtaskId) void fetchSubtask();
-  });
-
-  useKanbanEvent('subtask_complete', (e: any) => {
-    if (e.subtask_id === subtaskId) void fetchSubtask();
-  });
-
-  useKanbanEvent('subtask_failed', (e: any) => {
-    if (e.subtask_id === subtaskId) void fetchSubtask();
-  });
+  useEffect(() => {
+    const cleanup = [
+      registerEvent('subtask_start', (e: any) => {
+        if (e.subtask_id === subtaskId) void fetchSubtask();
+      }),
+      registerEvent('subtask_complete', (e: any) => {
+        if (e.subtask_id === subtaskId) void fetchSubtask();
+      }),
+      registerEvent('subtask_failed', (e: any) => {
+        if (e.subtask_id === subtaskId) void fetchSubtask();
+      }),
+    ];
+    return () => cleanup.forEach(fn => fn());
+  }, [registerEvent, subtaskId, fetchSubtask]);
 
   if (loading) {
     return (

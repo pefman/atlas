@@ -38,7 +38,7 @@ function getActionIcon(action: string) {
 export function ActivityFeed({ limit = 50 }: ActivityFeedProps) {
   const [activities, setActivities] = useState<ActivityItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const { useKanbanEvent } = useKanbanStream();
+  const { registerEvent } = useKanbanStream();
 
   const fetchActivities = useCallback(async () => {
     try {
@@ -58,10 +58,15 @@ export function ActivityFeed({ limit = 50 }: ActivityFeedProps) {
     fetchActivities();
   }, [fetchActivities]);
 
-  useKanbanEvent('subtask_start', () => void fetchActivities());
-  useKanbanEvent('subtask_complete', () => void fetchActivities());
-  useKanbanEvent('subtask_failed', () => void fetchActivities());
-  useKanbanEvent('task_decomposed', () => void fetchActivities());
+  useEffect(() => {
+    const cleanup = [
+      registerEvent('subtask_start', () => void fetchActivities()),
+      registerEvent('subtask_complete', () => void fetchActivities()),
+      registerEvent('subtask_failed', () => void fetchActivities()),
+      registerEvent('task_decomposed', () => void fetchActivities()),
+    ];
+    return () => cleanup.forEach(fn => fn());
+  }, [registerEvent, fetchActivities]);
 
   if (loading) {
     return (

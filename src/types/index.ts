@@ -42,6 +42,7 @@ export interface Subtask {
   title: string;
   description: string;
   role_id: number;
+  role_name?: string;
   status: SubtaskStatus;
   priority: 'high' | 'medium' | 'low';
   created_at: string;

@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Brain, Kanban, Settings, ListTodo, Command } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 import { Switch } from '@/components/ui/switch';

@@ -1,11 +1,11 @@
-import { createContext, useContext, useEffect, useRef, useState, useCallback } from 'react';
+import { createContext, useContext, useEffect, useRef, useState } from 'react';
 
 type EventHandler = (data: any) => void;
 
 interface KanbanStreamContextValue {
   connected: boolean;
   reconnectCount: number;
-  useKanbanEvent: (event: string, handler: EventHandler) => void;
+  registerEvent: (event: string, handler: EventHandler) => () => void;
   refetch: () => void;
 }
 
@@ -17,18 +17,16 @@ export function KanbanStreamProvider({ children }: { children: React.ReactNode }
   const eventSourceRef = useRef<EventSource | null>(null);
   const handlersRef = useRef<Map<string, Set<EventHandler>>>(new Map());
 
-  const useKanbanEvent = useCallback((event: string, handler: EventHandler) => {
-    useEffect(() => {
-      if (!handlersRef.current.has(event)) {
-        handlersRef.current.set(event, new Set());
-      }
-      handlersRef.current.get(event)!.add(handler);
+  const registerEvent = (event: string, handler: EventHandler) => {
+    if (!handlersRef.current.has(event)) {
+      handlersRef.current.set(event, new Set());
+    }
+    handlersRef.current.get(event)!.add(handler);
 
-      return () => {
-        handlersRef.current.get(event)?.delete(handler);
-      };
-    }, [event, handler]);
-  }, []);
+    return () => {
+      handlersRef.current.get(event)?.delete(handler);
+    };
+  };
 
   useEffect(() => {
     const eventSource = new EventSource('/api/kanban/stream');
@@ -67,16 +65,16 @@ export function KanbanStreamProvider({ children }: { children: React.ReactNode }
     };
   }, []);
 
-  const refetch = useCallback(() => {
+  const refetch = () => {
     if (eventSourceRef.current) {
       eventSourceRef.current.close();
       const newSource = new EventSource('/api/kanban/stream');
       eventSourceRef.current = newSource;
     }
-  }, []);
+  };
 
   return (
-    <KanbanStreamContext.Provider value={{ connected, reconnectCount, useKanbanEvent, refetch }}>
+    <KanbanStreamContext.Provider value={{ connected, reconnectCount, registerEvent, refetch }}>
       {children}
     </KanbanStreamContext.Provider>
   );
