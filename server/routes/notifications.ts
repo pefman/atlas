@@ -32,7 +32,7 @@ router.patch('/:id/read', (req: Request, res: Response) => {
 
 // POST /api/notifications - internal: create notification
 router.post('/', (req: Request, res: Response) => {
-  const { sender_role, message, task_id } = req.body;
+  const { sender_role, message, task_id, thread_id } = req.body;
   
   if (!sender_role || !message) {
     res.status(400).json({ error: 'sender_role and message are required' });
@@ -40,9 +40,9 @@ router.post('/', (req: Request, res: Response) => {
   }
   
   const result = db.prepare(`
-    INSERT INTO notifications (sender_role, message, task_id)
-    VALUES (?, ?, ?)
-  `).run(sender_role, message, task_id || null);
+    INSERT INTO notifications (sender_role, message, task_id, thread_id)
+    VALUES (?, ?, ?, ?)
+  `).run(sender_role, message, task_id || null, thread_id || null);
 
   const notification = db.prepare('SELECT * FROM notifications WHERE id = ?').get(result.lastInsertRowid);
   execEventBus.emit('notification', notification);

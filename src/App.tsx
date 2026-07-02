@@ -7,6 +7,8 @@ import { SiteHeader } from '@/components/site-header';
 import { KanbanPage } from '@/pages/KanbanPage';
 import { SettingsPage } from '@/pages/SettingsPage';
 import { DashboardPage } from '@/pages/DashboardPage';
+import { MessagesPage } from '@/pages/MessagesPage';
+import { AgentsPage } from '@/pages/AgentsPage';
 import { TaskDetail } from '@/components/tasks/TaskDetail';
 import { SubtaskDetail } from '@/components/tasks/SubtaskDetail';
 import { AgentDetail } from '@/components/agents/AgentDetail';
@@ -89,6 +91,8 @@ function App() {
                 <Route path="/" element={<KanbanPage />} />
                 <Route path="/kanban" element={<KanbanPage />} />
                 <Route path="/tasks" element={<DashboardPage />} />
+                <Route path="/messages" element={<MessagesPage />} />
+                <Route path="/agents" element={<AgentsPage />} />
                 <Route path="/settings" element={<SettingsPage />} />
                 <Route path="/task/:id" element={<TaskDetailPage />} />
                 <Route path="/subtask/:id" element={<SubtaskDetailPage />} />

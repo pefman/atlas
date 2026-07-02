@@ -1,6 +1,5 @@
 import { SidebarTrigger } from '@/components/ui/sidebar';
 import { Separator } from '@/components/ui/separator';
-import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { useLocation } from 'react-router-dom';
 
 interface SiteHeaderProps {
@@ -11,6 +10,8 @@ function getTitle(pathname: string) {
   if (pathname.startsWith('/task/')) return 'Task Details';
   if (pathname === '/settings') return 'Settings';
   if (pathname === '/tasks') return 'Tasks';
+  if (pathname === '/messages') return 'Messages';
+  if (pathname === '/agents') return 'Agents';
   return 'Kanban';
 }
 
@@ -23,9 +24,7 @@ export function SiteHeader({ titleOverride }: SiteHeaderProps) {
       <SidebarTrigger />
       <Separator orientation="vertical" className="mr-1 hidden h-4 sm:block" />
       <h1 className="truncate text-sm font-semibold sm:text-lg">{title}</h1>
-      <div className="ml-auto">
-        <NotificationBell />
-      </div>
+      <div className="ml-auto" />
     </header>
   );
 }

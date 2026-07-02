@@ -85,6 +85,8 @@ export interface Agent {
   name: string;
   description: string;
   system_prompt: string;
+  canonical?: boolean;
+  selectable_by_ceo?: boolean;
   status: AgentStatus;
   current_task?: string;
   stats?: AgentStats | null;
@@ -106,8 +108,47 @@ export interface Notification {
   sender_role: string;
   message: string;
   task_id?: number;
+  thread_id?: number;
   is_read: boolean;
   created_at: string;
+}
+
+export type MessageThreadStatus = 'open' | 'awaiting_user' | 'awaiting_agent' | 'resolved';
+export type MessageSenderType = 'user' | 'agent' | 'system';
+export type MessageThreadCategory = 'general' | 'clarification';
+
+export interface MessageThread {
+  id: number;
+  role_id: number;
+  role_name?: string;
+  task_id?: number;
+  subtask_id?: number;
+  subject?: string;
+  category?: MessageThreadCategory;
+  status: MessageThreadStatus;
+  created_by: string;
+  created_at: string;
+  updated_at: string;
+  last_message?: string;
+  last_message_at?: string;
+  unread_agent_messages?: number;
+}
+
+export interface Message {
+  id: number;
+  thread_id: number;
+  role_id?: number;
+  role_name?: string;
+  sender_type: MessageSenderType;
+  content: string;
+  task_id?: number;
+  subtask_id?: number;
+  task_title?: string;
+  subtask_title?: string;
+  requires_response: number;
+  is_read: number;
+  created_at: string;
+  updated_at: string;
 }
 
 

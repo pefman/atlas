@@ -7,6 +7,8 @@ export type ServerEvent =
   | { type: 'task_completed'; data: any }
   | { type: 'task_status_changed'; data: any }
   | { type: 'subtask_status_changed'; data: any }
+  | { type: 'message_created'; data: any }
+  | { type: 'message_updated'; data: any }
   | { type: 'error'; data: any }
   | { type: 'notification'; data: any };
 

@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Brain, Kanban, Settings, ListTodo, Command } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { Brain, Kanban, Settings, ListTodo, Command, MessageSquare, Users } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 import { Switch } from '@/components/ui/switch';
 import {
@@ -14,6 +14,7 @@ import { useTheme } from '@/context/ThemeProvider';
 import { Agent } from '@/types';
 import { AgentSidebarItem } from './agents/AgentSidebarItem';
 import { Badge } from '@/components/ui/badge';
+import { useNotifications } from '@/components/notifications/NotificationProvider';
 
 const items = [
   {
@@ -25,6 +26,16 @@ const items = [
     title: 'Tasks',
     url: '/tasks',
     icon: ListTodo,
+  },
+  {
+    title: 'Messages',
+    url: '/messages',
+    icon: MessageSquare,
+  },
+  {
+    title: 'Agents',
+    url: '/agents',
+    icon: Users,
   },
   {
     title: 'Settings',
@@ -42,6 +53,28 @@ interface AppSidebarProps {
 export function AppSidebar({ openCommandPalette }: AppSidebarProps) {
   const { isDark, toggleTheme } = useTheme();
   const [agents, setAgents] = useState<Agent[]>([]);
+  const { unreadCount } = useNotifications();
+
+  useEffect(() => {
+    let mounted = true;
+    fetch('/api/agents')
+      .then((res) => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.json();
+      })
+      .then((data: Agent[]) => {
+        if (mounted) {
+          setAgents(data);
+        }
+      })
+      .catch((error) => {
+        console.error('Failed to load agents for sidebar:', error);
+      });
+
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   return (
     <Sidebar>
@@ -87,6 +120,11 @@ export function AppSidebar({ openCommandPalette }: AppSidebarProps) {
               >
                 <item.icon />
                 <span>{item.title}</span>
+                {item.title === 'Messages' && unreadCount > 0 && (
+                  <Badge variant="destructive" className="ml-auto h-5 min-w-5 px-1">
+                    {unreadCount}
+                  </Badge>
+                )}
               </NavLink>
             </SidebarMenuItem>
           ))}

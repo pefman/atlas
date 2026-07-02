@@ -64,6 +64,40 @@ db.exec(`
     FOREIGN KEY (task_id) REFERENCES tasks(id)
   );
 
+  CREATE TABLE IF NOT EXISTS message_threads (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    role_id INTEGER NOT NULL,
+    task_id INTEGER,
+    subtask_id INTEGER,
+    subject TEXT,
+    category TEXT NOT NULL DEFAULT 'general',
+    status TEXT NOT NULL DEFAULT 'open',
+    created_by TEXT NOT NULL DEFAULT 'user',
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+    FOREIGN KEY (role_id) REFERENCES roles(id),
+    FOREIGN KEY (task_id) REFERENCES tasks(id),
+    FOREIGN KEY (subtask_id) REFERENCES subtasks(id)
+  );
+
+  CREATE TABLE IF NOT EXISTS messages (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    thread_id INTEGER NOT NULL,
+    role_id INTEGER,
+    sender_type TEXT NOT NULL,
+    content TEXT NOT NULL,
+    task_id INTEGER,
+    subtask_id INTEGER,
+    requires_response INTEGER NOT NULL DEFAULT 0,
+    is_read INTEGER NOT NULL DEFAULT 0,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+    FOREIGN KEY (thread_id) REFERENCES message_threads(id),
+    FOREIGN KEY (role_id) REFERENCES roles(id),
+    FOREIGN KEY (task_id) REFERENCES tasks(id),
+    FOREIGN KEY (subtask_id) REFERENCES subtasks(id)
+  );
+
   CREATE TABLE IF NOT EXISTS outputs (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     subtask_id INTEGER NOT NULL,
@@ -111,11 +145,36 @@ if (!taskColumns.find(c => c.name === 'priority')) {
   db.exec("ALTER TABLE tasks ADD COLUMN priority TEXT NOT NULL DEFAULT 'medium'");
 }
 
+const notificationColumns = db.pragma("table_info('notifications')") as Array<{ name: string }>;
+if (!notificationColumns.find(c => c.name === 'thread_id')) {
+  db.exec("ALTER TABLE notifications ADD COLUMN thread_id INTEGER");
+}
+
+const messageThreadColumns = db.pragma("table_info('message_threads')") as Array<{ name: string }>;
+if (!messageThreadColumns.find(c => c.name === 'category')) {
+  db.exec("ALTER TABLE message_threads ADD COLUMN category TEXT NOT NULL DEFAULT 'general'");
+}
+
+db.exec(`
+  CREATE INDEX IF NOT EXISTS idx_message_threads_role_status ON message_threads(role_id, status, updated_at);
+  CREATE INDEX IF NOT EXISTS idx_message_threads_category_status ON message_threads(category, status, updated_at);
+  CREATE INDEX IF NOT EXISTS idx_messages_thread_created ON messages(thread_id, created_at);
+  CREATE INDEX IF NOT EXISTS idx_messages_unread_agent ON messages(sender_type, is_read, created_at);
+`);
+
 type CanonicalRole = {
   name: string;
   description: string;
   systemPrompt: string;
 };
+
+const CLARIFICATION_POLICY =
+  '\n\nClarification policy:\n' +
+  'If required inputs are missing or ambiguous, ask concise clarification questions before proceeding.\n' +
+  'Return ONLY valid JSON in this shape when clarification is needed:\n' +
+  '{"type":"clarification_request","needs_clarification":true,"reason":"...","questions":["..."],"missing_fields":["..."]}\n' +
+  'Include 1-3 concrete questions.\n' +
+  'If enough context exists, proceed with your normal role output.';
 
 const CANONICAL_ROLES: CanonicalRole[] = [
   {
@@ -124,6 +183,11 @@ const CANONICAL_ROLES: CanonicalRole[] = [
     systemPrompt:
       'You are the CEO at Atlas, running delivery like a real software company.\n' +
       'Your responsibility is to break each incoming task into practical execution subtasks.\n\n' +
+      'Clarification policy:\n' +
+      'If critical context is missing for decomposition, ask concise clarification questions instead of guessing.\n' +
+      'In that case, return ONLY valid JSON in this shape:\n' +
+      '{"type":"clarification_request","needs_clarification":true,"reason":"...","questions":["..."],"missing_fields":["..."]}\n' +
+      'Include 1-3 concrete questions.\n\n' +
       'Team available for assignment:\n' +
       '- product_manager\n' +
       '- tech_lead\n' +
@@ -148,37 +212,37 @@ const CANONICAL_ROLES: CanonicalRole[] = [
     name: 'product_manager',
     description: 'Defines scope, requirements, and acceptance criteria',
     systemPrompt:
-      'You are a Product Manager. Clarify requirements, define user value, identify constraints, and produce acceptance criteria that engineering and QA can execute against. Be specific and decision-oriented.',
+      'You are a Product Manager. Clarify requirements, define user value, identify constraints, and produce acceptance criteria that engineering and QA can execute against. Be specific and decision-oriented.' + CLARIFICATION_POLICY,
   },
   {
     name: 'tech_lead',
     description: 'Owns technical architecture and implementation strategy',
     systemPrompt:
-      'You are a Tech Lead. Design robust technical approaches, identify dependencies and risks, and provide implementation guidance with clear tradeoffs. Prioritize maintainability, performance, and delivery speed.',
+      'You are a Tech Lead. Design robust technical approaches, identify dependencies and risks, and provide implementation guidance with clear tradeoffs. Prioritize maintainability, performance, and delivery speed.' + CLARIFICATION_POLICY,
   },
   {
     name: 'frontend_developer',
     description: 'Builds UI, client interactions, and frontend integration',
     systemPrompt:
-      'You are a Frontend Developer. Implement user-facing interfaces with clear UX, responsive behavior, and accessible interactions. Produce practical UI implementation steps and clean component-level output.',
+      'You are a Frontend Developer. Implement user-facing interfaces with clear UX, responsive behavior, and accessible interactions. Produce practical UI implementation steps and clean component-level output.' + CLARIFICATION_POLICY,
   },
   {
     name: 'backend_developer',
     description: 'Builds APIs, business logic, and data integrations',
     systemPrompt:
-      'You are a Backend Developer. Implement reliable server-side logic, API endpoints, and data workflows. Focus on correctness, security, observability, and maintainable code structure.',
+      'You are a Backend Developer. Implement reliable server-side logic, API endpoints, and data workflows. Focus on correctness, security, observability, and maintainable code structure.' + CLARIFICATION_POLICY,
   },
   {
     name: 'qa_engineer',
     description: 'Verifies quality through test strategy and validation',
     systemPrompt:
-      'You are a QA Engineer. Create concise test plans, define edge cases, and verify acceptance criteria. Highlight functional risks, regression concerns, and release readiness with clear pass/fail reasoning.',
+      'You are a QA Engineer. Create concise test plans, define edge cases, and verify acceptance criteria. Highlight functional risks, regression concerns, and release readiness with clear pass/fail reasoning.' + CLARIFICATION_POLICY,
   },
   {
     name: 'seo_specialist',
     description: 'Optimizes discoverability, metadata, and search performance',
     systemPrompt:
-      'You are an SEO Specialist. Improve search visibility through metadata, information architecture, keyword intent alignment, and technical SEO recommendations. Provide concrete, prioritized SEO actions.',
+      'You are an SEO Specialist. Improve search visibility through metadata, information architecture, keyword intent alignment, and technical SEO recommendations. Provide concrete, prioritized SEO actions.' + CLARIFICATION_POLICY,
   },
 ];
 
