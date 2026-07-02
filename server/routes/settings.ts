@@ -119,4 +119,42 @@ router.delete('/', (req: Request, res: Response) => {
   res.json({ success: true });
 });
 
+// Reset all data (tasks, subtasks, messages, roles, outputs, execution_logs, agent_stats, notifications, activity)
+router.post('/reset', (req: Request, res: Response) => {
+  try {
+    const tables = [
+      'tasks',
+      'subtasks',
+      'outputs',
+      'execution_logs',
+      'agent_stats',
+      'notifications',
+      'messages',
+      'message_threads',
+      'roles',
+    ];
+
+    db.exec('PRAGMA foreign_keys = OFF');
+    db.prepare('BEGIN TRANSACTION').run();
+    try {
+      for (const table of tables) {
+        const tableExists = db.prepare(`SELECT name FROM sqlite_master WHERE type='table' AND name=?`).get(table) as { name: string } | undefined;
+        if (tableExists) {
+          db.prepare(`DELETE FROM "${table}"`).run();
+        }
+      }
+      db.prepare('COMMIT').run();
+      db.exec('PRAGMA foreign_keys = ON');
+      res.json({ success: true, message: 'All data cleared' });
+    } catch (err) {
+      db.prepare('ROLLBACK').run();
+      db.exec('PRAGMA foreign_keys = ON');
+      throw err;
+    }
+  } catch (err) {
+    const error = err instanceof Error ? err : new Error(String(err));
+    res.status(500).json({ error: `Failed to reset data: ${error.message}` });
+  }
+});
+
 export default router;
