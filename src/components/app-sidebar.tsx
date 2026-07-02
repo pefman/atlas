@@ -12,7 +12,6 @@ import { Button } from '@/components/ui/button';
 import { useTheme } from '@/context/ThemeProvider';
 import { Agent } from '@/types';
 import { AgentSidebarItem } from './agents/AgentSidebarItem';
-import { useState, useEffect } from 'react';
 import { Badge } from '@/components/ui/badge';
 
 const items = [
@@ -39,25 +38,9 @@ interface AppSidebarProps {
   onAgentSelect: (agent: Agent | null) => void;
 }
 
-export function AppSidebar({ openCommandPalette, selectedAgent, onAgentSelect }: AppSidebarProps) {
+export function AppSidebar({ openCommandPalette }: AppSidebarProps) {
   const { isDark, toggleTheme } = useTheme();
   const [agents, setAgents] = useState<Agent[]>([]);
-
-  useEffect(() => {
-    const fetchAgents = async () => {
-      try {
-        const res = await fetch('/api/agents');
-        const data = await res.json();
-        setAgents(data);
-      } catch {
-        setAgents([]);
-      }
-    };
-
-    fetchAgents();
-    const interval = setInterval(fetchAgents, 2000);
-    return () => clearInterval(interval);
-  }, []);
 
   return (
     <Sidebar>
@@ -121,7 +104,6 @@ export function AppSidebar({ openCommandPalette, selectedAgent, onAgentSelect }:
                 <AgentSidebarItem
                   key={agent.id}
                   agent={agent}
-                  onClick={(a) => onAgentSelect(a)}
                 />
               ))}
             </div>
@@ -139,7 +121,6 @@ export function AppSidebar({ openCommandPalette, selectedAgent, onAgentSelect }:
                 <AgentSidebarItem
                   key={agent.id}
                   agent={agent}
-                  onClick={(a) => onAgentSelect(a)}
                 />
               ))}
             </div>

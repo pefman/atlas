@@ -1,13 +1,24 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback, useMemo } from 'react';
 import { KanbanColumn } from './KanbanColumn';
 import { KanbanDndProvider } from './KanbanDndProvider';
 import { CreateTaskDialog } from './CreateTaskDialog';
-import { Loader2 } from 'lucide-react';
-import type { Task, Subtask } from '@/types';
+import { MetricsStrip } from '@/components/metrics/MetricsStrip';
+import { Loader2, Search, X } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import type { Task, Subtask, SubtaskStatus } from '@/types';
 import { toast } from 'sonner';
+import { useKanbanStream } from '@/contexts/KanbanStreamContext';
 
 interface KanbanBoardProps {
   taskId?: number;
+}
+
+interface Filters {
+  search: string;
+  status: string;
+  role: string;
+  priority: string;
 }
 
 export function KanbanBoard({ taskId }: KanbanBoardProps) {
@@ -16,77 +27,14 @@ export function KanbanBoard({ taskId }: KanbanBoardProps) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [filters, setFilters] = useState<Filters>({ search: '', status: '', role: '', priority: '' });
+  const { connected, reconnectCount, useKanbanEvent } = useKanbanStream();
 
   useEffect(() => {
     fetchData();
-  }, [taskId]);
+  }, [taskId, reconnectCount]);
 
-  useEffect(() => {
-    const eventSource = new EventSource('/api/kanban/stream');
-
-    const handleSubtaskStart = (e: MessageEvent) => {
-      const data = JSON.parse(e.data);
-      setSubtasks(prev => prev.map((s: Subtask) =>
-        s.id === data.subtask_id ? { ...s, status: 'in_progress' as const, updated_at: new Date().toISOString() } : s
-      ));
-    };
-
-    const handleSubtaskComplete = (e: MessageEvent) => {
-      const data = JSON.parse(e.data);
-      setSubtasks(prev => prev.map((s: Subtask) =>
-        s.id === data.subtask_id ? { ...s, status: 'done' as const, updated_at: new Date().toISOString() } : s
-      ));
-      if (data.task_id) {
-        setTasks(prev => prev.map((t: Task) =>
-          t.id === data.task_id ? { ...t, status: 'done' as const, updated_at: new Date().toISOString() } : t
-        ));
-      }
-    };
-
-    const handleSubtaskFailed = (e: MessageEvent) => {
-      const data = JSON.parse(e.data);
-      setSubtasks(prev => prev.map((s: Subtask) =>
-        s.id === data.subtask_id ? { ...s, status: 'done' as const, updated_at: new Date().toISOString() } : s
-      ));
-    };
-
-    const handleTaskDecomposed = (e: MessageEvent) => {
-      const data = JSON.parse(e.data);
-      if (data.task_id) {
-        setTasks(prev => prev.map((t: Task) =>
-          t.id === data.task_id ? { ...t, ceo_status: 'decomposed' as const, decomposed_at: new Date().toISOString(), updated_at: new Date().toISOString() } : t
-        ));
-      }
-    };
-
-    const handleTaskCompleted = (e: MessageEvent) => {
-      const data = JSON.parse(e.data);
-      setTasks(prev => prev.map((t: Task) =>
-        t.id === data.task_id ? { ...t, status: 'done' as const, ceo_status: 'idle' as const, updated_at: new Date().toISOString() } : t
-      ));
-    };
-
-    eventSource.addEventListener('subtask_start', handleSubtaskStart);
-    eventSource.addEventListener('subtask_complete', handleSubtaskComplete);
-    eventSource.addEventListener('subtask_failed', handleSubtaskFailed);
-    eventSource.addEventListener('task_decomposed', handleTaskDecomposed);
-    eventSource.addEventListener('task_completed', handleTaskCompleted);
-
-    eventSource.onerror = () => {
-      console.error('EventSource connection failed');
-    };
-
-    return () => {
-      eventSource.removeEventListener('subtask_start', handleSubtaskStart);
-      eventSource.removeEventListener('subtask_complete', handleSubtaskComplete);
-      eventSource.removeEventListener('subtask_failed', handleSubtaskFailed);
-      eventSource.removeEventListener('task_decomposed', handleTaskDecomposed);
-      eventSource.removeEventListener('task_completed', handleTaskCompleted);
-      eventSource.close();
-    };
-  }, []);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
@@ -107,7 +55,75 @@ export function KanbanBoard({ taskId }: KanbanBoardProps) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [taskId]);
+
+  const filteredSubtasks = useMemo(() => {
+    return subtasks.filter(s => {
+      if (filters.search && !s.title.toLowerCase().includes(filters.search.toLowerCase()) && 
+          !s.description.toLowerCase().includes(filters.search.toLowerCase())) {
+        return false;
+      }
+      if (filters.status && s.status !== filters.status) return false;
+      if (filters.role && s.role_name !== filters.role) return false;
+      if (filters.priority && s.priority !== filters.priority) return false;
+      return true;
+    });
+  }, [subtasks, filters]);
+
+  const filteredTasks = useMemo(() => {
+    return tasks.filter(t => {
+      if (filters.search && !t.title.toLowerCase().includes(filters.search.toLowerCase()) && 
+          !t.description.toLowerCase().includes(filters.search.toLowerCase())) {
+        return false;
+      }
+      if (filters.status && t.status !== filters.status) return false;
+      return true;
+    });
+  }, [tasks, filters]);
+
+  useKanbanEvent('subtask_start', (data: any) => {
+    setSubtasks(prev => prev.map((s: Subtask) =>
+      s.id === data.subtask_id ? { ...s, status: 'in_progress' as SubtaskStatus, updated_at: new Date().toISOString() } : s
+    ));
+  });
+
+  useKanbanEvent('subtask_complete', (data: any) => {
+    setSubtasks(prev => prev.map((s: Subtask) =>
+      s.id === data.subtask_id ? { ...s, status: 'done' as SubtaskStatus, updated_at: new Date().toISOString() } : s
+    ));
+  });
+
+  useKanbanEvent('subtask_failed', (data: any) => {
+    setSubtasks(prev => prev.map((s: Subtask) =>
+      s.id === data.subtask_id ? { ...s, status: 'failed' as SubtaskStatus, updated_at: new Date().toISOString() } : s
+    ));
+  });
+
+  useKanbanEvent('task_decomposed', (data: any) => {
+    if (data.task_id) {
+      setTasks(prev => prev.map((t: Task) =>
+        t.id === data.task_id ? { ...t, ceo_status: 'decomposed' as const, decomposed_at: new Date().toISOString(), updated_at: new Date().toISOString() } : t
+      ));
+    }
+  });
+
+  useKanbanEvent('task_completed', (data: any) => {
+    setTasks(prev => prev.map((t: Task) =>
+      t.id === data.task_id ? { ...t, status: 'done' as const, ceo_status: 'idle' as const, updated_at: new Date().toISOString() } : t
+    ));
+  });
+
+  useKanbanEvent('task_status_changed', (data: any) => {
+    if (data.task_id) {
+      setTasks(prev => prev.map((t: Task) =>
+        t.id === data.task_id ? { ...t, status: data.new_status as Task['status'], updated_at: new Date().toISOString() } : t
+      ));
+    }
+  });
+
+  useKanbanEvent('subtask_status_changed', () => {
+    void fetchData();
+  });
 
   const handleSubtaskExecute = async (subtaskId: number) => {
     try {
@@ -129,7 +145,7 @@ export function KanbanBoard({ taskId }: KanbanBoardProps) {
     if (type === 'task') {
       setTasks(t => t.map((t: Task) => t.id === id ? { ...t, status: newStatus as Task['status'] } : t));
     } else {
-      setSubtasks(s => s.map((s: Subtask) => s.id === id ? { ...s, status: newStatus as Subtask['status'] } : s));
+      setSubtasks(s => s.map((s: Subtask) => s.id === id ? { ...s, status: newStatus as SubtaskStatus } : s));
     }
 
     try {
@@ -169,6 +185,14 @@ export function KanbanBoard({ taskId }: KanbanBoardProps) {
     );
   }
 
+  if (!connected) {
+    return (
+      <div className="status-banner status-banner-warning text-center">
+        Live updates disconnected — reconnecting...
+      </div>
+    );
+  }
+
   if (tasks.length === 0 && subtasks.length === 0) {
     return (
       <div className="status-banner status-banner-info text-sm">
@@ -177,32 +201,88 @@ export function KanbanBoard({ taskId }: KanbanBoardProps) {
     );
   }
 
-  const backlogTasks = tasks.filter(t => t.status === 'backlog');
-  const inProgressTasks = tasks.filter(t => t.status === 'in_progress');
-  const reviewTasks = tasks.filter(t => t.status === 'review');
-  const doneTasks = tasks.filter(t => t.status === 'done');
+  const failedSubtasks = filteredSubtasks.filter(s => s.status === 'failed');
+  const backlogSubtasksWithFailed = filteredSubtasks.filter(s => s.status === 'backlog');
+  const inProgressSubtasksWithFailed = filteredSubtasks.filter(s => s.status === 'in_progress');
+  const reviewSubtasksWithFailed = filteredSubtasks.filter(s => s.status === 'review').concat(failedSubtasks);
+  const doneSubtasksWithFailed = filteredSubtasks.filter(s => s.status === 'done');
 
-  const backlogSubtasks = subtasks.filter(s => s.status === 'backlog');
-  const inProgressSubtasks = subtasks.filter(s => s.status === 'in_progress');
-  const reviewSubtasks = subtasks.filter(s => s.status === 'review');
-  const doneSubtasks = subtasks.filter(s => s.status === 'done');
+  const backlogTasks = filteredTasks.filter(t => t.status === 'backlog');
+  const inProgressTasks = filteredTasks.filter(t => t.status === 'in_progress');
+  const reviewTasks = filteredTasks.filter(t => t.status === 'review');
+  const doneTasks = filteredTasks.filter(t => t.status === 'done');
+
+  const backlogSubtasks = filteredSubtasks.filter(s => s.status === 'backlog');
+  const inProgressSubtasks = filteredSubtasks.filter(s => s.status === 'in_progress');
+  const reviewSubtasks = filteredSubtasks.filter(s => s.status === 'review');
+  const doneSubtasks = filteredSubtasks.filter(s => s.status === 'done');
 
   const totalItems = tasks.length + subtasks.length;
-  const activeItems = inProgressTasks.length + reviewTasks.length + inProgressSubtasks.length + reviewSubtasks.length;
+  const activeItems = inProgressTasks.length + reviewTasks.length + inProgressSubtasks.length + reviewSubtasks.length + failedSubtasks.length;
   const completedItems = doneTasks.length + doneSubtasks.length;
+
+  const roles = useMemo(() => {
+    const roleSet = new Set(subtasks.map(s => s.role_name));
+    return Array.from(roleSet).sort();
+  }, [subtasks]);
 
   return (
     <div className="space-y-3">
-      <div className="grid grid-cols-3 gap-2 text-xs sm:max-w-md sm:gap-3 sm:text-sm">
-        <div className="rounded-md border bg-card px-2 py-1.5 text-muted-foreground sm:px-3 sm:py-2">
-          Total: <span className="font-medium text-foreground">{totalItems}</span>
+      <MetricsStrip />
+      
+      <div className="flex flex-wrap gap-2 items-center">
+        <div className="relative flex-1 min-w-[200px]">
+          <Search className="absolute left-2 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <Input
+            placeholder="Search..."
+            value={filters.search}
+            onChange={(e) => setFilters(f => ({ ...f, search: e.target.value }))}
+            className="pl-8"
+          />
+          {filters.search && (
+            <button
+              onClick={() => setFilters(f => ({ ...f, search: '' }))}
+              className="absolute right-2 top-1/2 -translate-y-1/2"
+            >
+              <X className="h-4 w-4 text-muted-foreground" />
+            </button>
+          )}
         </div>
-        <div className="rounded-md border bg-card px-2 py-1.5 text-muted-foreground sm:px-3 sm:py-2">
-          Active: <span className="font-medium text-foreground">{activeItems}</span>
-        </div>
-        <div className="rounded-md border bg-card px-2 py-1.5 text-muted-foreground sm:px-3 sm:py-2">
-          Done: <span className="font-medium text-foreground">{completedItems}</span>
-        </div>
+        <Select value={filters.status} onValueChange={(v) => setFilters(f => ({ ...f, status: v }))}>
+          <SelectTrigger className="w-[140px]">
+            <SelectValue placeholder="Status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="">All Statuses</SelectItem>
+            <SelectItem value="backlog">Backlog</SelectItem>
+            <SelectItem value="in_progress">In Progress</SelectItem>
+            <SelectItem value="review">Review</SelectItem>
+            <SelectItem value="done">Done</SelectItem>
+            <SelectItem value="failed">Failed</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={filters.role} onValueChange={(v) => setFilters(f => ({ ...f, role: v }))}>
+          <SelectTrigger className="w-[140px]">
+            <SelectValue placeholder="Role" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="">All Roles</SelectItem>
+            {roles.map(role => (
+              <SelectItem key={role} value={role}>{role}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select value={filters.priority} onValueChange={(v) => setFilters(f => ({ ...f, priority: v }))}>
+          <SelectTrigger className="w-[120px]">
+            <SelectValue placeholder="Priority" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="">All Priorities</SelectItem>
+            <SelectItem value="high">High</SelectItem>
+            <SelectItem value="medium">Medium</SelectItem>
+            <SelectItem value="low">Low</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       <div className="flex snap-x snap-mandatory gap-3 overflow-x-auto pb-2 sm:gap-4">
@@ -215,15 +295,18 @@ export function KanbanBoard({ taskId }: KanbanBoardProps) {
             ...backlogSubtasks.map(s => ({ id: `subtask-${s.id}`, status: s.status })),
             ...inProgressSubtasks.map(s => ({ id: `subtask-${s.id}`, status: s.status })),
             ...reviewSubtasks.map(s => ({ id: `subtask-${s.id}`, status: s.status })),
+            ...failedSubtasks.map(s => ({ id: `subtask-${s.id}`, status: s.status })),
             ...doneSubtasks.map(s => ({ id: `subtask-${s.id}`, status: s.status }))
           ]}
           onDrop={handleDrop}
+          tasks={tasks}
+          subtasks={subtasks}
         >
           <KanbanColumn
             title="Backlog"
             status="backlog"
             tasks={backlogTasks}
-            subtasks={backlogSubtasks}
+            subtasks={backlogSubtasksWithFailed}
             onCreateTask={() => setCreateDialogOpen(true)}
             onSubtaskExecute={handleSubtaskExecute}
             onTaskStatusChange={(taskId, status) => handleDrop(`task-${taskId}`, status)}
@@ -232,7 +315,7 @@ export function KanbanBoard({ taskId }: KanbanBoardProps) {
             title="In Progress"
             status="in_progress"
             tasks={inProgressTasks}
-            subtasks={inProgressSubtasks}
+            subtasks={inProgressSubtasksWithFailed}
             onSubtaskExecute={handleSubtaskExecute}
             onTaskStatusChange={(taskId, status) => handleDrop(`task-${taskId}`, status)}
           />
@@ -240,7 +323,7 @@ export function KanbanBoard({ taskId }: KanbanBoardProps) {
             title="Review"
             status="review"
             tasks={reviewTasks}
-            subtasks={reviewSubtasks}
+            subtasks={reviewSubtasksWithFailed}
             onSubtaskExecute={handleSubtaskExecute}
             onTaskStatusChange={(taskId, status) => handleDrop(`task-${taskId}`, status)}
           />
@@ -248,7 +331,7 @@ export function KanbanBoard({ taskId }: KanbanBoardProps) {
             title="Done"
             status="done"
             tasks={doneTasks}
-            subtasks={doneSubtasks}
+            subtasks={doneSubtasksWithFailed}
             onTaskStatusChange={(taskId, status) => handleDrop(`task-${taskId}`, status)}
           />
           <CreateTaskDialog

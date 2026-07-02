@@ -1,5 +1,7 @@
 import { AIProvider, Message, AIModel, ChatResponse } from './provider';
 
+const REQUEST_TIMEOUT = 120_000; // 2 minutes
+
 export class OpenAIProvider implements AIProvider {
   name = 'openai';
   private apiKey: string;
@@ -23,7 +25,7 @@ export class OpenAIProvider implements AIProvider {
     }
     
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 30000); // 30 second timeout
+    const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT);
     
     try {
       const response = await fetch(url, {
@@ -59,7 +61,7 @@ export class OpenAIProvider implements AIProvider {
     } catch (error) {
       clearTimeout(timeoutId);
       if (error instanceof Error && error.name === 'AbortError') {
-        throw new Error('Request timed out after 30 seconds');
+        throw new Error('Request timed out after 120 seconds');
       }
       throw error;
     }
@@ -73,23 +75,36 @@ export class OpenAIProvider implements AIProvider {
       headers['Authorization'] = `Bearer ${this.apiKey}`;
     }
     
-    const response = await fetch(url, {
-      headers,
-    });
-
-    console.log('[OpenAI] Models request status:', response.status);
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT);
     
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('[OpenAI] Models request failed:', errorText);
-      throw new Error(`OpenAI API error: ${response.status}`);
-    }
+    try {
+      const response = await fetch(url, {
+        headers,
+        signal: controller.signal,
+      });
 
-    const data = await response.json();
-    const models = (data.data || []).map((m: any) => ({
-      id: m.id,
-      name: m.id,
-    }));
-    return models;
+      clearTimeout(timeoutId);
+      console.log('[OpenAI] Models request status:', response.status);
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('[OpenAI] Models request failed:', errorText);
+        throw new Error(`OpenAI API error: ${response.status}`);
+      }
+
+      const data = await response.json();
+      const models = (data.data || []).map((m: any) => ({
+        id: m.id,
+        name: m.id,
+      }));
+      return models;
+    } catch (error) {
+      clearTimeout(timeoutId);
+      if (error instanceof Error && error.name === 'AbortError') {
+        throw new Error('Request timed out after 120 seconds');
+      }
+      throw error;
+    }
   }
 }

@@ -10,6 +10,8 @@ import agentRoutes from './routes/agents';
 import notificationsRouter from './routes/notifications';
 import notificationsStreamRouter from './routes/notificationsStream';
 import kanbanStreamRouter from './routes/kanbanStream';
+import activityRouter from './routes/activity';
+import metricsRouter from './routes/metrics';
 import { db } from './db';
 import { scheduler } from './scheduler';
 
@@ -42,6 +44,8 @@ app.use('/api/agents', agentRoutes);
 app.use('/api/notifications', notificationsRouter);
 app.use('/api/notifications/stream', notificationsStreamRouter);
 app.use('/api/kanban/stream', kanbanStreamRouter);
+app.use('/api/activity', activityRouter);
+app.use('/api/metrics', metricsRouter);
 
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server running on http://0.0.0.0:${PORT}`);

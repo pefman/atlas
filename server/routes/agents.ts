@@ -8,7 +8,7 @@ router.get('/', (req: Request, res: Response) => {
   const agents = db.prepare(`
     SELECT r.*, 
            (SELECT t.title FROM tasks t WHERE t.role_id = r.id AND t.status = 'in_progress' LIMIT 1) as current_task_title,
-           CASE WHEN (SELECT COUNT(*) FROM tasks t WHERE t.role_id = r.id AND t.status = 'in_progress' > 0) THEN 'executing' ELSE 'idle' END as status
+           CASE WHEN EXISTS (SELECT 1 FROM subtasks s WHERE s.role_id = r.id AND s.status = 'in_progress') THEN 'executing' ELSE 'idle' END as status
     FROM roles r
     ORDER BY r.name ASC
   `).all();

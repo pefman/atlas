@@ -15,9 +15,15 @@ router.get('/', (req: Request, res: Response) => {
       provider: 'ollama',
       endpoint: 'http://localhost:11434',
       model: 'llama3',
+      has_api_key: false,
     });
   } else {
-    res.json(settings);
+    res.json({
+      provider: settings.provider,
+      endpoint: settings.endpoint,
+      model: settings.model,
+      has_api_key: !!settings.api_key,
+    });
   }
 });
 
@@ -25,18 +31,21 @@ router.get('/', (req: Request, res: Response) => {
 router.put('/', (req: Request, res: Response) => {
   const { provider, endpoint, api_key, model } = req.body;
   
-  const existing = db.prepare('SELECT id FROM settings ORDER BY id DESC LIMIT 1').get() as { id: number } | undefined;
+  const existing = db.prepare('SELECT id, api_key FROM settings ORDER BY id DESC LIMIT 1').get() as { id: number; api_key: string } | undefined;
+  
+  const storedKey = existing?.api_key;
+  const newKey = api_key || storedKey;
   
   if (existing) {
     db.prepare(`
       UPDATE settings SET provider = ?, endpoint = ?, api_key = ?, model = ?, updated_at = datetime('now')
       WHERE id = ?
-    `).run(provider, endpoint, api_key, model, existing.id);
+    `).run(provider, endpoint, newKey, model, existing.id);
   } else {
     db.prepare(`
       INSERT INTO settings (provider, endpoint, api_key, model)
       VALUES (?, ?, ?, ?)
-    `).run(provider, endpoint, api_key, model);
+    `).run(provider, endpoint, newKey, model);
   }
   
   res.json({ success: true });

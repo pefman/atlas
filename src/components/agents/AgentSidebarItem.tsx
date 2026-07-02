@@ -1,9 +1,10 @@
 import { Agent } from '@/types';
 import { formatTokens } from '@/lib/utils';
+import { useNavigate } from 'react-router-dom';
 
 interface AgentSidebarItemProps {
   agent: Agent;
-  onClick: (agent: Agent) => void;
+  onClick?: (agent: Agent) => void;
 }
 
 const getStatusColor = (status: string) => {
@@ -36,6 +37,7 @@ const getStepTypeLabel = (stepType: string) => {
 };
 
 export function AgentSidebarItem({ agent, onClick }: AgentSidebarItemProps) {
+  const navigate = useNavigate();
   const isActive = agent.status !== 'idle';
   const hasActivity = agent.latestActivity && agent.latestActivity.output;
   const activityText = hasActivity 
@@ -44,6 +46,14 @@ export function AgentSidebarItem({ agent, onClick }: AgentSidebarItemProps) {
       : agent.latestActivity!.output
     : 'No activity yet';
 
+  const handleClick = () => {
+    if (onClick) {
+      onClick(agent);
+    } else {
+      navigate(`/agent/${agent.id}`);
+    }
+  };
+
   return (
     <div
       className={`p-3 rounded-lg border transition-all cursor-pointer ${
@@ -51,7 +61,7 @@ export function AgentSidebarItem({ agent, onClick }: AgentSidebarItemProps) {
           ? 'border-primary/30 bg-primary/5' 
           : 'border-border hover:border-muted-foreground/30 hover:bg-sidebar-accent'
       }`}
-      onClick={() => onClick(agent)}
+      onClick={handleClick}
     >
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">

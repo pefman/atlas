@@ -2,6 +2,8 @@ import { Router, Request, Response } from 'express';
 import { db } from '../db';
 import { scheduler } from '../scheduler';
 import { logTask, logTaskError } from '../lib/logger';
+import { recomputeTaskStatus } from '../lib/taskProgress';
+import { execEventBus } from '../events';
 
 const router = Router();
 
@@ -152,6 +154,8 @@ router.patch('/:id/status', (req: Request, res: Response) => {
       UPDATE tasks SET status = ?, updated_at = datetime('now') WHERE id = ?
     `).run(status, req.params.id);
     
+    execEventBus.emit('task_status_changed', { task_id: parseInt(req.params.id), new_status: status });
+    
     logTask('Status Changed', { id: req.params.id, status });
     
     res.json({ success: true });
@@ -159,6 +163,32 @@ router.patch('/:id/status', (req: Request, res: Response) => {
     const error = err instanceof Error ? err : new Error(String(err));
     logTaskError(error, { id: req.params.id, status: req.body.status });
     res.status(500).json({ error: 'Failed to update task status' });
+  }
+});
+
+// Redecompose task (manual retry)
+router.post('/:id/redecompose', (req: Request, res: Response) => {
+  try {
+    const task = db.prepare('SELECT * FROM tasks WHERE id = ?').get(req.params.id) as any;
+    
+    if (!task) {
+      res.status(404).json({ error: 'Task not found' });
+      return;
+    }
+    
+    if (task.ceo_status !== 'error' && task.ceo_status !== 'decomposed') {
+      res.status(409).json({ error: 'Task is not in error or decomposed state' });
+      return;
+    }
+    
+    db.prepare(`UPDATE tasks SET ceo_status = 'idle', updated_at = datetime('now') WHERE id = ?`).run(req.params.id);
+    
+    logTask('Redecompose requested', { id: req.params.id });
+    res.json({ success: true, message: 'Task reset to idle for redecomposition' });
+  } catch (err) {
+    const error = err instanceof Error ? err : new Error(String(err));
+    logTaskError(error, { id: req.params.id });
+    res.status(500).json({ error: 'Failed to redecompose task' });
   }
 });
 
@@ -170,6 +200,8 @@ router.delete('/:id', (req: Request, res: Response) => {
     res.status(404).json({ error: 'Task not found' });
     return;
   }
+  
+  scheduler.removeTask(parseInt(req.params.id));
   
   db.prepare('DELETE FROM execution_logs WHERE subtask_id IN (SELECT id FROM subtasks WHERE task_id = ?)').run(req.params.id);
   db.prepare('DELETE FROM outputs WHERE subtask_id IN (SELECT id FROM subtasks WHERE task_id = ?)').run(req.params.id);

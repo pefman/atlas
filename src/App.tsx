@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { BrowserRouter as Router, Routes, Route, useParams, useNavigate } from 'react-router-dom';
 import { NotificationProvider } from '@/components/notifications/NotificationProvider';
 import { SidebarProvider, SidebarInset } from '@/components/ui/sidebar';
@@ -17,6 +17,13 @@ import { Toaster } from '@/components/ui/sonner';
 import { CommandPalette } from '@/components/ui/command-palette';
 import { AppPage } from '@/components/layout/AppPage';
 import { AIStatusIndicator } from '@/components/AIStatusIndicator';
+import { KanbanStreamProvider } from '@/contexts/KanbanStreamContext';
+
+interface AppSidebarProps {
+  openCommandPalette: () => void;
+  selectedAgent?: Agent | null;
+  onAgentSelect?: (agent: Agent | null) => void;
+}
 
 function TaskDetailPage() {
   const { id } = useParams<{ id: string }>();
@@ -30,33 +37,54 @@ function SubtaskDetailPage() {
   return <SubtaskDetail subtaskId={parseInt(id!)} onBack={() => navigate(-1)} />;
 }
 
+function AgentDetailPage() {
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  const agentId = parseInt(id!);
+  
+  const [agent, setAgent] = useState<Agent | null>(null);
+  
+  useEffect(() => {
+    fetch(`/api/agents/${agentId}`)
+      .then(res => res.json())
+      .then(setAgent)
+      .catch(console.error);
+  }, [agentId]);
+  
+  if (!agent) {
+    return <AppPage><div className="flex items-center justify-center py-12"><div className="h-8 w-8 animate-spin rounded-full border-4 border-primary border-t-transparent" /></div></AppPage>;
+  }
+  
+  return (
+    <AppPage
+      title={agent.name}
+      actions={
+        <Button variant="ghost" size="icon" onClick={() => navigate(-1)}>
+          <X className="h-4 w-4" />
+        </Button>
+      }
+    >
+      <AgentDetail agent={agent} onClose={() => navigate(-1)} />
+    </AppPage>
+  );
+}
+
 function App() {
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
   const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
 
   return (
     <NotificationProvider>
-      <Router>
-        <SidebarProvider>
-          <AppSidebar 
-            openCommandPalette={() => setCommandPaletteOpen(true)} 
-            selectedAgent={selectedAgent}
-            onAgentSelect={setSelectedAgent}
-          />
-          <SidebarInset>
-            <SiteHeader titleOverride={selectedAgent ? selectedAgent.name : undefined} />
-            {selectedAgent ? (
-              <AppPage
-                title={selectedAgent.name}
-                actions={
-                  <Button variant="ghost" size="icon" onClick={() => setSelectedAgent(null)}>
-                    <X className="h-4 w-4" />
-                  </Button>
-                }
-              >
-                <AgentDetail agent={selectedAgent} onClose={() => setSelectedAgent(null)} />
-              </AppPage>
-            ) : (
+      <KanbanStreamProvider>
+        <Router>
+          <SidebarProvider>
+            <AppSidebar 
+              openCommandPalette={() => setCommandPaletteOpen(true)} 
+              selectedAgent={selectedAgent}
+              onAgentSelect={setSelectedAgent}
+            />
+            <SidebarInset>
+              <SiteHeader />
               <Routes>
                 <Route path="/" element={<KanbanPage />} />
                 <Route path="/kanban" element={<KanbanPage />} />
@@ -64,14 +92,15 @@ function App() {
                 <Route path="/settings" element={<SettingsPage />} />
                 <Route path="/task/:id" element={<TaskDetailPage />} />
                 <Route path="/subtask/:id" element={<SubtaskDetailPage />} />
+                <Route path="/agent/:id" element={<AgentDetailPage />} />
               </Routes>
-            )}
-          </SidebarInset>
-        </SidebarProvider>
-        <Toaster />
-        <CommandPalette open={commandPaletteOpen} setOpen={setCommandPaletteOpen} />
-        <AIStatusIndicator />
-      </Router>
+            </SidebarInset>
+          </SidebarProvider>
+          <Toaster />
+          <CommandPalette open={commandPaletteOpen} setOpen={setCommandPaletteOpen} />
+          <AIStatusIndicator />
+        </Router>
+      </KanbanStreamProvider>
     </NotificationProvider>
   );
 }

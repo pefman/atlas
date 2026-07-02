@@ -29,7 +29,14 @@ router.get('/', (req: Request, res: Response) => {
     subscriptions.push(subscription);
   }
 
+  res.write(`event: connected\ndata: {}\n\n`);
+
+  const heartbeat = setInterval(() => {
+    res.write(`: heartbeat\n\n`);
+  }, 25000);
+
   req.on('close', () => {
+    clearInterval(heartbeat);
     for (const sub of subscriptions) {
       sub.unsubscribe();
     }

@@ -33,6 +33,8 @@ export interface Task {
   updated_at: string;
 }
 
+export type SubtaskStatus = TaskStatus | 'failed';
+
 export interface Subtask {
   id: number;
   task_id: number;
@@ -40,7 +42,7 @@ export interface Subtask {
   title: string;
   description: string;
   role_id: number;
-  status: TaskStatus;
+  status: SubtaskStatus;
   priority: 'high' | 'medium' | 'low';
   created_at: string;
   updated_at: string;

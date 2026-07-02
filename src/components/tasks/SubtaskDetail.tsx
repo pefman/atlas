@@ -1,12 +1,13 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Brain, Clock, CheckCircle2, ListTodo } from 'lucide-react';
+import { ArrowLeft, Brain, Clock, CheckCircle2, ListTodo, AlertTriangle } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { TaskStatus } from '@/types';
+import type { TaskStatus, SubtaskStatus } from '@/types';
 import { priorityColors } from '@/lib/priority';
 import { AppPage } from '@/components/layout/AppPage';
+import { useKanbanStream } from '@/contexts/KanbanStreamContext';
 
 interface Subtask {
   id: number;
@@ -15,7 +16,7 @@ interface Subtask {
   title: string;
   description: string;
   role_name: string;
-  status: TaskStatus;
+  status: SubtaskStatus;
   priority: 'high' | 'medium' | 'low';
   created_at: string;
   updated_at: string;
@@ -50,7 +51,7 @@ interface SubtaskDetailProps {
   onBack: () => void;
 }
 
-function getStatusIcon(status: TaskStatus) {
+function getStatusIcon(status: SubtaskStatus) {
   switch (status) {
     case 'backlog':
       return <Clock className="h-4 w-4" />;
@@ -60,6 +61,8 @@ function getStatusIcon(status: TaskStatus) {
       return <ListTodo className="h-4 w-4" />;
     case 'done':
       return <CheckCircle2 className="h-4 w-4" />;
+    case 'failed':
+      return <AlertTriangle className="h-4 w-4 text-red-500" />;
     default:
       return <Clock className="h-4 w-4" />;
   }
@@ -68,12 +71,9 @@ function getStatusIcon(status: TaskStatus) {
 export function SubtaskDetail({ subtaskId, onBack }: SubtaskDetailProps) {
   const [data, setData] = useState<SubtaskDetailData | null>(null);
   const [loading, setLoading] = useState(true);
+  const { useKanbanEvent } = useKanbanStream();
 
-  useEffect(() => {
-    fetchSubtask();
-  }, [subtaskId]);
-
-  const fetchSubtask = async () => {
+  const fetchSubtask = useCallback(async () => {
     try {
       setLoading(true);
       const response = await fetch(`/api/subtasks/${subtaskId}`);
@@ -87,7 +87,23 @@ export function SubtaskDetail({ subtaskId, onBack }: SubtaskDetailProps) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [subtaskId]);
+
+  useEffect(() => {
+    fetchSubtask();
+  }, [fetchSubtask]);
+
+  useKanbanEvent('subtask_start', (e: any) => {
+    if (e.subtask_id === subtaskId) void fetchSubtask();
+  });
+
+  useKanbanEvent('subtask_complete', (e: any) => {
+    if (e.subtask_id === subtaskId) void fetchSubtask();
+  });
+
+  useKanbanEvent('subtask_failed', (e: any) => {
+    if (e.subtask_id === subtaskId) void fetchSubtask();
+  });
 
   if (loading) {
     return (
@@ -128,7 +144,7 @@ export function SubtaskDetail({ subtaskId, onBack }: SubtaskDetailProps) {
           <Badge variant="secondary" className={`text-xs ${priorityColors[subtask.priority]}`}>
             {subtask.priority}
           </Badge>
-          <Badge variant="secondary" className="gap-1">
+          <Badge variant="secondary" className={`gap-1 ${subtask.status === 'failed' ? 'text-red-500' : ''}`}>
             {getStatusIcon(subtask.status)}
             {subtask.status}
           </Badge>

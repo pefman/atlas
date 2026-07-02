@@ -1,13 +1,12 @@
 import { cn } from '@/lib/utils';
 import { useAIStatus } from '@/hooks/useAIStatus';
 
-type AIStatus = 'idle' | 'decomposing' | 'executing' | 'reviewing';
+type AIStatus = 'idle' | 'decomposing' | 'executing';
 
 const statusConfig = {
   idle: { color: 'bg-muted-foreground', label: 'AI Idle' },
   decomposing: { color: 'bg-blue-500', label: 'AI Decomposing' },
   executing: { color: 'bg-green-500', label: 'AI Executing' },
-  reviewing: { color: 'bg-yellow-500', label: 'AI Reviewing' },
 };
 
 export function AIStatusIndicator() {

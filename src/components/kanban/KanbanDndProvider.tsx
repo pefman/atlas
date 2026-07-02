@@ -1,14 +1,18 @@
 import { DndContext, DragEndEvent, DragOverlay, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { SortableContext, verticalListSortingStrategy } from '@dnd-kit/sortable';
 import { useState } from 'react';
+import { KanbanCard } from './KanbanCard';
+import type { Task, Subtask } from '@/types';
 
 interface KanbanDndProviderProps {
   children: React.ReactNode;
   items: Array<{ id: string; status: string }>;
   onDrop: (itemId: string, newStatus: string) => Promise<void>;
+  tasks?: Task[];
+  subtasks?: Subtask[];
 }
 
-export function KanbanDndProvider({ children, items, onDrop }: KanbanDndProviderProps) {
+export function KanbanDndProvider({ children, items, onDrop, tasks = [], subtasks = [] }: KanbanDndProviderProps) {
   const [activeId, setActiveId] = useState<string | null>(null);
 
   const sensors = useSensors(
@@ -35,6 +39,10 @@ export function KanbanDndProvider({ children, items, onDrop }: KanbanDndProvider
     await onDrop(itemId, newStatus);
   };
 
+  const activeItem = activeId ? items.find(item => item.id === activeId) : null;
+  const task = activeItem ? tasks.find(t => `task-${t.id}` === activeId) : undefined;
+  const subtask = activeItem ? subtasks.find(s => `subtask-${s.id}` === activeId) : undefined;
+
   return (
     <DndContext
       sensors={sensors}
@@ -45,7 +53,11 @@ export function KanbanDndProvider({ children, items, onDrop }: KanbanDndProvider
         {children}
       </SortableContext>
       <DragOverlay>
-        {activeId ? <div className="opacity-50">Dragging...</div> : null}
+        {activeItem && task ? (
+          <KanbanCard task={task} />
+        ) : activeItem && subtask ? (
+          <KanbanCard subtask={subtask} />
+        ) : null}
       </DragOverlay>
     </DndContext>
   );

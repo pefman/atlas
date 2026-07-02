@@ -1,6 +1,9 @@
 import { db } from './db';
 import { logSubtask, logSubtaskError, logSystem } from './lib/logger';
 import { execEventBus } from './events';
+import { recomputeTaskStatus } from './lib/taskProgress';
+import { OllamaProvider } from './ai/ollama';
+import { OpenAIProvider } from './ai/openai';
 
 type Priority = 'high' | 'medium' | 'low';
 
@@ -11,13 +14,17 @@ interface QueuedSubtask {
   failureCount: number;
 }
 
+const MAX_ATTEMPTS = 3;
+const DECOMP_MAX_ATTEMPTS = 3;
+
 class Scheduler {
   private queues: Map<Priority, QueuedSubtask[]> = new Map();
   private running = false;
   private stopped = false;
-  private processing = false;
-  private retryTimeout: NodeJS.Timeout | null = null;
+  private draining = false;
+  private retryTimers = new Map<number, NodeJS.Timeout>();
   private ceoWorkerInterval: NodeJS.Timeout | null = null;
+  private ceoAttempts = new Map<number, number>();
 
   constructor() {
     this.queues.set('high', []);
@@ -35,9 +42,7 @@ class Scheduler {
     this.queues.get(priority)!.push(item);
     logSubtask('Enqueued', { id: subtaskId, title, priority });
 
-    if (!this.processing) {
-      this.processNext();
-    }
+    void this.drain();
   }
 
   dequeue(): QueuedSubtask | null {
@@ -55,6 +60,31 @@ class Scheduler {
       (sum, p) => sum + this.queues.get(p as Priority).length,
       0
     );
+  }
+
+  removeTask(taskId: number): void {
+    for (const priority of ['high', 'medium', 'low'] as Priority[]) {
+      const queue = this.queues.get(priority)!;
+      const initialLength = queue.length;
+      const filtered = queue.filter(item => {
+        const subtask = db.prepare('SELECT task_id FROM subtasks WHERE id = ?').get(item.id) as { task_id: number } | undefined;
+        return subtask?.task_id !== taskId;
+      });
+      this.queues.set(priority, filtered);
+      const removed = initialLength - filtered.length;
+      if (removed > 0) {
+        logSystem(`Removed ${removed} queued item(s) for task ${taskId}`);
+      }
+    }
+
+    for (const [subtaskId, timer] of this.retryTimers) {
+      const subtask = db.prepare('SELECT task_id FROM subtasks WHERE id = ?').get(subtaskId) as { task_id: number } | undefined;
+      if (subtask?.task_id === taskId) {
+        clearTimeout(timer);
+        this.retryTimers.delete(subtaskId);
+        logSystem(`Cleared retry timer for subtask ${subtaskId} (task ${taskId} deleted)`);
+      }
+    }
   }
 
   start(): void {
@@ -95,10 +125,10 @@ class Scheduler {
       clearInterval(this.ceoWorkerInterval);
       this.ceoWorkerInterval = null;
     }
-    if (this.retryTimeout) {
-      clearTimeout(this.retryTimeout);
-      this.retryTimeout = null;
+    for (const timer of this.retryTimers.values()) {
+      clearTimeout(timer);
     }
+    this.retryTimers.clear();
     this.running = false;
     logSystem('Scheduler stopped');
   }
@@ -130,9 +160,18 @@ class Scheduler {
 
     if (!task) return;
 
-    db.prepare(`UPDATE tasks SET ceo_status = 'decomposing', updated_at = datetime('now') WHERE id = ?`).run(task.id);
+    const attempts = this.ceoAttempts.get(task.id) || 0;
+    if (attempts >= DECOMP_MAX_ATTEMPTS) {
+      logSystem(`Task ${task.id} exceeded max decomposition attempts (${DECOMP_MAX_ATTEMPTS})`);
+      db.prepare(`UPDATE tasks SET ceo_status = 'error', updated_at = datetime('now') WHERE id = ?`).run(task.id);
+      return;
+    }
 
-    const { name: providerName } = await this.getProvider();
+    db.prepare(`UPDATE tasks SET ceo_status = 'decomposing', updated_at = datetime('now') WHERE id = ?`).run(task.id);
+    this.ceoAttempts.set(task.id, attempts + 1);
+    execEventBus.emit('task_decomposing', { task_id: task.id });
+
+    const { provider, name: providerName } = await this.getProvider();
     logSystem(`Decomposing task ${task.id}: ${task.title}`);
 
     const ceoRole = db.prepare('SELECT * FROM roles WHERE name = ?').get('ceo') as any;
@@ -141,7 +180,6 @@ class Scheduler {
       return;
     }
 
-    const { provider } = await this.getProvider();
     const messages = [
       { role: 'system' as const, content: ceoRole.system_prompt },
       { role: 'user' as const, content: `Task: ${task.title}\n\nDescription: ${task.description}` },
@@ -181,31 +219,51 @@ class Scheduler {
       execEventBus.emit('task_decomposed', { task_id: task.id, subtask_count: subtasks.length });
     } catch (error) {
       logSubtaskError(error as Error, { task_id: task.id, title: task.title }, providerName);
-      db.prepare(`UPDATE tasks SET ceo_status = 'error', updated_at = datetime('now') WHERE id = ?`).run(task.id);
+      
+      const newAttempts = this.ceoAttempts.get(task.id) || 0;
+      if (newAttempts < DECOMP_MAX_ATTEMPTS) {
+        const delay = Math.min(Math.pow(2, newAttempts) * 1000, 30000);
+        logSystem(`Auto-retrying decomposition for task ${task.id} in ${delay / 1000}s (attempt ${newAttempts + 1}/${DECOMP_MAX_ATTEMPTS})`);
+        setTimeout(() => {
+          this.ceoAttempts.set(task.id, newAttempts + 1);
+          void this.processNextBacklog();
+        }, delay);
+      } else {
+        db.prepare(`UPDATE tasks SET ceo_status = 'error', updated_at = datetime('now') WHERE id = ?`).run(task.id);
+      }
     }
   }
 
-  private async processNext(): Promise<void> {
-    if (this.stopped) return;
+  private async drain(): Promise<void> {
+    if (this.draining) return;
+    this.draining = true;
+    try {
+      while (!this.stopped) {
+        const item = this.dequeue();
+        if (!item) break;
+        await this.executeItem(item);
+      }
+    } finally {
+      this.draining = false;
+    }
+  }
 
-    const item = this.dequeue();
-    if (!item) {
-      this.processing = false;
+  private async executeItem(item: QueuedSubtask): Promise<void> {
+    const subtask = db.prepare('SELECT * FROM subtasks WHERE id = ?').get(item.id) as any;
+    
+    if (!subtask) {
+      logSystem(`Subtask ${item.id} no longer exists (deleted), skipping`);
       return;
     }
 
-    this.processing = true;
-    item.failureCount++;
-
-    const subtask = db.prepare('SELECT * FROM subtasks WHERE id = ?').get(item.id) as any;
-    const role = db.prepare('SELECT * FROM roles WHERE id = ?').get(subtask?.role_id) as any;
-    const taskId = subtask?.task_id;
+    const role = db.prepare('SELECT * FROM roles WHERE id = ?').get(subtask.role_id) as any;
+    const taskId = subtask.task_id;
     const { provider, name: providerName } = await this.getProvider();
 
     try {
       db.prepare(`UPDATE subtasks SET status = 'in_progress', updated_at = datetime('now') WHERE id = ?`).run(item.id);
       logSubtask('Started', { id: item.id, title: item.title }, providerName);
-      execEventBus.emit('subtask_start', { subtask_id: item.id, task_id: subtask.task_id, title: item.title });
+      execEventBus.emit('subtask_start', { subtask_id: item.id, task_id: taskId, title: item.title });
 
       const messages = [
         { role: 'system' as const, content: role?.system_prompt || '' },
@@ -233,9 +291,10 @@ class Scheduler {
 
       db.prepare(`UPDATE subtasks SET status = 'done', updated_at = datetime('now') WHERE id = ?`).run(item.id);
       logSubtask('Completed', { id: item.id, title: item.title }, providerName);
-      execEventBus.emit('subtask_complete', { subtask_id: item.id, task_id: subtask.task_id, title: item.title });
+      execEventBus.emit('subtask_complete', { subtask_id: item.id, task_id: taskId, title: item.title });
 
-      await this.checkTaskCompletion(taskId);
+      const { newStatus } = recomputeTaskStatus(taskId);
+      logSystem(`Task ${taskId} status: ${newStatus}`);
     } catch (error) {
       const errorStr = error instanceof Error ? error.message : String(error);
       logSubtaskError(error as Error, { id: item.id, title: item.title, step: item.failureCount });
@@ -245,29 +304,34 @@ class Scheduler {
         VALUES (?, ?, ?, '', ?)
       `).run(item.id, item.failureCount, role?.id || 0, errorStr);
 
-      const delay = Math.min(Math.pow(2, item.failureCount) * 1000, 300000); // cap at 5 min
-      logSystem(`Retrying subtask ${item.id} in ${delay / 1000}s (attempt ${item.failureCount + 1})`);
-      this.retryTimeout = setTimeout(() => {
-        this.enqueue(item.id, item.title, item.priority, item.failureCount);
-      }, delay);
-    }
-
-    this.processing = false;
-    if (!this.stopped) {
-      this.processNext();
-    }
-  }
-
-  private async checkTaskCompletion(taskId: number): Promise<void> {
-    const pending = db.prepare(`
-      SELECT COUNT(*) as count FROM subtasks 
-      WHERE task_id = ? AND status NOT IN ('done', 'failed')
-    `).get(taskId) as { count: number };
-
-    if (pending.count === 0) {
-      db.prepare(`UPDATE tasks SET status = 'done', ceo_status = 'idle', updated_at = datetime('now') WHERE id = ?`).run(taskId);
-      logSystem(`Task ${taskId} completed`);
-      execEventBus.emit('task_completed', { task_id: taskId });
+      if (item.failureCount >= MAX_ATTEMPTS - 1) {
+        db.prepare(`UPDATE subtasks SET status = 'failed', updated_at = datetime('now') WHERE id = ?`).run(item.id);
+        logSubtask('Failed permanently', { id: item.id, title: item.title });
+        execEventBus.emit('subtask_failed', { subtask_id: item.id, task_id: taskId, title: item.title });
+        
+        const task = db.prepare('SELECT title FROM tasks WHERE id = ?').get(taskId) as { title: string } | undefined;
+        const notification = {
+          sender_role: 'system',
+          message: `Subtask "${item.title}" failed after ${MAX_ATTEMPTS} attempts`,
+          task_id: taskId,
+        };
+        db.prepare(`INSERT INTO notifications (sender_role, message, task_id) VALUES (?, ?, ?)`).run(notification.sender_role, notification.message, notification.task_id);
+        execEventBus.emit('notification', { ...notification, id: Date.now(), is_read: false, created_at: new Date().toISOString() });
+        
+        const { newStatus } = recomputeTaskStatus(taskId);
+        logSystem(`Task ${taskId} status: ${newStatus} (subtask failed)`);
+      } else {
+        item.failureCount++;
+        const delay = Math.min(Math.pow(2, item.failureCount) * 1000, 300000);
+        logSystem(`Retrying subtask ${item.id} in ${delay / 1000}s (attempt ${item.failureCount + 1}/${MAX_ATTEMPTS})`);
+        
+        const timer = setTimeout(() => {
+          this.enqueue(item.id, item.title, item.priority, item.failureCount);
+          this.retryTimers.delete(item.id);
+        }, delay);
+        
+        this.retryTimers.set(item.id, timer);
+      }
     }
   }
 
@@ -362,18 +426,14 @@ class Scheduler {
   private async getProvider(): Promise<{ provider: any; name: string }> {
     const settings = db.prepare('SELECT * FROM settings ORDER BY id DESC LIMIT 1').get();
     if (!settings) {
-      const { OllamaProvider } = await import('./ai/ollama');
       return { provider: new OllamaProvider('http://localhost:11434', 'llama3'), name: 'ollama' };
     }
     if (settings.provider === 'openai') {
       if (!settings.api_key) {
-        const { OllamaProvider } = await import('./ai/ollama');
         return { provider: new OllamaProvider('http://localhost:11434', 'llama3'), name: 'ollama' };
       }
-      const { OpenAIProvider } = await import('./ai/openai');
       return { provider: new OpenAIProvider(settings.api_key, settings.model, settings.endpoint), name: 'openai' };
     }
-    const { OllamaProvider } = await import('./ai/ollama');
     return { provider: new OllamaProvider(settings.endpoint, settings.model), name: 'ollama' };
   }
 }
