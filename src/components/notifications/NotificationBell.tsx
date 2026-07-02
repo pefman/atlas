@@ -24,19 +24,19 @@ export function NotificationBell() {
 
   return (
     <Popover>
-      <PopoverTrigger nativeButton={false}>
-        <div
-          className="relative inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-transparent hover:bg-accent hover:text-accent-foreground h-10 w-10 text-muted-foreground hover:text-foreground cursor-pointer"
-          aria-label="Notifications"
-        >
-          <Bell className="h-5 w-5" />
-          {unreadCount > 0 && (
-            <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs">
-              {unreadCount}
-            </Badge>
-          )}
-        </div>
-      </PopoverTrigger>
+      <PopoverTrigger
+        nativeButton={false}
+        render={(props) => (
+          <div {...props} aria-label="Notifications">
+            <Bell className="h-5 w-5" />
+            {unreadCount > 0 && (
+              <Badge className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 text-xs">
+                {unreadCount}
+              </Badge>
+            )}
+          </div>
+        )}
+      ></PopoverTrigger>
       <PopoverContent className="w-80" align="end">
         <div className="space-y-2">
           <h4 className="font-semibold text-sm">Notifications</h4>
