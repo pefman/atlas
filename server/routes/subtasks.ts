@@ -94,6 +94,38 @@ router.patch('/:id/status', (req: Request, res: Response) => {
   res.json({ success: true, pendingSubtasks: pendingSubtasks.count });
 });
 
+// Get single subtask with outputs and logs
+router.get('/:id', (req: Request, res: Response) => {
+  const subtask = db.prepare(`
+    SELECT s.*, r.name as role_name, t.title as task_title
+    FROM subtasks s
+    JOIN roles r ON s.role_id = r.id
+    JOIN tasks t ON s.task_id = t.id
+    WHERE s.id = ?
+  `).get(req.params.id) as any;
+  
+  if (!subtask) {
+    res.status(404).json({ error: 'Subtask not found' });
+    return;
+  }
+  
+  const outputs = db.prepare(`
+    SELECT * FROM outputs
+    WHERE subtask_id = ?
+    ORDER BY created_at ASC
+  `).all(req.params.id);
+  
+  const logs = db.prepare(`
+    SELECT el.*, r.name as role_name
+    FROM execution_logs el
+    JOIN roles r ON el.role_id = r.id
+    WHERE el.subtask_id = ?
+    ORDER BY el.created_at ASC
+  `).all(req.params.id);
+  
+  res.json({ subtask, outputs, logs });
+});
+
 // Get outputs for a subtask
 router.get('/:id/outputs', (req: Request, res: Response) => {
   const outputs = db.prepare(`

@@ -3,7 +3,6 @@ import { KanbanColumn } from './KanbanColumn';
 import { KanbanDndProvider } from './KanbanDndProvider';
 import { CreateTaskDialog } from './CreateTaskDialog';
 import { Loader2 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
 import type { Task, Subtask } from '@/types';
 import { toast } from 'sonner';
 
@@ -12,7 +11,6 @@ interface KanbanBoardProps {
 }
 
 export function KanbanBoard({ taskId }: KanbanBoardProps) {
-  const navigate = useNavigate();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [subtasks, setSubtasks] = useState<Subtask[]>([]);
   const [loading, setLoading] = useState(false);
@@ -109,10 +107,6 @@ export function KanbanBoard({ taskId }: KanbanBoardProps) {
     } finally {
       setLoading(false);
     }
-  };
-
-  const handleTaskClick = (taskId: number) => {
-    navigate(`/task/${taskId}`);
   };
 
   const handleSubtaskExecute = async (subtaskId: number) => {
@@ -231,7 +225,6 @@ export function KanbanBoard({ taskId }: KanbanBoardProps) {
             tasks={backlogTasks}
             subtasks={backlogSubtasks}
             onCreateTask={() => setCreateDialogOpen(true)}
-            onTaskClick={handleTaskClick}
             onSubtaskExecute={handleSubtaskExecute}
             onTaskStatusChange={(taskId, status) => handleDrop(`task-${taskId}`, status)}
           />
@@ -240,7 +233,6 @@ export function KanbanBoard({ taskId }: KanbanBoardProps) {
             status="in_progress"
             tasks={inProgressTasks}
             subtasks={inProgressSubtasks}
-            onTaskClick={handleTaskClick}
             onSubtaskExecute={handleSubtaskExecute}
             onTaskStatusChange={(taskId, status) => handleDrop(`task-${taskId}`, status)}
           />
@@ -249,7 +241,6 @@ export function KanbanBoard({ taskId }: KanbanBoardProps) {
             status="review"
             tasks={reviewTasks}
             subtasks={reviewSubtasks}
-            onTaskClick={handleTaskClick}
             onSubtaskExecute={handleSubtaskExecute}
             onTaskStatusChange={(taskId, status) => handleDrop(`task-${taskId}`, status)}
           />
@@ -258,7 +249,6 @@ export function KanbanBoard({ taskId }: KanbanBoardProps) {
             status="done"
             tasks={doneTasks}
             subtasks={doneSubtasks}
-            onTaskClick={handleTaskClick}
             onTaskStatusChange={(taskId, status) => handleDrop(`task-${taskId}`, status)}
           />
           <CreateTaskDialog

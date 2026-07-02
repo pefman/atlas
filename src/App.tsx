@@ -8,6 +8,7 @@ import { KanbanPage } from '@/pages/KanbanPage';
 import { SettingsPage } from '@/pages/SettingsPage';
 import { DashboardPage } from '@/pages/DashboardPage';
 import { TaskDetail } from '@/components/tasks/TaskDetail';
+import { SubtaskDetail } from '@/components/tasks/SubtaskDetail';
 import { AgentDetail } from '@/components/agents/AgentDetail';
 import { Agent } from '@/types';
 import { Button } from '@/components/ui/button';
@@ -15,11 +16,18 @@ import { X } from 'lucide-react';
 import { Toaster } from '@/components/ui/sonner';
 import { CommandPalette } from '@/components/ui/command-palette';
 import { AppPage } from '@/components/layout/AppPage';
+import { AIStatusIndicator } from '@/components/AIStatusIndicator';
 
 function TaskDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   return <TaskDetail taskId={parseInt(id!)} onBack={() => navigate(-1)} />;
+}
+
+function SubtaskDetailPage() {
+  const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
+  return <SubtaskDetail subtaskId={parseInt(id!)} onBack={() => navigate(-1)} />;
 }
 
 function App() {
@@ -55,12 +63,14 @@ function App() {
                 <Route path="/tasks" element={<DashboardPage />} />
                 <Route path="/settings" element={<SettingsPage />} />
                 <Route path="/task/:id" element={<TaskDetailPage />} />
+                <Route path="/subtask/:id" element={<SubtaskDetailPage />} />
               </Routes>
             )}
           </SidebarInset>
         </SidebarProvider>
         <Toaster />
         <CommandPalette open={commandPaletteOpen} setOpen={setCommandPaletteOpen} />
+        <AIStatusIndicator />
       </Router>
     </NotificationProvider>
   );

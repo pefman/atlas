@@ -11,7 +11,6 @@ interface KanbanColumnProps {
   onCreateTask?: () => void;
   onExecute?: (subtaskId: number) => void;
   onSubtaskExecute?: (subtaskId: number) => void;
-  onTaskClick?: (taskId: number) => void;
   onTaskStatusChange?: (taskId: number, status: Task['status']) => void;
 }
 
@@ -36,7 +35,7 @@ const statusColors: Record<string, string> = {
   done: 'text-[var(--status-success-foreground)]',
 };
 
-export function KanbanColumn({ title, status, tasks = [], subtasks, onCreateTask, onExecute, onSubtaskExecute, onTaskClick, onTaskStatusChange }: KanbanColumnProps) {
+export function KanbanColumn({ title, status, tasks = [], subtasks, onCreateTask, onExecute, onSubtaskExecute, onTaskStatusChange }: KanbanColumnProps) {
   const totalCount = tasks.length + subtasks.length;
 
   return (
@@ -63,7 +62,6 @@ export function KanbanColumn({ title, status, tasks = [], subtasks, onCreateTask
           <KanbanCard
             key={task.id}
             task={task}
-            onTaskClick={onTaskClick}
             onTaskStatusChange={onTaskStatusChange}
           />
         ))}

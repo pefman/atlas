@@ -115,8 +115,9 @@ export function SettingsForm() {
       }
       const data = await res.json();
       if (!data.success) throw new Error(data.error || 'Test failed');
-      setTestResult({ success: true, message: `Connection successful! Response: ${data.response}` });
-      toast.success(`Connection successful! Response: ${data.response}`);
+      const responseText = data.response?.content || 'OK';
+      setTestResult({ success: true, message: `Connection successful! Response: ${responseText}` });
+      toast.success(`Connection successful! Response: ${responseText}`);
     } catch (err) {
       clearTimeout(timeoutId);
       const message = err instanceof Error && err.name !== 'AbortError'

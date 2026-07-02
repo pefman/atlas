@@ -6,16 +6,17 @@ import { useSortable } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import type { Subtask, Task } from '@/types';
 import { priorityColors } from '@/lib/priority';
+import { useNavigate } from 'react-router-dom';
 
 interface KanbanCardProps {
   task?: Task;
   subtask?: Subtask;
   onExecute?: (subtaskId: number) => void;
-  onTaskClick?: (taskId: number) => void;
   onTaskStatusChange?: (taskId: number, status: Task['status']) => void;
 }
 
-export function KanbanCard({ task, subtask, onExecute, onTaskClick, onTaskStatusChange }: KanbanCardProps) {
+export function KanbanCard({ task, subtask, onExecute, onTaskStatusChange }: KanbanCardProps) {
+  const navigate = useNavigate();
   const item = task || subtask;
   if (!item) return null;
 
@@ -32,16 +33,24 @@ export function KanbanCard({ task, subtask, onExecute, onTaskClick, onTaskStatus
     opacity: isDragging ? 0.5 : 1,
   };
 
+  const handleClick = () => {
+    if (isTask) {
+      navigate(`/task/${task.id}`);
+    } else if (subtask) {
+      navigate(`/subtask/${subtask.id}`);
+    }
+  };
+
   return (
     <div
       ref={setNodeRef}
       style={style}
       {...attributes}
       {...listeners}
+      onClick={handleClick}
       className={`group cursor-pointer rounded-lg border bg-card p-3 shadow-sm transition-shadow hover:shadow-md ${
         isTask ? 'border-l-4 border-l-primary' : 'border-dashed border-l-4 border-l-muted-foreground/40 bg-muted/30'
       }`}
-      onClick={() => isTask && onTaskClick?.(task!.id)}
     >
       <div className="mb-2 flex items-center gap-2">
         <Badge variant={isTask ? 'default' : 'secondary'} className="text-[10px] uppercase tracking-wide">

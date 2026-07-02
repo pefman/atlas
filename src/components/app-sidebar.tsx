@@ -1,10 +1,9 @@
-import { Brain, Kanban, Settings, ListTodo, Command, User } from 'lucide-react';
+import { Brain, Kanban, Settings, ListTodo, Command } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
 import { Switch } from '@/components/ui/switch';
 import {
   Sidebar,
   SidebarContent,
-  SidebarFooter,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuItem,
@@ -147,22 +146,6 @@ export function AppSidebar({ openCommandPalette, selectedAgent, onAgentSelect }:
           </div>
         </div>
       </SidebarContent>
-      <SidebarFooter>
-        <div className="flex items-center gap-2 px-4 py-2 border-t">
-          <div className="flex items-center gap-2 flex-1">
-            <div className="h-8 w-8 rounded-full bg-primary flex items-center justify-center">
-              <User className="h-4 w-4 text-primary-foreground" />
-            </div>
-            <div className="flex flex-col">
-              <span className="text-sm font-medium">Admin User</span>
-              <span className="text-xs text-muted-foreground">admin@example.com</span>
-            </div>
-          </div>
-        </div>
-        <p className="text-xs text-muted-foreground px-4 py-2">
-          MVP v0.1
-        </p>
-      </SidebarFooter>
     </Sidebar>
   );
 }

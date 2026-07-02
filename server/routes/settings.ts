@@ -82,10 +82,10 @@ router.post('/test', testSettings);
 // Get available models
 router.get('/models', async (req: Request, res: Response) => {
   try {
-    const settings = db.prepare('SELECT * FROM settings ORDER BY id DESC LIMIT 1').get() as any;
+    let settings = db.prepare('SELECT * FROM settings ORDER BY id DESC LIMIT 1').get() as any;
     
     if (!settings) {
-      return res.json([]);
+      settings = { provider: 'ollama', endpoint: 'http://localhost:11434', model: 'llama3' };
     }
     
     let aiProvider: AIProvider;
