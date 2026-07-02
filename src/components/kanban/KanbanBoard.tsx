@@ -3,7 +3,8 @@ import { KanbanColumn } from './KanbanColumn';
 import { KanbanDndProvider } from './KanbanDndProvider';
 import { CreateTaskDialog } from './CreateTaskDialog';
 import { MetricsStrip } from '@/components/metrics/MetricsStrip';
-import { Loader2, Search, X } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Loader2, Search, X, Plus } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import type { Task, Subtask, SubtaskStatus } from '@/types';
@@ -12,6 +13,7 @@ import { useKanbanStream } from '@/contexts/KanbanStreamContext';
 
 interface KanbanBoardProps {
   taskId?: number;
+  projectId?: number | null;
 }
 
 interface Filters {
@@ -21,7 +23,7 @@ interface Filters {
   priority: string | null;
 }
 
-export function KanbanBoard({ taskId }: KanbanBoardProps) {
+export function KanbanBoard({ taskId, projectId = null }: KanbanBoardProps) {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [subtasks, setSubtasks] = useState<Subtask[]>([]);
   const [loading, setLoading] = useState(false);
@@ -32,19 +34,22 @@ export function KanbanBoard({ taskId }: KanbanBoardProps) {
 
   useEffect(() => {
     fetchData();
-  }, [taskId, reconnectCount]);
+  }, [taskId, reconnectCount, projectId]);
 
   const fetchData = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
       
-      const tasksResponse = await fetch('/api/tasks');
+      const tasksQuery = projectId ? `?project_id=${projectId}` : '';
+      const tasksResponse = await fetch(`/api/tasks${tasksQuery}`);
       if (!tasksResponse.ok) throw new Error(`HTTP ${tasksResponse.status}`);
       const tasksData = await tasksResponse.json();
       setTasks(tasksData);
       
-      const endpoint = taskId ? `/api/subtasks/task/${taskId}` : '/api/subtasks';
+      const endpoint = taskId
+        ? `/api/subtasks/task/${taskId}`
+        : `/api/subtasks${projectId ? `?project_id=${projectId}` : ''}`;
       const subtasksResponse = await fetch(endpoint);
       if (!subtasksResponse.ok) throw new Error(`HTTP ${subtasksResponse.status}`);
       const subtasksData = await subtasksResponse.json();
@@ -55,7 +60,7 @@ export function KanbanBoard({ taskId }: KanbanBoardProps) {
     } finally {
       setLoading(false);
     }
-  }, [taskId]);
+  }, [taskId, projectId]);
 
   const filteredSubtasks = useMemo(() => {
     return subtasks.filter(s => {
@@ -306,7 +311,6 @@ export function KanbanBoard({ taskId }: KanbanBoardProps) {
             status="backlog"
             tasks={backlogTasks}
             subtasks={backlogSubtasksWithFailed}
-            onCreateTask={() => setCreateDialogOpen(true)}
             onSubtaskExecute={handleSubtaskExecute}
             onTaskStatusChange={(taskId, status) => handleDrop(`task-${taskId}`, status)}
           />
@@ -337,8 +341,20 @@ export function KanbanBoard({ taskId }: KanbanBoardProps) {
             open={createDialogOpen}
             onOpenChange={setCreateDialogOpen}
             onCreated={fetchData}
+            projectId={projectId}
           />
         </KanbanDndProvider>
+      </div>
+
+      <div className="fixed bottom-6 right-6">
+        <Button
+          size="lg"
+          className="shadow-lg"
+          onClick={() => setCreateDialogOpen(true)}
+        >
+          <Plus className="h-5 w-5 mr-2" />
+          Add Task
+        </Button>
       </div>
     </div>
   );

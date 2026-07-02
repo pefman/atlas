@@ -9,6 +9,8 @@ import { SettingsPage } from '@/pages/SettingsPage';
 import { DashboardPage } from '@/pages/DashboardPage';
 import { MessagesPage } from '@/pages/MessagesPage';
 import { AgentsPage } from '@/pages/AgentsPage';
+import { ProjectsPage } from '@/pages/ProjectsPage';
+import { ReposPage } from '@/pages/ReposPage';
 import { TaskDetail } from '@/components/tasks/TaskDetail';
 import { SubtaskDetail } from '@/components/tasks/SubtaskDetail';
 import { AgentDetail } from '@/components/agents/AgentDetail';
@@ -16,7 +18,6 @@ import { Agent } from '@/types';
 import { Button } from '@/components/ui/button';
 import { X } from 'lucide-react';
 import { Toaster } from '@/components/ui/sonner';
-import { CommandPalette } from '@/components/ui/command-palette';
 import { AppPage } from '@/components/layout/AppPage';
 import { AIStatusIndicator } from '@/components/AIStatusIndicator';
 import { KanbanStreamProvider } from '@/contexts/KanbanStreamContext';
@@ -72,7 +73,6 @@ function AgentDetailPage() {
 }
 
 function App() {
-  const [commandPaletteOpen, setCommandPaletteOpen] = useState(false);
   const [selectedAgent, setSelectedAgent] = useState<Agent | null>(null);
 
   return (
@@ -81,7 +81,6 @@ function App() {
         <Router>
           <SidebarProvider>
             <AppSidebar 
-              openCommandPalette={() => setCommandPaletteOpen(true)} 
               selectedAgent={selectedAgent}
               onAgentSelect={setSelectedAgent}
             />
@@ -91,6 +90,8 @@ function App() {
                 <Route path="/" element={<KanbanPage />} />
                 <Route path="/kanban" element={<KanbanPage />} />
                 <Route path="/tasks" element={<DashboardPage />} />
+                <Route path="/projects" element={<ProjectsPage />} />
+                <Route path="/repos" element={<ReposPage />} />
                 <Route path="/messages" element={<MessagesPage />} />
                 <Route path="/agents" element={<AgentsPage />} />
                 <Route path="/settings" element={<SettingsPage />} />
@@ -101,7 +102,6 @@ function App() {
             </SidebarInset>
           </SidebarProvider>
           <Toaster />
-          <CommandPalette open={commandPaletteOpen} setOpen={setCommandPaletteOpen} />
           <AIStatusIndicator />
         </Router>
       </KanbanStreamProvider>

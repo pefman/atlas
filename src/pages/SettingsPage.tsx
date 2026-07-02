@@ -19,7 +19,7 @@ export function SettingsPage() {
         const data = await res.json();
         throw new Error(data.error || 'Failed to reset');
       }
-      toast.success('All data cleared');
+      toast.success('Execution data cleared. Agent templates preserved.');
       setResetDialogOpen(false);
       window.location.reload();
     } catch (err) {
@@ -45,7 +45,7 @@ export function SettingsPage() {
         </CardHeader>
         <CardContent className="space-y-4">
           <p className="text-sm text-muted-foreground">
-            This will permanently delete all tasks, subtasks, messages, agents, execution logs, and notifications. AI provider settings will be preserved. Agents will be re-created on next server restart.
+            This will permanently delete projects, repo assets, tasks, subtasks, messages, execution logs, and notifications. AI provider settings and agent templates are preserved.
           </p>
           <Button
             variant="destructive"
@@ -62,7 +62,7 @@ export function SettingsPage() {
                   Confirm Reset
                 </DialogTitle>
                 <DialogDescription>
-                  This will permanently delete all tasks, subtasks, messages, agents, execution logs, and notifications. AI provider settings will be preserved. Agents will be re-created on next server restart. This action cannot be undone.
+                  This will permanently delete projects, repo assets, tasks, subtasks, messages, execution logs, and notifications. AI provider settings and agent templates are preserved. This action cannot be undone.
                 </DialogDescription>
               </DialogHeader>
               <DialogFooter>

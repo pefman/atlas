@@ -8,13 +8,17 @@ const router = Router();
 
 // Get all subtasks (no task filter)
 router.get('/', (req: Request, res: Response) => {
+  const parsedProjectId = typeof req.query.project_id === 'string' ? parseInt(req.query.project_id, 10) : NaN;
+  const projectId = Number.isFinite(parsedProjectId) ? parsedProjectId : null;
+
   const subtasks = db.prepare(`
     SELECT s.*, r.name as role_name, t.title as task_title
     FROM subtasks s
     JOIN roles r ON s.role_id = r.id
     JOIN tasks t ON s.task_id = t.id
+    WHERE (? IS NULL OR t.project_id = ?)
     ORDER BY s.created_at ASC
-  `).all();
+  `).all(projectId, projectId);
   
   res.json(subtasks);
 });

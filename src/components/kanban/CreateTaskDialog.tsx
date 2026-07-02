@@ -15,9 +15,10 @@ interface CreateTaskDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onCreated: () => void;
+  projectId?: number | null;
 }
 
-export function CreateTaskDialog({ open, onOpenChange, onCreated }: CreateTaskDialogProps) {
+export function CreateTaskDialog({ open, onOpenChange, onCreated, projectId = null }: CreateTaskDialogProps) {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [status, setStatus] = useState<'backlog' | 'in_progress'>('backlog');
@@ -31,7 +32,12 @@ export function CreateTaskDialog({ open, onOpenChange, onCreated }: CreateTaskDi
       const res = await fetch('/api/tasks', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title, description, status })
+        body: JSON.stringify({
+          title,
+          description,
+          status,
+          project_id: projectId,
+        })
       });
 
       if (!res.ok) throw new Error('Failed to create task');

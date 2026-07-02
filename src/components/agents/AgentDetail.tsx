@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Agent } from '@/types';
 import { Button } from '@/components/ui/button';
 import { AgentEditDialog } from './AgentEditDialog';
+import { Badge } from '@/components/ui/badge';
 import {
   Dialog,
   DialogContent,
@@ -17,12 +18,46 @@ interface AgentDetailProps {
   onClose: () => void;
 }
 
+function roleLabel(name: string): string {
+  return name
+    .split('_')
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ');
+}
+
+function formatPrompt(prompt: string): string {
+  return prompt.replace(/\\n/g, '\n').trim();
+}
+
+function agentStatusLabel(status: Agent['status']): string {
+  switch (status) {
+    case 'reading_email':
+      return 'Reading mail';
+    case 'answering_email':
+      return 'Answering mail';
+    case 'decomposing':
+      return 'Decomposing';
+    case 'executing':
+      return 'Executing';
+    case 'reviewing':
+      return 'Reviewing';
+    case 'completed':
+      return 'Completed';
+    case 'error':
+      return 'Error';
+    default:
+      return 'Idle';
+  }
+}
+
 export function AgentDetail({ agent, onClose }: AgentDetailProps) {
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
   if (!agent) return null;
+
+  const promptText = formatPrompt(agent.system_prompt);
 
   const handleDelete = async () => {
     try {
@@ -37,39 +72,49 @@ export function AgentDetail({ agent, onClose }: AgentDetailProps) {
 
   return (
     <>
-      <div className="p-4 border-t">
-        <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold">{agent.name}</h3>
+      <div className="space-y-4 border-t p-4">
+        <div className="flex items-start justify-between gap-3">
+          <div className="space-y-1">
+            <h3 className="text-lg font-semibold">{roleLabel(agent.name)}</h3>
+            <p className="font-mono text-xs text-muted-foreground">{agent.name}</p>
+          </div>
           <Button variant="ghost" size="icon" onClick={onClose} aria-label="Close agent details">
             <X className="h-4 w-4" />
           </Button>
         </div>
 
-        <div className="space-y-3">
-          <div>
+        <div className="grid gap-3 md:grid-cols-3">
+          <div className="rounded-md border bg-card p-3">
             <label className="text-xs text-muted-foreground">Status</label>
-            <p className="text-sm capitalize">{agent.status}</p>
-          </div>
-
-          <div>
-            <label className="text-xs text-muted-foreground">Description</label>
-            <p className="text-sm">{agent.description}</p>
-          </div>
-
-          <div>
-            <label className="text-xs text-muted-foreground">Current Task</label>
-            <p className="text-sm">{agent.current_task || 'None'}</p>
-          </div>
-
-          <div>
-            <label className="text-xs text-muted-foreground">System Prompt</label>
-            <div className="text-xs bg-muted p-2 rounded max-h-[200px] overflow-y-auto">
-              {agent.system_prompt}
+            <div className="mt-1">
+              <Badge variant="secondary">{agentStatusLabel(agent.status)}</Badge>
             </div>
+          </div>
+
+          <div className="rounded-md border bg-card p-3 md:col-span-2">
+            <label className="text-xs text-muted-foreground">Description</label>
+            <p className="mt-1 text-sm leading-relaxed">{agent.description || 'No description'}</p>
+          </div>
+
+          <div className="rounded-md border bg-card p-3 md:col-span-3">
+            <label className="text-xs text-muted-foreground">Current Task</label>
+            <p className="mt-1 text-sm">{agent.current_task || 'None'}</p>
           </div>
         </div>
 
-        <div className="flex gap-2 mt-4">
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <label className="text-xs text-muted-foreground">System Prompt</label>
+            <Badge variant="secondary" className="font-mono text-[10px]">
+              {promptText.length} chars
+            </Badge>
+          </div>
+          <pre className="max-h-[420px] overflow-y-auto rounded-md border bg-muted/40 p-4 font-mono text-xs leading-6 whitespace-pre-wrap break-words">
+            {promptText || 'No system prompt'}
+          </pre>
+        </div>
+
+        <div className="mt-2 flex gap-2">
           <Button size="sm" onClick={() => setIsEditOpen(true)}>Edit</Button>
           {agent.name !== 'ceo' && (
             <Button size="sm" variant="destructive" onClick={() => setDeleteDialogOpen(true)}>

@@ -25,8 +25,17 @@ interface ClarificationPayload {
   reason?: string;
 }
 
+interface ToolCall {
+  tool: string;
+  query: string;
+  maxResults: number;
+}
+
 const MAX_ATTEMPTS = 3;
 const DECOMP_MAX_ATTEMPTS = 3;
+const MAX_TOOL_ROUNDS = 1;
+const DEFAULT_SEARCH_RESULTS = 5;
+const MAX_SEARCH_RESULTS = 8;
 const CEO_ASSIGNABLE_ROLES = [
   'product_manager',
   'tech_lead',
@@ -44,6 +53,7 @@ class Scheduler {
   private retryTimers = new Map<number, NodeJS.Timeout>();
   private ceoWorkerInterval: NodeJS.Timeout | null = null;
   private ceoAttempts = new Map<number, number>();
+  private replyingThreadIds = new Set<number>();
 
   constructor() {
     this.queues.set('high', []);
@@ -155,6 +165,8 @@ class Scheduler {
   private startCEOWorker(): void {
     this.ceoWorkerInterval = setInterval(async () => {
       try {
+        await this.maybeNotifyCeoReadyForBacklog();
+        await this.processAgentInbox();
         await this.processNextBacklog();
       } catch (error) {
         console.error('Scheduler CEO worker error:', error);
@@ -162,9 +174,336 @@ class Scheduler {
     }, 5000);
   }
 
+  private async processAgentInbox(): Promise<void> {
+    const pendingThread = db.prepare(`
+      SELECT
+        mt.*,
+        r.name as role_name,
+        r.system_prompt,
+        s.status as subtask_status,
+        s.title as subtask_title,
+        s.description as subtask_description,
+        t.title as task_title,
+        t.description as task_description,
+        p.name as project_name,
+        p.folder_path as project_folder_path,
+        (
+          SELECT MAX(m.created_at)
+          FROM messages m
+          WHERE m.thread_id = mt.id AND m.sender_type = 'user'
+        ) as last_user_message_at,
+        (
+          SELECT MAX(m.created_at)
+          FROM messages m
+          WHERE m.thread_id = mt.id AND m.sender_type = 'agent'
+        ) as last_agent_message_at
+      FROM message_threads mt
+      JOIN roles r ON r.id = mt.role_id
+      LEFT JOIN subtasks s ON s.id = mt.subtask_id
+      LEFT JOIN tasks t ON t.id = mt.task_id
+      LEFT JOIN projects p ON p.id = t.project_id
+      WHERE mt.status IN ('open', 'awaiting_agent')
+        AND mt.created_by = 'user'
+        AND (
+          mt.subtask_id IS NULL
+          OR s.status IN ('done', 'failed', 'review')
+        )
+        AND EXISTS (
+          SELECT 1
+          FROM messages m
+          WHERE m.thread_id = mt.id AND m.sender_type = 'user'
+        )
+        AND (
+          last_agent_message_at IS NULL
+          OR last_user_message_at > last_agent_message_at
+        )
+      ORDER BY mt.updated_at ASC, mt.id ASC
+      LIMIT 1
+    `).get() as any;
+
+    if (!pendingThread) {
+      return;
+    }
+
+    if (this.replyingThreadIds.has(pendingThread.id)) {
+      return;
+    }
+
+    this.replyingThreadIds.add(pendingThread.id);
+    try {
+      const threadMessages = db.prepare(`
+        SELECT sender_type, content
+        FROM messages
+        WHERE thread_id = ?
+        ORDER BY created_at ASC, id ASC
+      `).all(pendingThread.id) as Array<{ sender_type: string; content: string }>;
+
+      const threadContext = [
+        `Thread subject: ${pendingThread.subject || 'General conversation'}`,
+        pendingThread.project_name ? `Project: ${pendingThread.project_name}` : null,
+        pendingThread.project_folder_path ? `Project folder: ${pendingThread.project_folder_path}` : null,
+        pendingThread.task_id ? `Task ID: ${pendingThread.task_id}` : null,
+        pendingThread.task_title ? `Task title: ${pendingThread.task_title}` : null,
+        pendingThread.task_description ? `Task description: ${pendingThread.task_description}` : null,
+        pendingThread.subtask_id ? `Subtask ID: ${pendingThread.subtask_id}` : null,
+        pendingThread.subtask_title ? `Subtask title: ${pendingThread.subtask_title}` : null,
+        pendingThread.subtask_description ? `Subtask description: ${pendingThread.subtask_description}` : null,
+      ].filter(Boolean).join('\n');
+
+      const conversation: Array<{ role: 'system' | 'user' | 'assistant'; content: string }> = [
+        {
+          role: 'system',
+          content: `${pendingThread.system_prompt || ''}\n\nYou are replying in an internal team chat. Format your reply like a short professional email (greeting, concise body, clear closing line). Keep replies concise, practical, and directly answer the user's latest message. Use the provided task/subtask/project context as source of truth when present and do not ask for those details again unless they are truly missing. Never output tool calls, JSON tool payloads, command payloads, or any structured function-calling format; respond with plain text only.`,
+        },
+        {
+          role: 'user',
+          content: `Conversation context:\n${threadContext}`,
+        },
+      ];
+
+      for (const msg of threadMessages) {
+        conversation.push({
+          role: msg.sender_type === 'user' ? 'user' : 'assistant',
+          content: msg.content,
+        });
+      }
+
+      const { provider } = await this.getProvider();
+      const isAnyToolCallPayload = (output: string): boolean => {
+        const text = (output || '').trim();
+        if (!text) return false;
+
+        // Catch partial/truncated tool-call payloads that are not valid JSON.
+        const lowered = text.toLowerCase();
+        if (
+          lowered.includes('"type":"tool_call"') ||
+          lowered.includes("'type':'tool_call'") ||
+          lowered.includes('"tool":"') ||
+          lowered.includes("'tool':'") ||
+          lowered.includes('"arguments":{') ||
+          lowered.includes("'arguments':{") ||
+          lowered.includes('{"type":"tool_call"') ||
+          lowered.startsWith('{"type":"tool_call"') ||
+          lowered.startsWith('{"tool":"')
+        ) {
+          return true;
+        }
+
+        const candidates: string[] = [text];
+        const fencedJson = text.match(/```(?:json)?\s*([\s\S]*?)```/i);
+        if (fencedJson?.[1]) {
+          candidates.push(fencedJson[1].trim());
+        }
+
+        const objectMatch = text.match(/\{[\s\S]*\}/);
+        if (objectMatch?.[0]) {
+          candidates.push(objectMatch[0]);
+        }
+
+        for (const candidate of candidates) {
+          try {
+            const parsed = JSON.parse(candidate) as Record<string, any>;
+            const type = String(parsed.type || '').trim();
+            const tool = String(parsed.tool || parsed.name || '').trim();
+            if (type === 'tool_call' || tool.length > 0) {
+              return true;
+            }
+          } catch {
+            continue;
+          }
+        }
+
+        return false;
+      };
+
+      let replyContent = '';
+      for (let attempt = 0; attempt < 2; attempt++) {
+        const response = await provider.chat(conversation);
+        await this.updateAgentStats(pendingThread.role_id, response.usage);
+
+        const candidate = (response.content || '').trim();
+
+        if (isAnyToolCallPayload(candidate)) {
+          conversation.push({ role: 'assistant', content: candidate });
+          conversation.push({
+            role: 'user',
+            content: 'Do not output tool calls or JSON. Reply directly to the user in plain text only.',
+          });
+          if (attempt === 0) {
+            continue;
+          }
+          replyContent = 'Hi,\n\nThanks for your message. I can answer directly here in plain text and do not need tool commands for this conversation.\n\nBest regards,';
+          break;
+        }
+
+        replyContent = candidate;
+        break;
+      }
+
+      replyContent = replyContent || 'Acknowledged.';
+
+      const messageResult = db.prepare(`
+        INSERT INTO messages (thread_id, role_id, sender_type, content, task_id, subtask_id, requires_response, is_read)
+        VALUES (?, ?, 'agent', ?, ?, ?, 0, 0)
+      `).run(
+        pendingThread.id,
+        pendingThread.role_id,
+        replyContent,
+        pendingThread.task_id || null,
+        pendingThread.subtask_id || null
+      );
+
+      db.prepare(`
+        UPDATE message_threads
+        SET status = 'open', updated_at = datetime('now')
+        WHERE id = ?
+      `).run(pendingThread.id);
+
+      const preview = replyContent.length > 180 ? `${replyContent.slice(0, 177)}...` : replyContent;
+      db.prepare(`
+        INSERT INTO notifications (sender_role, message, task_id, thread_id)
+        VALUES (?, ?, ?, ?)
+      `).run(pendingThread.role_name || 'agent', preview, pendingThread.task_id || null, pendingThread.id);
+
+      const thread = db.prepare(`
+        SELECT mt.*, r.name as role_name
+        FROM message_threads mt
+        LEFT JOIN roles r ON r.id = mt.role_id
+        WHERE mt.id = ?
+      `).get(pendingThread.id);
+      const message = db.prepare('SELECT * FROM messages WHERE id = ?').get(messageResult.lastInsertRowid as number);
+
+      execEventBus.emit('notification', {
+        id: Date.now(),
+        sender_role: pendingThread.role_name || 'agent',
+        message: preview,
+        task_id: pendingThread.task_id || null,
+        thread_id: pendingThread.id,
+        is_read: 0,
+        created_at: new Date().toISOString(),
+      });
+      execEventBus.emit('message_created', { thread_id: pendingThread.id, message, thread });
+      execEventBus.emit('message_updated', { thread_id: pendingThread.id, thread });
+    } catch (error) {
+      logSystem(`Failed to process agent inbox thread ${pendingThread.id}: ${error instanceof Error ? error.message : String(error)}`);
+    } finally {
+      this.replyingThreadIds.delete(pendingThread.id);
+    }
+  }
+
+  private async maybeNotifyCeoReadyForBacklog(): Promise<void> {
+    const ceoRole = db.prepare('SELECT id, name FROM roles WHERE name = ?').get('ceo') as { id: number; name: string } | undefined;
+    if (!ceoRole) {
+      return;
+    }
+
+    const backlogSummary = db.prepare(`
+      SELECT id, title
+      FROM tasks
+      WHERE status = 'backlog'
+      ORDER BY
+        CASE priority
+          WHEN 'high' THEN 1
+          WHEN 'medium' THEN 2
+          WHEN 'low' THEN 3
+          ELSE 2
+        END ASC,
+        created_at ASC
+      LIMIT 1
+    `).get() as { id: number; title: string } | undefined;
+
+    if (!backlogSummary) {
+      return;
+    }
+
+    const ceoBusy = db.prepare(`
+      SELECT 1
+      FROM tasks
+      WHERE status = 'in_progress' AND ceo_status = 'decomposing'
+      LIMIT 1
+    `).get() as { 1: number } | undefined;
+
+    if (ceoBusy) {
+      return;
+    }
+
+    const existingThread = db.prepare(`
+      SELECT mt.id
+      FROM message_threads mt
+      WHERE mt.role_id = ?
+        AND mt.subtask_id IS NULL
+        AND mt.category = 'general'
+        AND mt.created_by = 'agent'
+        AND mt.subject = 'CEO ready to start backlog work'
+        AND mt.status IN ('open', 'awaiting_user', 'awaiting_agent')
+      ORDER BY mt.updated_at DESC, mt.id DESC
+      LIMIT 1
+    `).get(ceoRole.id) as { id: number } | undefined;
+
+    if (existingThread) {
+      return;
+    }
+
+    const backlogCountRow = db.prepare(`
+      SELECT COUNT(*) as count
+      FROM tasks
+      WHERE status = 'backlog'
+    `).get() as { count: number };
+
+    const backlogCount = backlogCountRow.count;
+    const prompt = `I am ready to work. There ${backlogCount === 1 ? 'is' : 'are'} ${backlogCount} task${backlogCount === 1 ? '' : 's'} in backlog. Should I start "${backlogSummary.title}" now?`;
+
+    const threadResult = db.prepare(`
+      INSERT INTO message_threads (role_id, task_id, subtask_id, subject, category, status, created_by)
+      VALUES (?, ?, NULL, 'CEO ready to start backlog work', 'general', 'awaiting_user', 'agent')
+    `).run(ceoRole.id, backlogSummary.id);
+
+    const threadId = threadResult.lastInsertRowid as number;
+
+    const messageResult = db.prepare(`
+      INSERT INTO messages (thread_id, role_id, sender_type, content, task_id, subtask_id, requires_response, is_read)
+      VALUES (?, ?, 'agent', ?, ?, NULL, 1, 0)
+    `).run(threadId, ceoRole.id, prompt, backlogSummary.id);
+
+    const preview = prompt.length > 180 ? `${prompt.slice(0, 177)}...` : prompt;
+    db.prepare(`
+      INSERT INTO notifications (sender_role, message, task_id, thread_id)
+      VALUES (?, ?, ?, ?)
+    `).run(ceoRole.name, preview, backlogSummary.id, threadId);
+
+    const thread = db.prepare(`
+      SELECT mt.*, r.name as role_name
+      FROM message_threads mt
+      LEFT JOIN roles r ON r.id = mt.role_id
+      WHERE mt.id = ?
+    `).get(threadId);
+    const message = db.prepare('SELECT * FROM messages WHERE id = ?').get(messageResult.lastInsertRowid as number);
+
+    logCEO('Asked user whether to start backlog task', {
+      task_id: backlogSummary.id,
+      task_title: backlogSummary.title,
+      thread_id: threadId,
+      backlog_count: backlogCount,
+    });
+
+    execEventBus.emit('notification', {
+      id: Date.now(),
+      sender_role: ceoRole.name,
+      message: preview,
+      task_id: backlogSummary.id,
+      thread_id: threadId,
+      is_read: 0,
+      created_at: new Date().toISOString(),
+    });
+    execEventBus.emit('message_created', { thread_id: threadId, message, thread });
+    execEventBus.emit('message_updated', { thread_id: threadId, thread });
+  }
+
   private async processNextBacklog(): Promise<void> {
     const task = db.prepare(`
-      SELECT * FROM tasks 
+      SELECT t.*, p.name as project_name, p.folder_path as project_folder_path
+      FROM tasks t
+      LEFT JOIN projects p ON p.id = t.project_id
       WHERE status = 'in_progress' AND ceo_status = 'idle'
       ORDER BY 
         CASE priority 
@@ -199,9 +538,13 @@ class Scheduler {
       return;
     }
 
+    const projectContext = task.project_name
+      ? `\nProject: ${task.project_name}\nProject folder: ${task.project_folder_path || 'n/a'}`
+      : '';
+
     const messages = [
       { role: 'system' as const, content: ceoRole.system_prompt },
-      { role: 'user' as const, content: `Task: ${task.title}\n\nDescription: ${task.description}` },
+      { role: 'user' as const, content: `Task: ${task.title}\n\nDescription: ${task.description}${projectContext}` },
     ];
 
     try {
@@ -317,6 +660,12 @@ class Scheduler {
     }
 
     const role = db.prepare('SELECT * FROM roles WHERE id = ?').get(subtask.role_id) as any;
+    const taskContext = db.prepare(`
+      SELECT t.id, t.title, p.name as project_name, p.folder_path as project_folder_path
+      FROM tasks t
+      LEFT JOIN projects p ON p.id = t.project_id
+      WHERE t.id = ?
+    `).get(subtask.task_id) as any;
     const taskId = subtask.task_id;
     const { provider, name: providerName } = await this.getProvider();
 
@@ -325,20 +674,79 @@ class Scheduler {
       logSubtask('Started', { id: item.id, title: item.title }, providerName);
       execEventBus.emit('subtask_start', { subtask_id: item.id, task_id: taskId, title: item.title });
 
-      const messages = [
+      const projectContext = taskContext?.project_name
+        ? `\n\nProject: ${taskContext.project_name}\nProject folder: ${taskContext.project_folder_path || 'n/a'}`
+        : '';
+
+      let conversation: Array<{ role: 'system' | 'user' | 'assistant'; content: string }> = [
         { role: 'system' as const, content: role?.system_prompt || '' },
-        { role: 'user' as const, content: subtask.description },
+        { role: 'user' as const, content: `${subtask.description}${projectContext}` },
       ];
+
+      // Append prior conversation from message thread, if any
+      const existingThread = db.prepare(`
+        SELECT id FROM message_threads
+        WHERE subtask_id = ? AND status IN ('awaiting_agent', 'open')
+        ORDER BY id DESC
+        LIMIT 1
+      `).get(item.id) as { id: number } | undefined;
+
+      if (existingThread) {
+        const threadMessages = db.prepare(`
+          SELECT sender_type, content
+          FROM messages
+          WHERE thread_id = ?
+          ORDER BY created_at ASC, id ASC
+        `).all(existingThread.id) as Array<{ sender_type: string; content: string }>;
+
+        for (const msg of threadMessages) {
+          conversation.push({
+            role: msg.sender_type === 'user' ? 'user' : 'assistant',
+            content: msg.content,
+          });
+        }
+      }
 
       const logEntry = db.prepare(`
         INSERT INTO execution_logs (subtask_id, step, role_id, input, output)
         VALUES (?, ?, ?, ?, ?)
-      `).run(item.id, item.failureCount, role?.id || 0, JSON.stringify(messages), '');
+      `).run(item.id, item.failureCount, role?.id || 0, JSON.stringify(conversation), '');
 
-      const chatResponse = await provider.chat(messages);
-      const output = chatResponse.content;
+      let output = '';
 
-      await this.updateAgentStats(role?.id || 0, chatResponse.usage);
+      for (let round = 0; round <= MAX_TOOL_ROUNDS; round++) {
+        const chatResponse = await provider.chat(conversation);
+        await this.updateAgentStats(role?.id || 0, chatResponse.usage);
+
+        const candidate = chatResponse.content;
+        const toolCall = this.parseToolCall(candidate);
+        if (!toolCall || round >= MAX_TOOL_ROUNDS) {
+          output = candidate;
+          break;
+        }
+
+        const toolResult = await this.executeToolCall(toolCall);
+        db.prepare(`
+          INSERT INTO execution_logs (subtask_id, step, role_id, input, output)
+          VALUES (?, ?, ?, ?, ?)
+        `).run(
+          item.id,
+          item.failureCount,
+          role?.id || 0,
+          JSON.stringify({ tool: toolCall.tool, query: toolCall.query, max_results: toolCall.maxResults }),
+          toolResult
+        );
+
+        conversation.push({ role: 'assistant', content: candidate });
+        conversation.push({
+          role: 'user',
+          content: `Tool result (search_web):\n${toolResult}\n\nUse this information to complete the subtask.`,
+        });
+      }
+
+      if (!output) {
+        output = 'No output produced.';
+      }
 
       const clarification = this.detectClarificationRequest(output);
 
@@ -458,6 +866,151 @@ class Scheduler {
     }
 
     return { needed: false, content: output };
+  }
+
+  private parseToolCall(output: string): ToolCall | null {
+    const text = (output || '').trim();
+    if (!text) return null;
+
+    const candidates: string[] = [text];
+    const fencedJson = text.match(/```(?:json)?\s*([\s\S]*?)```/i);
+    if (fencedJson?.[1]) {
+      candidates.push(fencedJson[1].trim());
+    }
+
+    const objectMatch = text.match(/\{[\s\S]*\}/);
+    if (objectMatch?.[0]) {
+      candidates.push(objectMatch[0]);
+    }
+
+    for (const candidate of candidates) {
+      try {
+        const parsed = JSON.parse(candidate) as Record<string, any>;
+        const tool = String(parsed.tool || parsed.name || '').trim();
+        const type = String(parsed.type || '').trim();
+        const args = parsed.arguments && typeof parsed.arguments === 'object' ? parsed.arguments : parsed;
+        const query = typeof args.query === 'string' ? args.query.trim() : '';
+        const requestedMax = Number(args.max_results ?? args.maxResults ?? DEFAULT_SEARCH_RESULTS);
+        const maxResults = Number.isFinite(requestedMax)
+          ? Math.max(1, Math.min(MAX_SEARCH_RESULTS, Math.floor(requestedMax)))
+          : DEFAULT_SEARCH_RESULTS;
+
+        if ((type === 'tool_call' || tool.length > 0) && tool === 'search_web' && query.length > 0) {
+          return { tool, query, maxResults };
+        }
+      } catch {
+        continue;
+      }
+    }
+
+    return null;
+  }
+
+  private async executeToolCall(toolCall: ToolCall): Promise<string> {
+    if (toolCall.tool !== 'search_web') {
+      return JSON.stringify({ error: `Unsupported tool: ${toolCall.tool}` }, null, 2);
+    }
+    return this.searchWeb(toolCall.query, toolCall.maxResults);
+  }
+
+  private async searchWeb(query: string, maxResults: number): Promise<string> {
+    const normalizedQuery = query.trim();
+    if (!normalizedQuery) {
+      return JSON.stringify({ error: 'Empty query' }, null, 2);
+    }
+
+    try {
+      const searxResults = await this.searchViaSearxng(normalizedQuery, maxResults);
+      return JSON.stringify({ source: 'searxng', query: normalizedQuery, results: searxResults }, null, 2);
+    } catch (searxError) {
+      try {
+        const ddgResults = await this.searchViaDuckDuckGo(normalizedQuery, maxResults);
+        return JSON.stringify({ source: 'duckduckgo', query: normalizedQuery, results: ddgResults }, null, 2);
+      } catch (ddgError) {
+        return JSON.stringify({
+          error: 'search_failed',
+          query: normalizedQuery,
+          searxng: searxError instanceof Error ? searxError.message : String(searxError),
+          duckduckgo: ddgError instanceof Error ? ddgError.message : String(ddgError),
+        }, null, 2);
+      }
+    }
+  }
+
+  private async searchViaSearxng(query: string, maxResults: number): Promise<Array<{ title: string; url: string; snippet: string }>> {
+    const baseUrl = (process.env.SEARXNG_BASE_URL || 'https://searx.be').replace(/\/$/, '');
+    const url = `${baseUrl}/search?format=json&language=en&safesearch=1&q=${encodeURIComponent(query)}`;
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(`SearxNG HTTP ${response.status}`);
+    }
+
+    const data = await response.json() as { results?: Array<{ title?: string; url?: string; content?: string }> };
+    const results = (data.results || [])
+      .filter((item) => item.url && item.title)
+      .slice(0, maxResults)
+      .map((item) => ({
+        title: item.title || 'Untitled',
+        url: item.url || '',
+        snippet: (item.content || '').slice(0, 320),
+      }));
+
+    if (results.length === 0) {
+      throw new Error('SearxNG returned no results');
+    }
+
+    return results;
+  }
+
+  private async searchViaDuckDuckGo(query: string, maxResults: number): Promise<Array<{ title: string; url: string; snippet: string }>> {
+    const url = `https://api.duckduckgo.com/?q=${encodeURIComponent(query)}&format=json&no_redirect=1&no_html=1&skip_disambig=1`;
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(`DuckDuckGo HTTP ${response.status}`);
+    }
+
+    const data = await response.json() as {
+      AbstractText?: string;
+      AbstractURL?: string;
+      Heading?: string;
+      RelatedTopics?: Array<{ Text?: string; FirstURL?: string; Topics?: Array<{ Text?: string; FirstURL?: string }> }>;
+    };
+
+    const results: Array<{ title: string; url: string; snippet: string }> = [];
+    if (data.AbstractURL && data.AbstractText) {
+      results.push({
+        title: data.Heading || 'DuckDuckGo Result',
+        url: data.AbstractURL,
+        snippet: data.AbstractText.slice(0, 320),
+      });
+    }
+
+    const appendTopic = (topic: { Text?: string; FirstURL?: string }) => {
+      if (!topic.FirstURL || !topic.Text) return;
+      results.push({
+        title: topic.Text.slice(0, 100),
+        url: topic.FirstURL,
+        snippet: topic.Text.slice(0, 320),
+      });
+    };
+
+    for (const topic of data.RelatedTopics || []) {
+      if (topic.Topics && Array.isArray(topic.Topics)) {
+        for (const nested of topic.Topics) {
+          appendTopic(nested);
+          if (results.length >= maxResults) break;
+        }
+      } else {
+        appendTopic(topic);
+      }
+      if (results.length >= maxResults) break;
+    }
+
+    const limited = results.slice(0, maxResults);
+    if (limited.length === 0) {
+      throw new Error('DuckDuckGo returned no results');
+    }
+    return limited;
   }
 
   private parseClarificationPayload(text: string): ClarificationPayload {

@@ -17,9 +17,10 @@ import { Button } from '@/components/ui/button';
 
 interface TaskListProps {
   onTaskSelect: (taskId: number) => void;
+  projectId?: number | null;
 }
 
-export function TaskList({ onTaskSelect }: TaskListProps) {
+export function TaskList({ onTaskSelect, projectId = null }: TaskListProps) {
   const navigate = useNavigate();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [loading, setLoading] = useState(true);
@@ -28,13 +29,14 @@ export function TaskList({ onTaskSelect }: TaskListProps) {
   const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
-    fetchTasks();
-  }, []);
+    void fetchTasks();
+  }, [projectId]);
 
   const fetchTasks = async () => {
     try {
       setLoading(true);
-      const response = await fetch('/api/tasks');
+      const query = projectId ? `?project_id=${projectId}` : '';
+      const response = await fetch(`/api/tasks${query}`);
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const data = await response.json();
       setTasks(data);

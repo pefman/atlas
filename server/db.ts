@@ -29,6 +29,7 @@ db.exec(`
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     title TEXT NOT NULL,
     description TEXT NOT NULL,
+    project_id INTEGER,
     role_id INTEGER NOT NULL,
     priority TEXT NOT NULL DEFAULT 'medium',
     status TEXT NOT NULL DEFAULT 'backlog',
@@ -36,7 +37,44 @@ db.exec(`
     decomposed_at TEXT,
     created_at TEXT NOT NULL DEFAULT (datetime('now')),
     updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+    FOREIGN KEY (project_id) REFERENCES projects(id),
     FOREIGN KEY (role_id) REFERENCES roles(id)
+  );
+
+  CREATE TABLE IF NOT EXISTS projects (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    name TEXT UNIQUE NOT NULL,
+    description TEXT,
+    folder_path TEXT NOT NULL,
+    is_active INTEGER NOT NULL DEFAULT 1,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+  );
+
+  CREATE TABLE IF NOT EXISTS project_repos (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    project_id INTEGER NOT NULL,
+    name TEXT NOT NULL,
+    provider TEXT,
+    remote_url TEXT,
+    local_path TEXT,
+    default_branch TEXT NOT NULL DEFAULT 'main',
+    is_active INTEGER NOT NULL DEFAULT 1,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+    FOREIGN KEY (project_id) REFERENCES projects(id)
+  );
+
+  CREATE TABLE IF NOT EXISTS project_repo_public_keys (
+    id INTEGER PRIMARY KEY AUTOINCREMENT,
+    repo_id INTEGER NOT NULL,
+    name TEXT NOT NULL,
+    public_key TEXT NOT NULL,
+    key_type TEXT NOT NULL DEFAULT 'ssh',
+    is_active INTEGER NOT NULL DEFAULT 1,
+    created_at TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+    FOREIGN KEY (repo_id) REFERENCES project_repos(id)
   );
 
   CREATE TABLE IF NOT EXISTS subtasks (
@@ -128,6 +166,13 @@ db.exec(`
     FOREIGN KEY (role_id) REFERENCES roles(id)
   );
 
+  CREATE TABLE IF NOT EXISTS agent_email_activity (
+    role_id INTEGER PRIMARY KEY,
+    last_user_message_at TEXT NOT NULL DEFAULT (datetime('now')),
+    updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+    FOREIGN KEY (role_id) REFERENCES roles(id)
+  );
+
   CREATE TABLE IF NOT EXISTS settings (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     provider TEXT NOT NULL DEFAULT 'ollama',
@@ -144,6 +189,9 @@ const taskColumns = db.pragma("table_info('tasks')") as Array<{ name: string }>;
 if (!taskColumns.find(c => c.name === 'priority')) {
   db.exec("ALTER TABLE tasks ADD COLUMN priority TEXT NOT NULL DEFAULT 'medium'");
 }
+if (!taskColumns.find(c => c.name === 'project_id')) {
+  db.exec("ALTER TABLE tasks ADD COLUMN project_id INTEGER");
+}
 
 const notificationColumns = db.pragma("table_info('notifications')") as Array<{ name: string }>;
 if (!notificationColumns.find(c => c.name === 'thread_id')) {
@@ -156,10 +204,14 @@ if (!messageThreadColumns.find(c => c.name === 'category')) {
 }
 
 db.exec(`
+  CREATE INDEX IF NOT EXISTS idx_tasks_project_id ON tasks(project_id);
+  CREATE INDEX IF NOT EXISTS idx_projects_active_name ON projects(is_active, name);
+  CREATE INDEX IF NOT EXISTS idx_project_repos_project_id ON project_repos(project_id, is_active);
   CREATE INDEX IF NOT EXISTS idx_message_threads_role_status ON message_threads(role_id, status, updated_at);
   CREATE INDEX IF NOT EXISTS idx_message_threads_category_status ON message_threads(category, status, updated_at);
   CREATE INDEX IF NOT EXISTS idx_messages_thread_created ON messages(thread_id, created_at);
   CREATE INDEX IF NOT EXISTS idx_messages_unread_agent ON messages(sender_type, is_read, created_at);
+  CREATE INDEX IF NOT EXISTS idx_agent_email_activity_updated ON agent_email_activity(updated_at);
 `);
 
 type CanonicalRole = {
@@ -175,6 +227,14 @@ const CLARIFICATION_POLICY =
   '{"type":"clarification_request","needs_clarification":true,"reason":"...","questions":["..."],"missing_fields":["..."]}\n' +
   'Include 1-3 concrete questions.\n' +
   'If enough context exists, proceed with your normal role output.';
+
+const TOOL_POLICY =
+  '\n\nTool policy:\n' +
+  'If current context is not enough and external information is required, you may call the web search tool.\n' +
+  'To call it, return ONLY valid JSON in this shape:\n' +
+  '{"type":"tool_call","tool":"search_web","arguments":{"query":"...","max_results":5}}\n' +
+  'Use concise queries and only call tools when necessary.\n' +
+  'After tool results are provided, return your normal final answer.';
 
 const CANONICAL_ROLES: CanonicalRole[] = [
   {
@@ -212,37 +272,37 @@ const CANONICAL_ROLES: CanonicalRole[] = [
     name: 'product_manager',
     description: 'Defines scope, requirements, and acceptance criteria',
     systemPrompt:
-      'You are a Product Manager. Clarify requirements, define user value, identify constraints, and produce acceptance criteria that engineering and QA can execute against. Be specific and decision-oriented.' + CLARIFICATION_POLICY,
+      'You are a Product Manager. Clarify requirements, define user value, identify constraints, and produce acceptance criteria that engineering and QA can execute against. Be specific and decision-oriented.' + TOOL_POLICY + CLARIFICATION_POLICY,
   },
   {
     name: 'tech_lead',
     description: 'Owns technical architecture and implementation strategy',
     systemPrompt:
-      'You are a Tech Lead. Design robust technical approaches, identify dependencies and risks, and provide implementation guidance with clear tradeoffs. Prioritize maintainability, performance, and delivery speed.' + CLARIFICATION_POLICY,
+      'You are a Tech Lead. Design robust technical approaches, identify dependencies and risks, and provide implementation guidance with clear tradeoffs. Prioritize maintainability, performance, and delivery speed.' + TOOL_POLICY + CLARIFICATION_POLICY,
   },
   {
     name: 'frontend_developer',
     description: 'Builds UI, client interactions, and frontend integration',
     systemPrompt:
-      'You are a Frontend Developer. Implement user-facing interfaces with clear UX, responsive behavior, and accessible interactions. Produce practical UI implementation steps and clean component-level output.' + CLARIFICATION_POLICY,
+      'You are a Frontend Developer. Implement user-facing interfaces with clear UX, responsive behavior, and accessible interactions. Produce practical UI implementation steps and clean component-level output.' + TOOL_POLICY + CLARIFICATION_POLICY,
   },
   {
     name: 'backend_developer',
     description: 'Builds APIs, business logic, and data integrations',
     systemPrompt:
-      'You are a Backend Developer. Implement reliable server-side logic, API endpoints, and data workflows. Focus on correctness, security, observability, and maintainable code structure.' + CLARIFICATION_POLICY,
+      'You are a Backend Developer. Implement reliable server-side logic, API endpoints, and data workflows. Focus on correctness, security, observability, and maintainable code structure.' + TOOL_POLICY + CLARIFICATION_POLICY,
   },
   {
     name: 'qa_engineer',
     description: 'Verifies quality through test strategy and validation',
     systemPrompt:
-      'You are a QA Engineer. Create concise test plans, define edge cases, and verify acceptance criteria. Highlight functional risks, regression concerns, and release readiness with clear pass/fail reasoning.' + CLARIFICATION_POLICY,
+      'You are a QA Engineer. Create concise test plans, define edge cases, and verify acceptance criteria. Highlight functional risks, regression concerns, and release readiness with clear pass/fail reasoning.' + TOOL_POLICY + CLARIFICATION_POLICY,
   },
   {
     name: 'seo_specialist',
     description: 'Optimizes discoverability, metadata, and search performance',
     systemPrompt:
-      'You are an SEO Specialist. Improve search visibility through metadata, information architecture, keyword intent alignment, and technical SEO recommendations. Provide concrete, prioritized SEO actions.' + CLARIFICATION_POLICY,
+      'You are an SEO Specialist. Improve search visibility through metadata, information architecture, keyword intent alignment, and technical SEO recommendations. Provide concrete, prioritized SEO actions.' + TOOL_POLICY + CLARIFICATION_POLICY,
   },
 ];
 

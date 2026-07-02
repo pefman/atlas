@@ -1,20 +1,18 @@
-import { useEffect, useState } from 'react';
-import { Brain, Kanban, Settings, ListTodo, Command, MessageSquare, Users } from 'lucide-react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { Brain, Kanban, Settings, ListTodo, MessageSquare, Users, FolderKanban, GitBranch, ChevronLeft, ChevronRight } from 'lucide-react';
 import { NavLink } from 'react-router-dom';
-import { Switch } from '@/components/ui/switch';
 import {
   Sidebar,
   SidebarContent,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuItem,
+  useSidebar,
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
-import { useTheme } from '@/context/ThemeProvider';
 import { Agent } from '@/types';
 import { AgentSidebarItem } from './agents/AgentSidebarItem';
 import { Badge } from '@/components/ui/badge';
-import { useNotifications } from '@/components/notifications/NotificationProvider';
 
 const items = [
   {
@@ -26,6 +24,16 @@ const items = [
     title: 'Tasks',
     url: '/tasks',
     icon: ListTodo,
+  },
+  {
+    title: 'Projects',
+    url: '/projects',
+    icon: FolderKanban,
+  },
+  {
+    title: 'Repos',
+    url: '/repos',
+    icon: GitBranch,
   },
   {
     title: 'Messages',
@@ -45,65 +53,131 @@ const items = [
 ];
 
 interface AppSidebarProps {
-  openCommandPalette: () => void;
   selectedAgent: Agent | null;
   onAgentSelect: (agent: Agent | null) => void;
 }
 
-export function AppSidebar({ openCommandPalette }: AppSidebarProps) {
-  const { isDark, toggleTheme } = useTheme();
+export function AppSidebar({}: AppSidebarProps) {
+  const { state, toggleSidebar } = useSidebar();
   const [agents, setAgents] = useState<Agent[]>([]);
-  const { unreadCount } = useNotifications();
+  const [messageUnreadCount, setMessageUnreadCount] = useState(0);
+  const pollingRef = useRef<number | null>(null);
 
-  useEffect(() => {
-    let mounted = true;
-    fetch('/api/agents')
-      .then((res) => {
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        return res.json();
-      })
-      .then((data: Agent[]) => {
-        if (mounted) {
-          setAgents(data);
-        }
-      })
-      .catch((error) => {
-        console.error('Failed to load agents for sidebar:', error);
-      });
-
-    return () => {
-      mounted = false;
-    };
+  const fetchAgents = useCallback(async () => {
+    try {
+      const res = await fetch('/api/agents');
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json() as Agent[];
+      setAgents(data);
+    } catch (error) {
+      console.error('Failed to load agents for sidebar:', error);
+    }
   }, []);
 
+  const fetchMessageUnreadCount = useCallback(async () => {
+    try {
+      const res = await fetch('/api/messages/threads');
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json() as { unreadCount?: number };
+      setMessageUnreadCount(data.unreadCount || 0);
+    } catch (error) {
+      console.error('Failed to load unread message count for sidebar:', error);
+    }
+  }, []);
+
+  const refreshSidebarData = useCallback(async () => {
+    await Promise.all([fetchAgents(), fetchMessageUnreadCount()]);
+  }, [fetchAgents, fetchMessageUnreadCount]);
+
+  const startPolling = useCallback(() => {
+    if (pollingRef.current !== null) return;
+    pollingRef.current = window.setInterval(() => {
+      if (document.visibilityState === 'visible') {
+        void refreshSidebarData();
+      }
+    }, 2000);
+  }, [refreshSidebarData]);
+
+  const stopPolling = useCallback(() => {
+    if (pollingRef.current !== null) {
+      clearInterval(pollingRef.current);
+      pollingRef.current = null;
+    }
+  }, []);
+
+  useEffect(() => {
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        void refreshSidebarData();
+        startPolling();
+      } else {
+        stopPolling();
+      }
+    };
+
+    const onFocus = () => {
+      void refreshSidebarData();
+    };
+
+    void refreshSidebarData();
+    if (document.visibilityState === 'visible') {
+      startPolling();
+    }
+
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    window.addEventListener('focus', onFocus);
+
+    return () => {
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+      window.removeEventListener('focus', onFocus);
+      stopPolling();
+    };
+  }, [refreshSidebarData, startPolling, stopPolling]);
+
+  const sortedAgents = useMemo(() => {
+    return [...agents].sort((a, b) => {
+      const aActive = a.status === 'idle' ? 1 : 0;
+      const bActive = b.status === 'idle' ? 1 : 0;
+      if (aActive !== bActive) return aActive - bActive;
+
+      const aTime = a.latestActivity?.created_at ? new Date(a.latestActivity.created_at).getTime() : 0;
+      const bTime = b.latestActivity?.created_at ? new Date(b.latestActivity.created_at).getTime() : 0;
+      if (aTime !== bTime) return bTime - aTime;
+
+      return a.name.localeCompare(b.name);
+    });
+  }, [agents]);
+
+  const activeAgents = useMemo(
+    () => sortedAgents.filter((a) => a.status !== 'idle' || Boolean(a.current_task?.trim())),
+    [sortedAgents]
+  );
+
+  const leadershipAgents = useMemo(
+    () => activeAgents.filter((a) => a.name === 'ceo'),
+    [activeAgents]
+  );
+
+  const executionAgents = useMemo(
+    () => activeAgents.filter((a) => a.name !== 'ceo'),
+    [activeAgents]
+  );
+
   return (
-    <Sidebar>
+    <Sidebar collapsible="icon">
       <SidebarHeader>
         <div className="space-y-3 px-2 py-1">
           <div className="flex items-center gap-2">
             <Brain className="h-6 w-6" />
-            <span className="text-lg font-semibold">AI Task Executor</span>
+            {state === 'expanded' && (
+              <span className="text-lg font-semibold">aTLAS</span>
+            )}
           </div>
-          <div className="flex items-center justify-between">
-            <p className="text-xs text-muted-foreground">Workspace</p>
-            <div className="flex items-center gap-2">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={openCommandPalette}
-                className="h-8 w-8"
-              >
-                <Command className="h-4 w-4" />
-              </Button>
-              <Switch checked={isDark} onCheckedChange={toggleTheme} aria-label="Toggle dark mode" />
-            </div>
-          </div>
+          <div className="flex items-center justify-between"></div>
         </div>
       </SidebarHeader>
       <SidebarContent>
-        <div className="px-4 pb-1 pt-2">
-          <h3 className="text-xs font-semibold text-muted-foreground">Navigation</h3>
-        </div>
+
         <SidebarMenu className="px-2">
           {items.map((item) => (
             <SidebarMenuItem key={item.title}>
@@ -119,53 +193,77 @@ export function AppSidebar({ openCommandPalette }: AppSidebarProps) {
                 }
               >
                 <item.icon />
-                <span>{item.title}</span>
-                {item.title === 'Messages' && unreadCount > 0 && (
-                  <Badge variant="destructive" className="ml-auto h-5 min-w-5 px-1">
-                    {unreadCount}
-                  </Badge>
+                {state === 'expanded' && (
+                  <>
+                    <span>{item.title}</span>
+                    {item.title === 'Messages' && messageUnreadCount > 0 && (
+                      <Badge variant="destructive" className="ml-auto h-5 min-w-5 px-1">
+                        {messageUnreadCount}
+                      </Badge>
+                    )}
+                  </>
                 )}
               </NavLink>
             </SidebarMenuItem>
           ))}
         </SidebarMenu>
 
-        <div className="px-4 py-2">
-          <div className="mb-3">
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="text-xs font-semibold text-muted-foreground">Leadership</h3>
-              <Badge variant="secondary" className="text-xs">
-                {agents.filter(a => a.name === 'ceo').length}
-              </Badge>
-            </div>
-            <div className="space-y-1">
-              {agents.filter(a => a.name === 'ceo').map((agent) => (
-                <AgentSidebarItem
-                  key={agent.id}
-                  agent={agent}
-                />
-              ))}
-            </div>
+        {state === 'expanded' && (
+          <div className="px-4 py-2">
+            {activeAgents.length === 0 ? (
+              <p className="rounded-md border border-dashed p-3 text-xs text-muted-foreground">
+                No agents are currently working.
+              </p>
+            ) : (
+              <>
+                <div className="mb-3">
+                  <div className="mb-2 flex items-center justify-between">
+                    <h3 className="text-xs font-semibold text-muted-foreground">Leadership</h3>
+                    <Badge variant="secondary" className="text-xs">
+                      {leadershipAgents.length}
+                    </Badge>
+                  </div>
+                  <div className="space-y-1">
+                    {leadershipAgents.map((agent) => (
+                      <AgentSidebarItem
+                        key={agent.id}
+                        agent={agent}
+                      />
+                    ))}
+                  </div>
+                </div>
+
+                <div className="mb-3">
+                  <div className="mb-2 flex items-center justify-between">
+                    <h3 className="text-xs font-semibold text-muted-foreground">Execution Agents</h3>
+                    <Badge variant="secondary" className="text-xs">
+                      {executionAgents.length}
+                    </Badge>
+                  </div>
+                  <div className="space-y-1">
+                    {executionAgents.map((agent) => (
+                      <AgentSidebarItem
+                        key={agent.id}
+                        agent={agent}
+                      />
+                    ))}
+                  </div>
+                </div>
+              </>
+            )}
           </div>
-          
-          <div className="mb-3">
-            <div className="flex items-center justify-between mb-2">
-              <h3 className="text-xs font-semibold text-muted-foreground">Execution Agents</h3>
-              <Badge variant="secondary" className="text-xs">
-                {agents.filter(a => a.name !== 'ceo').length}
-              </Badge>
-            </div>
-            <div className="space-y-1">
-              {agents.filter(a => a.name !== 'ceo').map((agent) => (
-                <AgentSidebarItem
-                  key={agent.id}
-                  agent={agent}
-                />
-              ))}
-            </div>
-          </div>
-        </div>
+        )}
       </SidebarContent>
+      <div className="p-2">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={toggleSidebar}
+          className="w-full justify-center"
+        >
+          {state === 'expanded' ? <ChevronLeft className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+        </Button>
+      </div>
     </Sidebar>
   );
 }

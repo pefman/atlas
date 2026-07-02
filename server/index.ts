@@ -13,6 +13,8 @@ import kanbanStreamRouter from './routes/kanbanStream';
 import activityRouter from './routes/activity';
 import metricsRouter from './routes/metrics';
 import messagesRouter from './routes/messages';
+import projectsRouter from './routes/projects';
+import reposRouter from './routes/repos';
 import { db } from './db';
 import { scheduler } from './scheduler';
 
@@ -48,6 +50,8 @@ app.use('/api/kanban/stream', kanbanStreamRouter);
 app.use('/api/activity', activityRouter);
 app.use('/api/metrics', metricsRouter);
 app.use('/api/messages', messagesRouter);
+app.use('/api/projects', projectsRouter);
+app.use('/api/repos', reposRouter);
 
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`Server running on http://0.0.0.0:${PORT}`);

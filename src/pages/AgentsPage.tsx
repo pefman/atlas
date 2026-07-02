@@ -16,6 +16,27 @@ function roleLabel(name: string): string {
     .join(' ');
 }
 
+function agentStatusLabel(status: Agent['status']): string {
+  switch (status) {
+    case 'reading_email':
+      return 'Reading mail';
+    case 'answering_email':
+      return 'Answering mail';
+    case 'decomposing':
+      return 'Decomposing';
+    case 'executing':
+      return 'Executing';
+    case 'reviewing':
+      return 'Reviewing';
+    case 'completed':
+      return 'Completed';
+    case 'error':
+      return 'Error';
+    default:
+      return 'Idle';
+  }
+}
+
 export function AgentsPage() {
   const navigate = useNavigate();
   const [agents, setAgents] = useState<Agent[]>([]);
@@ -25,9 +46,11 @@ export function AgentsPage() {
   useEffect(() => {
     let mounted = true;
 
-    const load = async () => {
+    const load = async (showLoading: boolean = false) => {
       try {
-        setLoading(true);
+        if (showLoading) {
+          setLoading(true);
+        }
         const response = await fetch('/api/agents?canonical=true');
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const data = await response.json() as Agent[];
@@ -37,15 +60,20 @@ export function AgentsPage() {
       } catch (error) {
         console.error('Failed to load agents library:', error);
       } finally {
-        if (mounted) {
+        if (mounted && showLoading) {
           setLoading(false);
         }
       }
     };
 
-    void load();
+    void load(true);
+    const interval = setInterval(() => {
+      void load(false);
+    }, 2000);
+
     return () => {
       mounted = false;
+      clearInterval(interval);
     };
   }, []);
 
@@ -114,7 +142,7 @@ export function AgentsPage() {
                   </p>
 
                   <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                    <Badge variant="secondary">Status {agent.status}</Badge>
+                    <Badge variant="secondary">{agentStatusLabel(agent.status)}</Badge>
                     {agent.stats && (
                       <Badge variant="secondary">
                         Calls {agent.stats.totalCalls}

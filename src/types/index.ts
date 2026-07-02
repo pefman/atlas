@@ -1,6 +1,14 @@
 export type TaskStatus = 'backlog' | 'in_progress' | 'review' | 'done';
 
-export type AgentStatus = 'idle' | 'decomposing' | 'executing' | 'reviewing' | 'completed' | 'error';
+export type AgentStatus =
+  | 'idle'
+  | 'decomposing'
+  | 'executing'
+  | 'reading_email'
+  | 'answering_email'
+  | 'reviewing'
+  | 'completed'
+  | 'error';
 
 export type StepType = 'decompose' | 'assign' | 'execute' | 'review';
 
@@ -25,10 +33,41 @@ export interface Task {
   id: number;
   title: string;
   description: string;
+  project_id?: number | null;
+  project_name?: string;
+  project_folder_path?: string;
+  role_name?: string;
   role_id: number;
   status: TaskStatus;
   ceo_status: 'idle' | 'decomposing' | 'decomposed' | 'error';
   decomposed_at?: string;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface Project {
+  id: number;
+  name: string;
+  description?: string | null;
+  folder_path: string;
+  is_active: number;
+  task_count?: number;
+  repo_count?: number;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface RepoAsset {
+  id: number;
+  project_id: number;
+  project_name?: string;
+  project_folder_path?: string;
+  name: string;
+  provider?: string | null;
+  remote_url?: string | null;
+  local_path?: string | null;
+  default_branch: string;
+  is_active: number;
   created_at: string;
   updated_at: string;
 }

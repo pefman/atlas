@@ -29,12 +29,15 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
   const markAsRead = useCallback(async (id: number) => {
     try {
       await fetch(`/api/notifications/${id}/read`, { method: 'PATCH' });
+      setNotifications(prev => {
+        const updated = prev.map(n => n.id === id ? { ...n, is_read: true } as Notification : n);
+        return updated;
+      });
+      setUnreadCount(prev => Math.max(0, prev - 1));
     } catch (error) {
       console.error('Failed to mark notification as read:', error);
-    } finally {
-      await fetchNotifications();
     }
-  }, [fetchNotifications]);
+  }, []);
 
   useEffect(() => {
     fetchNotifications();

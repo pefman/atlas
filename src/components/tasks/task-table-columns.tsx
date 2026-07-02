@@ -38,6 +38,14 @@ export function taskTableColumns(_props: TaskTableColumnsProps): ColumnDef<Task>
       },
     },
     {
+      accessorKey: "project_name",
+      header: "Project",
+      cell: ({ row }: any) => {
+        const projectName = row.original.project_name;
+        return <span className="text-sm">{projectName || 'Global'}</span>;
+      },
+    },
+    {
       accessorKey: "created_at",
       header: "Created",
       cell: ({ row }: any) => {

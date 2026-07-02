@@ -7,6 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Loader2, Plus } from 'lucide-react';
 import { toast } from 'sonner';
+import type { Project } from '@/types';
 
 interface CreateTaskDialogProps {
   onTaskCreated: () => void;
@@ -17,6 +18,26 @@ export function CreateTaskDialog({ onTaskCreated }: CreateTaskDialogProps) {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [creating, setCreating] = useState(false);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [projectId, setProjectId] = useState<string>('none');
+
+  const fetchProjects = async () => {
+    try {
+      const response = await fetch('/api/projects');
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const data = await response.json() as Project[];
+      setProjects(data);
+    } catch (error) {
+      console.error('Failed to load projects for task dialog:', error);
+    }
+  };
+
+  const handleOpenChange = (nextOpen: boolean) => {
+    setOpen(nextOpen);
+    if (nextOpen) {
+      void fetchProjects();
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,7 +47,11 @@ export function CreateTaskDialog({ onTaskCreated }: CreateTaskDialogProps) {
       const response = await fetch('/api/tasks', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ title, description }),
+        body: JSON.stringify({
+          title,
+          description,
+          project_id: projectId !== 'none' ? parseInt(projectId) : null,
+        }),
       });
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       
@@ -34,6 +59,7 @@ export function CreateTaskDialog({ onTaskCreated }: CreateTaskDialogProps) {
       setOpen(false);
       setTitle('');
       setDescription('');
+      setProjectId('none');
       onTaskCreated();
     } catch (error) {
       console.error('Failed to create task:', error);
@@ -44,7 +70,7 @@ export function CreateTaskDialog({ onTaskCreated }: CreateTaskDialogProps) {
   };
 
   return (
-    <Dialog open={open} onOpenChange={setOpen}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger>
         <Button>
           <Plus className="h-4 w-4 mr-1" /> Create Task
@@ -79,6 +105,29 @@ export function CreateTaskDialog({ onTaskCreated }: CreateTaskDialogProps) {
               rows={4}
               required
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label>Project (optional)</Label>
+            <Select value={projectId} onValueChange={(value) => setProjectId(value ?? 'none')}>
+              <SelectTrigger>
+                <SelectValue placeholder="Select project">
+                  {(val: string) => {
+                    if (val === 'none') return 'No project';
+                    const p = projects.find(p => String(p.id) === val);
+                    return p?.name || val;
+                  }}
+                </SelectValue>
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="none">No project</SelectItem>
+                {projects.map((project) => (
+                  <SelectItem key={project.id} value={String(project.id)}>
+                    {project.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           
           <Button type="submit" disabled={creating || !title || !description}>

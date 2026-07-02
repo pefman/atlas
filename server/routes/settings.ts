@@ -119,19 +119,21 @@ router.delete('/', (req: Request, res: Response) => {
   res.json({ success: true });
 });
 
-// Reset all data (tasks, subtasks, messages, roles, outputs, execution_logs, agent_stats, notifications, activity)
+// Reset execution data while preserving role templates
 router.post('/reset', (req: Request, res: Response) => {
   try {
     const tables = [
+      'project_repos',
+      'projects',
       'tasks',
       'subtasks',
       'outputs',
       'execution_logs',
       'agent_stats',
+      'agent_email_activity',
       'notifications',
       'messages',
       'message_threads',
-      'roles',
     ];
 
     db.exec('PRAGMA foreign_keys = OFF');
@@ -145,7 +147,7 @@ router.post('/reset', (req: Request, res: Response) => {
       }
       db.prepare('COMMIT').run();
       db.exec('PRAGMA foreign_keys = ON');
-      res.json({ success: true, message: 'All data cleared' });
+      res.json({ success: true, message: 'Execution data cleared. Agent templates were preserved.' });
     } catch (err) {
       db.prepare('ROLLBACK').run();
       db.exec('PRAGMA foreign_keys = ON');

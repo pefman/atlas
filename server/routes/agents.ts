@@ -29,8 +29,23 @@ router.get('/', (req: Request, res: Response) => {
   const agents = db.prepare(`
     SELECT r.*, 
            (SELECT t.title FROM tasks t WHERE t.role_id = r.id AND t.status = 'in_progress' LIMIT 1) as current_task_title,
-           CASE WHEN EXISTS (SELECT 1 FROM subtasks s WHERE s.role_id = r.id AND s.status = 'in_progress') THEN 'executing' ELSE 'idle' END as status
+           CASE
+             WHEN a.last_user_message_at IS NOT NULL
+               AND ((julianday('now') - julianday(a.last_user_message_at)) * 86400.0) < 3
+               THEN 'reading_email'
+             WHEN a.last_user_message_at IS NOT NULL
+               AND ((julianday('now') - julianday(a.last_user_message_at)) * 86400.0) < 8
+               THEN 'answering_email'
+             WHEN r.name = 'ceo' AND EXISTS (
+               SELECT 1 FROM tasks t WHERE t.status = 'in_progress' AND t.ceo_status = 'decomposing'
+             ) THEN 'decomposing'
+             WHEN EXISTS (
+               SELECT 1 FROM subtasks s WHERE s.role_id = r.id AND s.status = 'in_progress'
+             ) THEN 'executing'
+             ELSE 'idle'
+           END as status
     FROM roles r
+    LEFT JOIN agent_email_activity a ON a.role_id = r.id
     ORDER BY r.name ASC
   `).all();
   
@@ -54,6 +69,7 @@ router.get('/', (req: Request, res: Response) => {
     
     return {
       ...agent,
+      current_task: agent.current_task_title || null,
       canonical,
       selectable_by_ceo: selectableByCeo,
       stats: stats ? {
@@ -85,24 +101,38 @@ router.get('/', (req: Request, res: Response) => {
 
 // Get agent by ID
 router.get('/:id', (req: Request, res: Response) => {
-  const agent = db.prepare('SELECT * FROM roles WHERE id = ?').get(req.params.id);
+  const agent = db.prepare(`
+    SELECT r.*,
+           (SELECT t.title FROM tasks t WHERE t.role_id = r.id AND t.status = 'in_progress' LIMIT 1) as current_task_title,
+           CASE
+             WHEN a.last_user_message_at IS NOT NULL
+               AND ((julianday('now') - julianday(a.last_user_message_at)) * 86400.0) < 3
+               THEN 'reading_email'
+             WHEN a.last_user_message_at IS NOT NULL
+               AND ((julianday('now') - julianday(a.last_user_message_at)) * 86400.0) < 8
+               THEN 'answering_email'
+             WHEN r.name = 'ceo' AND EXISTS (
+               SELECT 1 FROM tasks t WHERE t.status = 'in_progress' AND t.ceo_status = 'decomposing'
+             ) THEN 'decomposing'
+             WHEN EXISTS (
+               SELECT 1 FROM subtasks s WHERE s.role_id = r.id AND s.status = 'in_progress'
+             ) THEN 'executing'
+             ELSE 'idle'
+           END as status
+    FROM roles r
+    LEFT JOIN agent_email_activity a ON a.role_id = r.id
+    WHERE r.id = ?
+  `).get(req.params.id) as any;
   
   if (!agent) {
     res.status(404).json({ error: 'Agent not found' });
     return;
   }
   
-  const currentTask = db.prepare(`
-    SELECT t.title, t.status
-    FROM tasks t
-    WHERE t.role_id = ? AND t.status = 'in_progress'
-    LIMIT 1
-  `).get(req.params.id);
-  
   res.json({
     ...agent,
-    status: currentTask ? 'executing' : 'idle',
-    current_task: currentTask ? currentTask.title : null
+    status: agent.status,
+    current_task: agent.current_task_title || null
   });
 });
 

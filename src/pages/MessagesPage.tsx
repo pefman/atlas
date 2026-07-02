@@ -63,6 +63,21 @@ function threadTitle(thread: MessageThread): string {
   return thread.subject || `Conversation with ${thread.role_name || `Agent #${thread.role_id}`}`;
 }
 
+function isThreadUnread(thread: MessageThread): boolean {
+  return (thread.unread_agent_messages || 0) > 0;
+}
+
+function isCeoReadyThread(thread: MessageThread | null): boolean {
+  if (!thread) return false;
+  return (
+    thread.created_by === 'agent' &&
+    thread.subject === 'CEO ready to start backlog work' &&
+    thread.status === 'awaiting_user' &&
+    Boolean(thread.task_id) &&
+    !thread.subtask_id
+  );
+}
+
 export function MessagesPage() {
   const [threads, setThreads] = useState<MessageThread[]>([]);
   const [selectedThreadId, setSelectedThreadId] = useState<number | null>(null);
@@ -71,8 +86,6 @@ export function MessagesPage() {
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [threadSearch, setThreadSearch] = useState('');
   const [reply, setReply] = useState('');
-  const [loadingThreads, setLoadingThreads] = useState(false);
-  const [loadingThread, setLoadingThread] = useState(false);
 
   const [composeOpen, setComposeOpen] = useState(false);
   const [agents, setAgents] = useState<Agent[]>([]);
@@ -88,7 +101,6 @@ export function MessagesPage() {
 
   const fetchThreads = useCallback(async () => {
     try {
-      setLoadingThreads(true);
       const queryParams = new URLSearchParams();
       if (statusFilter !== 'all') queryParams.set('status', statusFilter);
       if (categoryFilter !== 'all') queryParams.set('category', categoryFilter);
@@ -106,14 +118,11 @@ export function MessagesPage() {
     } catch (error) {
       console.error('Failed to load message threads:', error);
       toast.error('Failed to load message threads');
-    } finally {
-      setLoadingThreads(false);
     }
   }, [selectedThreadId, statusFilter, categoryFilter]);
 
   const fetchThreadDetails = useCallback(async (threadId: number) => {
     try {
-      setLoadingThread(true);
       const response = await fetch(`/api/messages/threads/${threadId}`);
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const data = await response.json() as ThreadDetailsResponse;
@@ -121,14 +130,12 @@ export function MessagesPage() {
       setThreads(prev => prev.map(t => (t.id === data.thread.id ? { ...t, ...data.thread } : t)));
 
       await fetch(`/api/messages/threads/${threadId}/read`, { method: 'POST' });
-      await fetchThreads();
+      setThreads(prev => prev.map(t => (t.id === threadId ? { ...t, unread_agent_messages: 0 } : t)));
     } catch (error) {
       console.error('Failed to load thread details:', error);
       toast.error('Failed to load thread details');
-    } finally {
-      setLoadingThread(false);
     }
-  }, [fetchThreads]);
+  }, []);
 
   const fetchAgents = useCallback(async () => {
     try {
@@ -172,6 +179,42 @@ export function MessagesPage() {
     }
   }, [selectedThreadId, fetchThreadDetails]);
 
+  useEffect(() => {
+    const eventSource = new EventSource('/api/notifications/stream');
+
+    const onNotification = (event: MessageEvent) => {
+      try {
+        const payload = JSON.parse(event.data) as {
+          sender_role?: string;
+          message?: string;
+          thread_id?: number;
+        };
+
+        void fetchThreads();
+
+        if (typeof payload.thread_id === 'number' && selectedThreadId === payload.thread_id) {
+          void fetchThreadDetails(payload.thread_id);
+          return;
+        }
+
+        if (typeof payload.thread_id === 'number') {
+          toast.info(`New message from ${payload.sender_role || 'agent'}`, {
+            description: payload.message || 'Open Messages to view the latest reply.',
+          });
+        }
+      } catch (error) {
+        console.error('Failed to process live notification event:', error);
+      }
+    };
+
+    eventSource.addEventListener('notification', onNotification as EventListener);
+
+    return () => {
+      eventSource.removeEventListener('notification', onNotification as EventListener);
+      eventSource.close();
+    };
+  }, [fetchThreads, fetchThreadDetails, selectedThreadId]);
+
   const visibleThreads = useMemo(() => {
     const query = threadSearch.trim().toLowerCase();
     if (!query) return threads;
@@ -182,6 +225,13 @@ export function MessagesPage() {
       return title.includes(query) || role.includes(query) || message.includes(query);
     });
   }, [threads, threadSearch]);
+
+  const orderedThreads = useMemo(() => {
+    if (!selectedThreadId) return visibleThreads;
+    const selected = visibleThreads.find((t) => t.id === selectedThreadId);
+    if (!selected) return visibleThreads;
+    return [selected, ...visibleThreads.filter((t) => t.id !== selectedThreadId)];
+  }, [visibleThreads, selectedThreadId]);
 
   const visibleSubtasks = useMemo(() => {
     if (!assignedWork || newTaskId === 'none') return [];
@@ -231,8 +281,8 @@ export function MessagesPage() {
     }
   };
 
-  const handleReply = async () => {
-    if (!selectedThreadId || !reply.trim()) {
+  const submitReply = async (content: string) => {
+    if (!selectedThreadId || !content.trim()) {
       return;
     }
 
@@ -240,7 +290,7 @@ export function MessagesPage() {
       const response = await fetch(`/api/messages/threads/${selectedThreadId}/reply`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ sender_type: 'user', content: reply.trim() }),
+        body: JSON.stringify({ sender_type: 'user', content: content.trim() }),
       });
 
       if (!response.ok) {
@@ -250,12 +300,19 @@ export function MessagesPage() {
 
       setReply('');
       await fetchThreadDetails(selectedThreadId);
-      await fetchThreads();
       toast.success('Reply sent');
     } catch (error) {
       console.error('Failed to send reply:', error);
       toast.error(error instanceof Error ? error.message : 'Failed to send reply');
     }
+  };
+
+  const handleReply = async () => {
+    await submitReply(reply);
+  };
+
+  const handleCeoStartDecision = async (shouldStart: boolean) => {
+    await submitReply(shouldStart ? '__CEO_START_TASK__' : '__CEO_DECLINE_TASK__');
   };
 
   const handleRemoveThread = async () => {
@@ -321,15 +378,16 @@ export function MessagesPage() {
         </div>
       }
     >
-      <div className="grid grid-cols-1 gap-4 xl:grid-cols-[360px_minmax(0,1fr)]">
-        <Card>
-          <CardHeader className="space-y-3">
+      <Card className="overflow-hidden">
+        <div className="grid grid-cols-1 2xl:grid-cols-[300px_minmax(0,1fr)]">
+          <div className="border-b 2xl:border-b-0 2xl:border-r">
+            <CardHeader className="space-y-3">
             <div className="flex items-center justify-between">
               <CardTitle className="text-sm">Inbox</CardTitle>
               <Badge variant="secondary">Threads {unreadThreadCount}</Badge>
             </div>
-            <div className="flex items-center gap-2">
-              <div className="relative flex-1">
+            <div className="space-y-2">
+              <div className="relative w-full">
                 <Search className="pointer-events-none absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   value={threadSearch}
@@ -338,78 +396,74 @@ export function MessagesPage() {
                   className="pl-8"
                 />
               </div>
-              <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value ?? 'all')}>
-                <SelectTrigger className="w-[128px]">
-                  <SelectValue placeholder="Status" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All</SelectItem>
-                  <SelectItem value="open">Open</SelectItem>
-                  <SelectItem value="awaiting_user">Awaiting you</SelectItem>
-                  <SelectItem value="awaiting_agent">Awaiting agent</SelectItem>
-                  <SelectItem value="resolved">Resolved</SelectItem>
-                </SelectContent>
-              </Select>
-              <Select value={categoryFilter} onValueChange={(value) => setCategoryFilter(value ?? 'all')}>
-                <SelectTrigger className="w-[148px]">
-                  <SelectValue placeholder="Category" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">All categories</SelectItem>
-                  <SelectItem value="clarification">Clarifications</SelectItem>
-                  <SelectItem value="general">General</SelectItem>
-                </SelectContent>
-              </Select>
+              <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                <Select value={statusFilter} onValueChange={(value) => setStatusFilter(value ?? 'all')}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All</SelectItem>
+                    <SelectItem value="open">Open</SelectItem>
+                    <SelectItem value="awaiting_user">Awaiting you</SelectItem>
+                    <SelectItem value="awaiting_agent">Awaiting agent</SelectItem>
+                    <SelectItem value="resolved">Resolved</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select value={categoryFilter} onValueChange={(value) => setCategoryFilter(value ?? 'all')}>
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="Category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All categories</SelectItem>
+                    <SelectItem value="clarification">Clarifications</SelectItem>
+                    <SelectItem value="general">General</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
-            <CardDescription className="text-xs">
-              Select a thread to view context and reply.
-            </CardDescription>
-            <div className="h-[560px] rounded-lg border">
-              <MessageScroller className="h-[560px] border-0 p-2">
-                {loadingThreads && <p className="text-xs text-muted-foreground">Loading threads...</p>}
-                {!loadingThreads && visibleThreads.length === 0 && (
+            <div className="h-[520px] rounded-lg border">
+              <MessageScroller className="h-[520px] border-0 p-2">
+                {visibleThreads.length === 0 && (
                   <p className="text-xs text-muted-foreground">No threads found.</p>
                 )}
-                {visibleThreads.map((thread) => (
+                {orderedThreads.map((thread) => (
                   <button
                     key={thread.id}
                     onClick={() => setSelectedThreadId(thread.id)}
-                    className={`w-full rounded-lg border p-2 text-left transition-colors ${selectedThreadId === thread.id ? 'border-primary bg-accent/50' : 'bg-background hover:bg-accent/20'}`}
+                    className={`w-full rounded-lg border p-2 text-left transition-colors ${selectedThreadId === thread.id ? 'border-primary bg-accent/50' : isThreadUnread(thread) ? 'border-primary/30 bg-primary/5 hover:bg-primary/10' : 'bg-background hover:bg-accent/20'}`}
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
-                        <p className="truncate text-sm font-medium">{threadTitle(thread)}</p>
-                        <p className="text-xs text-muted-foreground">{thread.role_name || `Agent #${thread.role_id}`}</p>
+                        <div className="flex items-center gap-2">
+                          <span className={`h-2 w-2 rounded-full ${isThreadUnread(thread) ? 'bg-primary' : 'bg-transparent'}`} />
+                          <p className={`truncate text-sm ${isThreadUnread(thread) ? 'font-semibold' : 'font-medium'}`}>
+                            {thread.role_name || `Agent #${thread.role_id}`}
+                          </p>
+                        </div>
                       </div>
-                      <Badge className={statusBadgeClass(thread.status)}>
-                        {thread.status.replace('_', ' ')}
-                      </Badge>
-                    </div>
-                    {thread.last_message && (
-                      <p className="mt-1 line-clamp-2 text-xs text-muted-foreground">{thread.last_message}</p>
-                    )}
-                    <div className="mt-2 flex items-center justify-between text-[11px] text-muted-foreground">
-                      <span>
+                      <span className="text-[11px] text-muted-foreground">
                         {thread.last_message_at
                           ? formatDistanceToNow(new Date(thread.last_message_at), { addSuffix: true })
                           : 'new'}
                       </span>
-                      {(thread.unread_agent_messages || 0) > 0 && (
-                        <Badge variant="secondary">{thread.unread_agent_messages}</Badge>
+                    </div>
+                    <div className="mt-2 flex items-center justify-end text-[11px] text-muted-foreground">
+                      {isThreadUnread(thread) && (
+                        <Badge variant="secondary">Unread {thread.unread_agent_messages}</Badge>
                       )}
                     </div>
                   </button>
                 ))}
               </MessageScroller>
             </div>
-          </CardHeader>
-        </Card>
+            </CardHeader>
+          </div>
 
-        <Card>
-          <CardHeader className="border-b pb-3">
-            <div className="flex items-center justify-between gap-2">
-              <div>
-                <CardTitle className="text-base">
+          <div className="min-w-0">
+            <CardHeader className="border-b pb-3">
+            <div className="flex flex-col gap-3 2xl:flex-row 2xl:items-start 2xl:justify-between">
+              <div className="min-w-0">
+                <CardTitle className="truncate text-base">
                   {selectedThread ? threadTitle(selectedThread) : 'Conversation'}
                 </CardTitle>
                 <CardDescription>
@@ -419,7 +473,7 @@ export function MessagesPage() {
                 </CardDescription>
               </div>
               {selectedThread && (
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2 2xl:justify-end">
                   <Badge className={statusBadgeClass(selectedThread.status)}>
                     {selectedThread.status.replace('_', ' ')}
                   </Badge>
@@ -440,8 +494,8 @@ export function MessagesPage() {
                 </div>
               )}
             </div>
-          </CardHeader>
-          <CardContent className="space-y-3 pt-4">
+            </CardHeader>
+            <CardContent className="space-y-3 pt-4">
             {!selectedThread ? (
               <div className="flex h-[460px] flex-col items-center justify-center rounded-lg border border-dashed text-center">
                 <p className="text-sm font-medium">Pick a thread from the inbox</p>
@@ -454,8 +508,7 @@ export function MessagesPage() {
             ) : (
               <>
                 <MessageScroller className="h-[460px]">
-                  {loadingThread && <p className="text-xs text-muted-foreground">Loading conversation...</p>}
-                  {!loadingThread && messages.length === 0 && (
+                  {messages.length === 0 && (
                     <p className="text-xs text-muted-foreground">No messages yet.</p>
                   )}
 
@@ -524,6 +577,32 @@ export function MessagesPage() {
                         </Message>
                       );
                     })}
+
+                    {isCeoReadyThread(selectedThread) && (
+                      <Message align="start">
+                        <MessageAvatar>
+                          <Avatar size="sm">
+                            <AvatarFallback>AI</AvatarFallback>
+                          </Avatar>
+                        </MessageAvatar>
+                        <MessageContent>
+                          <MessageHeader>Quick decision</MessageHeader>
+                          <Bubble>
+                            <BubbleContent>
+                              <p className="mb-2 text-xs text-muted-foreground">Reply inline with one click:</p>
+                              <div className="flex flex-wrap items-center gap-2">
+                                <Button size="sm" onClick={() => void handleCeoStartDecision(true)}>
+                                  Yes, I'd love that
+                                </Button>
+                                <Button size="sm" variant="outline" onClick={() => void handleCeoStartDecision(false)}>
+                                  No
+                                </Button>
+                              </div>
+                            </BubbleContent>
+                          </Bubble>
+                        </MessageContent>
+                      </Message>
+                    )}
                   </MessageGroup>
                 </MessageScroller>
 
@@ -542,9 +621,10 @@ export function MessagesPage() {
                 </div>
               </>
             )}
-          </CardContent>
-        </Card>
-      </div>
+            </CardContent>
+          </div>
+        </div>
+      </Card>
 
       <Sheet open={composeOpen} onOpenChange={setComposeOpen}>
         <SheetContent side="right" className="sm:max-w-md">

@@ -1,6 +1,5 @@
 import { KanbanCard } from './KanbanCard';
-import { Circle, Plus } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { Circle } from 'lucide-react';
 import type { Task, Subtask } from '@/types';
 
 interface KanbanColumnProps {
@@ -8,7 +7,6 @@ interface KanbanColumnProps {
   status: 'backlog' | 'in_progress' | 'review' | 'done';
   tasks?: Task[];
   subtasks: Subtask[];
-  onCreateTask?: () => void;
   onExecute?: (subtaskId: number) => void;
   onSubtaskExecute?: (subtaskId: number) => void;
   onTaskStatusChange?: (taskId: number, status: Task['status']) => void;
@@ -35,7 +33,7 @@ const statusColors: Record<string, string> = {
   done: 'text-[var(--status-success-foreground)]',
 };
 
-export function KanbanColumn({ title, status, tasks = [], subtasks, onCreateTask, onExecute, onSubtaskExecute, onTaskStatusChange }: KanbanColumnProps) {
+export function KanbanColumn({ title, status, tasks = [], subtasks, onExecute, onSubtaskExecute, onTaskStatusChange }: KanbanColumnProps) {
   const totalCount = tasks.length + subtasks.length;
 
   return (
@@ -47,16 +45,6 @@ export function KanbanColumn({ title, status, tasks = [], subtasks, onCreateTask
         </div>
         <span className="rounded-full bg-background/70 px-2 py-1 text-xs font-medium">{totalCount}</span>
       </div>
-      {onCreateTask && (
-        <Button
-          variant="outline"
-          className="mb-3 h-9 w-full text-xs sm:h-10 sm:text-sm"
-          onClick={onCreateTask}
-        >
-          <Plus className="h-4 w-4 mr-2" />
-          Add Task
-        </Button>
-      )}
       <div className="space-y-3 max-h-[calc(100dvh-20rem)] overflow-y-auto pr-1">
         {tasks.map((task) => (
           <KanbanCard

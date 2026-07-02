@@ -1,5 +1,6 @@
 import { Agent } from '@/types';
 import { formatTokens } from '@/lib/utils';
+import { formatDistanceToNow } from 'date-fns';
 import { useNavigate } from 'react-router-dom';
 
 interface AgentSidebarItemProps {
@@ -12,6 +13,10 @@ const getStatusColor = (status: string) => {
     case 'executing':
     case 'decomposing':
       return 'bg-[var(--status-success-foreground)]';
+    case 'reading_email':
+      return 'bg-[var(--status-info-foreground)]';
+    case 'answering_email':
+      return 'bg-[var(--status-warning-foreground)]';
     case 'reviewing':
       return 'bg-[var(--status-warning-foreground)]';
     case 'error':
@@ -21,30 +26,63 @@ const getStatusColor = (status: string) => {
   }
 };
 
-const getStepTypeLabel = (stepType: string) => {
-  switch (stepType) {
-    case 'decompose':
+const getStatusLabel = (status: string) => {
+  switch (status) {
+    case 'reading_email':
+      return 'Reading mail';
+    case 'answering_email':
+      return 'Answering mail';
+    case 'decomposing':
       return 'Decomposing';
-    case 'assign':
-      return 'Assigning';
-    case 'execute':
+    case 'executing':
       return 'Executing';
-    case 'review':
+    case 'reviewing':
       return 'Reviewing';
+    case 'error':
+      return 'Error';
     default:
-      return stepType;
+      return 'Idle';
   }
+};
+
+const hasToolLeak = (text: string): boolean => {
+  const lowered = (text || '').toLowerCase();
+  if (!lowered) return false;
+
+  return (
+    lowered.includes('tool_call') ||
+    lowered.includes('"tool"') ||
+    lowered.includes('"arguments"') ||
+    lowered.includes('list_directory') ||
+    lowered.includes('"type"')
+  );
+};
+
+const getActivityText = (agent: Agent): string => {
+  if (!agent.latestActivity?.output) return 'No activity yet';
+
+  if (agent.status === 'reading_email') {
+    return 'Reading your message.';
+  }
+
+  if (agent.status === 'answering_email') {
+    return 'Writing a reply.';
+  }
+
+  const output = agent.latestActivity.output.trim();
+  if (hasToolLeak(output)) {
+    return 'Working on the latest request.';
+  }
+
+  return output.length > 80 ? `${output.substring(0, 80)}...` : output;
 };
 
 export function AgentSidebarItem({ agent, onClick }: AgentSidebarItemProps) {
   const navigate = useNavigate();
   const isActive = agent.status !== 'idle';
-  const hasActivity = agent.latestActivity && agent.latestActivity.output;
-  const activityText = hasActivity 
-    ? agent.latestActivity!.output.length > 80 
-      ? agent.latestActivity!.output.substring(0, 80) + '...' 
-      : agent.latestActivity!.output
-    : 'No activity yet';
+  const hasActivity = Boolean(agent.latestActivity);
+  const isEmailStatus = agent.status === 'reading_email' || agent.status === 'answering_email';
+  const activityText = getActivityText(agent);
 
   const handleClick = () => {
     if (onClick) {
@@ -84,10 +122,17 @@ export function AgentSidebarItem({ agent, onClick }: AgentSidebarItemProps) {
           <div className="border-t border-border my-2" />
           <div className="space-y-1">
             <p className="text-xs text-muted-foreground">
-              {getStepTypeLabel(agent.latestActivity!.step_type)} by {agent.latestActivity!.role_name}
+              {getStatusLabel(agent.status)}
             </p>
-            <p className="text-xs line-clamp-2 text-foreground/80">
-              {activityText}
+            {!isEmailStatus && (
+              <p className="text-xs line-clamp-2 text-foreground/80">
+                {activityText}
+              </p>
+            )}
+            <p className="text-[11px] text-muted-foreground">
+              {agent.latestActivity?.created_at
+                ? formatDistanceToNow(new Date(agent.latestActivity.created_at), { addSuffix: true })
+                : 'just now'}
             </p>
           </div>
         </>

@@ -9,12 +9,17 @@ const router = Router();
 
 // Get all tasks
 router.get('/', (req: Request, res: Response) => {
+  const parsedProjectId = typeof req.query.project_id === 'string' ? parseInt(req.query.project_id, 10) : NaN;
+  const projectId = Number.isFinite(parsedProjectId) ? parsedProjectId : null;
+
   const tasks = db.prepare(`
-    SELECT t.*, r.name as role_name
+    SELECT t.*, r.name as role_name, p.name as project_name, p.folder_path as project_folder_path
     FROM tasks t
     JOIN roles r ON t.role_id = r.id
+    LEFT JOIN projects p ON p.id = t.project_id
+    WHERE (? IS NULL OR t.project_id = ?)
     ORDER BY t.created_at DESC
-  `).all();
+  `).all(projectId, projectId);
   
   res.json(tasks);
 });
@@ -22,9 +27,10 @@ router.get('/', (req: Request, res: Response) => {
 // Get task by ID with subtasks
 router.get('/:id', (req: Request, res: Response) => {
   const task = db.prepare(`
-    SELECT t.*, r.name as role_name, r.description as role_description
+    SELECT t.*, r.name as role_name, r.description as role_description, p.name as project_name, p.folder_path as project_folder_path
     FROM tasks t
     JOIN roles r ON t.role_id = r.id
+    LEFT JOIN projects p ON p.id = t.project_id
     WHERE t.id = ?
   `).get(req.params.id);
   
@@ -47,7 +53,7 @@ router.get('/:id', (req: Request, res: Response) => {
 // Create task
 router.post('/', (req: Request, res: Response) => {
   try {
-    const { title, description, priority, role_id, status } = req.body;
+    const { title, description, priority, role_id, status, project_id } = req.body;
     
     if (!title || !description) {
       res.status(400).json({ error: 'Missing required fields' });
@@ -78,6 +84,16 @@ router.post('/', (req: Request, res: Response) => {
       }
       assignedRoleId = role.id;
     }
+
+    let assignedProjectId: number | null = null;
+    if (project_id !== undefined && project_id !== null) {
+      const project = db.prepare('SELECT id FROM projects WHERE id = ?').get(project_id) as { id: number } | undefined;
+      if (!project) {
+        res.status(400).json({ error: 'Invalid project_id. Project not found.' });
+        return;
+      }
+      assignedProjectId = project.id;
+    }
     
     // Validate and default status
     const validStatuses = ['backlog', 'in_progress'];
@@ -90,13 +106,19 @@ router.post('/', (req: Request, res: Response) => {
     const taskPriority = priority || 'medium';
     
     const result = db.prepare(`
-      INSERT INTO tasks (title, description, role_id, priority, status)
-      VALUES (?, ?, ?, ?, ?)
-    `).run(title, description, assignedRoleId, taskPriority, taskStatus);
+      INSERT INTO tasks (title, description, project_id, role_id, priority, status)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `).run(title, description, assignedProjectId, assignedRoleId, taskPriority, taskStatus);
     
     logTask('Created', { title, id: result.lastInsertRowid, role_id: assignedRoleId });
     
-    const task = db.prepare('SELECT * FROM tasks WHERE id = ?').get(result.lastInsertRowid);
+    const task = db.prepare(`
+      SELECT t.*, r.name as role_name, p.name as project_name, p.folder_path as project_folder_path
+      FROM tasks t
+      JOIN roles r ON t.role_id = r.id
+      LEFT JOIN projects p ON p.id = t.project_id
+      WHERE t.id = ?
+    `).get(result.lastInsertRowid);
     
     res.status(201).json(task);
   } catch (err) {

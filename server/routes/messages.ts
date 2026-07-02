@@ -2,10 +2,41 @@ import { Router, Request, Response } from 'express';
 import { db } from '../db';
 import { execEventBus } from '../events';
 import { scheduler } from '../scheduler';
+import { logCEO } from '../lib/logger';
 
 const router = Router();
 
 type SenderType = 'user' | 'agent' | 'system';
+
+const CEO_START_TASK_COMMAND = '__CEO_START_TASK__';
+const CEO_DECLINE_TASK_COMMAND = '__CEO_DECLINE_TASK__';
+
+function markAgentEmailActivity(roleId: number): void {
+  db.prepare(`
+    INSERT INTO agent_email_activity (role_id, last_user_message_at, updated_at)
+    VALUES (?, datetime('now'), datetime('now'))
+    ON CONFLICT(role_id) DO UPDATE SET
+      last_user_message_at = datetime('now'),
+      updated_at = datetime('now')
+  `).run(roleId);
+}
+
+function isAffirmativeReply(content: string): boolean {
+  const normalized = content.trim().toLowerCase();
+  if (!normalized) return false;
+
+  const negativeHints = ['no', 'not now', 'dont', "don't", 'later', 'wait', 'stop'];
+  if (negativeHints.some((hint) => normalized.includes(hint))) {
+    return false;
+  }
+
+  return [
+    /^y(es)?\b/.test(normalized),
+    /^ok(ay)?\b/.test(normalized),
+    /^sure\b/.test(normalized),
+    /\b(go ahead|start|proceed|do it|begin)\b/.test(normalized),
+  ].some(Boolean);
+}
 
 function threadRow(threadId: number) {
   return db.prepare(`
@@ -183,6 +214,8 @@ router.post('/threads', (req: Request, res: Response) => {
     WHERE id = ?
   `).run(threadId);
 
+  markAgentEmailActivity(role.id);
+
   const message = db.prepare('SELECT * FROM messages WHERE id = ?').get(messageResult.lastInsertRowid as number);
   const thread = threadRow(threadId);
 
@@ -223,6 +256,23 @@ router.post('/threads/:id/reply', (req: Request, res: Response) => {
     }
   } else if (senderType === 'user') {
     senderRoleId = thread.role_id;
+    markAgentEmailActivity(thread.role_id);
+  }
+
+  const isCeoReadyThread =
+    senderType === 'user' &&
+    !thread.subtask_id &&
+    !!thread.task_id &&
+    thread.created_by === 'agent' &&
+    thread.subject === 'CEO ready to start backlog work';
+
+  const rawContent = content;
+  let storedContent = content;
+  if (isCeoReadyThread && rawContent === CEO_START_TASK_COMMAND) {
+    storedContent = 'Yes, start the task.';
+  }
+  if (isCeoReadyThread && rawContent === CEO_DECLINE_TASK_COMMAND) {
+    storedContent = 'No, do not start yet.';
   }
 
   const result = db.prepare(`
@@ -232,21 +282,15 @@ router.post('/threads/:id/reply', (req: Request, res: Response) => {
     threadId,
     senderRoleId,
     senderType,
-    content,
+    storedContent,
     thread.task_id || null,
     thread.subtask_id || null,
     requires_response ? 1 : 0
   );
 
-  const nextStatus = senderType === 'user' && thread.status === 'awaiting_user'
+  let nextStatus = senderType === 'user' && thread.status === 'awaiting_user'
     ? 'awaiting_agent'
     : 'open';
-
-  db.prepare(`
-    UPDATE message_threads
-    SET status = ?, updated_at = datetime('now')
-    WHERE id = ?
-  `).run(nextStatus, threadId);
 
   if (senderType === 'user' && thread.subtask_id && thread.status === 'awaiting_user') {
     const subtask = db.prepare('SELECT id, title, priority, status, task_id FROM subtasks WHERE id = ?').get(thread.subtask_id) as any;
@@ -269,6 +313,50 @@ router.post('/threads/:id/reply', (req: Request, res: Response) => {
       execEventBus.emit('task_status_changed', { task_id: task.id, new_status: nextTaskStatus });
     }
   }
+
+  if (isCeoReadyThread && (rawContent === CEO_START_TASK_COMMAND || rawContent === CEO_DECLINE_TASK_COMMAND || isAffirmativeReply(rawContent))) {
+    const wantsStart = rawContent === CEO_START_TASK_COMMAND || isAffirmativeReply(rawContent);
+
+    if (wantsStart) {
+      const startResult = db.prepare(`
+      UPDATE tasks
+      SET status = 'in_progress', ceo_status = 'idle', updated_at = datetime('now')
+      WHERE id = ? AND status = 'backlog'
+    `).run(thread.task_id);
+
+      if (startResult.changes > 0) {
+        execEventBus.emit('task_status_changed', { task_id: thread.task_id, new_status: 'in_progress' });
+        logCEO('User approved CEO backlog start prompt', {
+          task_id: thread.task_id,
+          thread_id: threadId,
+          decision: 'start',
+          source: rawContent === CEO_START_TASK_COMMAND ? 'quick_action' : 'text_reply',
+        });
+      } else {
+        logCEO('User approved backlog start but task was not startable', {
+          task_id: thread.task_id,
+          thread_id: threadId,
+          decision: 'start',
+          source: rawContent === CEO_START_TASK_COMMAND ? 'quick_action' : 'text_reply',
+        });
+      }
+    } else {
+      logCEO('User declined CEO backlog start prompt', {
+        task_id: thread.task_id,
+        thread_id: threadId,
+        decision: 'decline',
+        source: rawContent === CEO_DECLINE_TASK_COMMAND ? 'quick_action' : 'text_reply',
+      });
+    }
+
+    nextStatus = 'resolved';
+  }
+
+  db.prepare(`
+    UPDATE message_threads
+    SET status = ?, updated_at = datetime('now')
+    WHERE id = ?
+  `).run(nextStatus, threadId);
 
   const message = db.prepare('SELECT * FROM messages WHERE id = ?').get(result.lastInsertRowid as number);
   const updatedThread = threadRow(threadId);
