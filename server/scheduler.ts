@@ -1,5 +1,5 @@
 import { db } from './db';
-import { logSubtask, logSubtaskError, logSystem } from './lib/logger';
+import { logCEO, logSubtask, logSubtaskError, logSystem } from './lib/logger';
 import { execEventBus } from './events';
 import { recomputeTaskStatus } from './lib/taskProgress';
 import { OllamaProvider } from './ai/ollama';
@@ -162,7 +162,7 @@ class Scheduler {
 
     const attempts = this.ceoAttempts.get(task.id) || 0;
     if (attempts >= DECOMP_MAX_ATTEMPTS) {
-      logSystem(`Task ${task.id} exceeded max decomposition attempts (${DECOMP_MAX_ATTEMPTS})`);
+      logCEO(`Task ${task.id} exceeded max decomposition attempts (${DECOMP_MAX_ATTEMPTS})`, {});
       db.prepare(`UPDATE tasks SET ceo_status = 'error', updated_at = datetime('now') WHERE id = ?`).run(task.id);
       return;
     }
@@ -172,7 +172,7 @@ class Scheduler {
     execEventBus.emit('task_decomposing', { task_id: task.id });
 
     const { provider, name: providerName } = await this.getProvider();
-    logSystem(`Decomposing task ${task.id}: ${task.title}`);
+    logCEO(`Decomposing task ${task.id}: ${task.title}`, {});
 
     const ceoRole = db.prepare('SELECT * FROM roles WHERE name = ?').get('ceo') as any;
     if (!ceoRole) {
@@ -215,7 +215,7 @@ class Scheduler {
         UPDATE tasks SET ceo_status = 'decomposed', decomposed_at = datetime('now'), updated_at = datetime('now') WHERE id = ?
       `).run(task.id);
 
-      logSystem(`Decomposed task ${task.id}: ${subtasks.length} subtasks`);
+      logCEO(`Decomposed task ${task.id}: ${subtasks.length} subtasks`, {});
       execEventBus.emit('task_decomposed', { task_id: task.id, subtask_count: subtasks.length });
     } catch (error) {
       logSubtaskError(error as Error, { task_id: task.id, title: task.title }, providerName);
@@ -223,7 +223,7 @@ class Scheduler {
       const newAttempts = this.ceoAttempts.get(task.id) || 0;
       if (newAttempts < DECOMP_MAX_ATTEMPTS) {
         const delay = Math.min(Math.pow(2, newAttempts) * 1000, 30000);
-        logSystem(`Auto-retrying decomposition for task ${task.id} in ${delay / 1000}s (attempt ${newAttempts + 1}/${DECOMP_MAX_ATTEMPTS})`);
+        logCEO(`Auto-retrying decomposition for task ${task.id} in ${delay / 1000}s (attempt ${newAttempts + 1}/${DECOMP_MAX_ATTEMPTS})`, {});
         setTimeout(() => {
           this.ceoAttempts.set(task.id, newAttempts + 1);
           void this.processNextBacklog();
