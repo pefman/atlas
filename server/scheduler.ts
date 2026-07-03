@@ -181,6 +181,7 @@ class Scheduler {
         mt.*,
         r.name as role_name,
         r.system_prompt,
+        r.personality,
         s.status as subtask_status,
         s.title as subtask_title,
         s.description as subtask_description,
@@ -251,10 +252,14 @@ class Scheduler {
         pendingThread.subtask_description ? `Subtask description: ${pendingThread.subtask_description}` : null,
       ].filter(Boolean).join('\n');
 
+      const personalityHint = pendingThread.personality
+        ? `\n\nYour email style: ${pendingThread.personality}. Let this shape your tone, word choice, and formality in replies.`
+        : '';
+
       const conversation: Array<{ role: 'system' | 'user' | 'assistant'; content: string }> = [
         {
           role: 'system',
-          content: `${pendingThread.system_prompt || ''}\n\nYou are replying in an internal team chat. Format your reply like a short professional email (greeting, concise body, clear closing line). Keep replies concise, practical, and directly answer the user's latest message. Use the provided task/subtask/project context as source of truth when present and do not ask for those details again unless they are truly missing. Never output tool calls, JSON tool payloads, command payloads, or any structured function-calling format; respond with plain text only.`,
+          content: `${pendingThread.system_prompt || ''}\n\nYou are replying in an internal team chat. Format your reply like a short professional email (greeting, concise body, clear closing line). Keep replies concise, practical, and directly answer the user's latest message.${personalityHint} Never output tool calls, JSON tool payloads, command payloads, or any structured function-calling format; respond with plain text only.`,
         },
         {
           role: 'user',
@@ -1443,7 +1448,7 @@ Example format (showing only first 2 rows, you must output all 32):
     return Buffer.concat([length, typeBuf, data, crc]);
   }
 
-  private async seedPortraits(): Promise<void> {
+  async seedPortraits(): Promise<void> {
     const rolesWithoutPortraits = db.prepare(
       'SELECT id, name FROM roles WHERE portrait = ""'
     ).all() as Array<{ id: number; name: string }>;
