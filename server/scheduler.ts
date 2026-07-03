@@ -1450,7 +1450,7 @@ Example format (showing only first 2 rows, you must output all 32):
 
   async seedPortraits(): Promise<void> {
     const rolesWithoutPortraits = db.prepare(
-      'SELECT id, name FROM roles WHERE portrait = ""'
+      "SELECT id, name FROM roles WHERE portrait = ''"
     ).all() as Array<{ id: number; name: string }>;
 
     if (rolesWithoutPortraits.length === 0) return;
