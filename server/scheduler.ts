@@ -1373,6 +1373,7 @@ Example format (showing only first 2 rows, you must output all 32):
 
     const grid = this.parsePixelGrid(response.content);
     if (!grid) {
+      logSystem(`Portrait generation raw response for ${roleName}: ${response.content.substring(0, 500)}`);
       throw new Error('Failed to parse pixel grid from AI response');
     }
 
@@ -1382,21 +1383,51 @@ Example format (showing only first 2 rows, you must output all 32):
   private parsePixelGrid(response: string): string[][] | null {
     try {
       const jsonMatch = response.match(/\[[\s\S]*\]/);
-      if (!jsonMatch) return null;
+      if (!jsonMatch) {
+        logSystem(`parsePixelGrid: no JSON array found in response`);
+        return null;
+      }
 
       const grid = JSON.parse(jsonMatch[0]);
-      if (!Array.isArray(grid) || grid.length !== 32) return null;
+      if (!Array.isArray(grid)) {
+        logSystem(`parsePixelGrid: not an array`);
+        return null;
+      }
+      
+      if (grid.length !== 32) {
+        logSystem(`parsePixelGrid: expected 32 rows, got ${grid.length}. Truncating/padding to 32.`);
+        // If more than 32 rows, take first 32
+        const trimmed = grid.length > 32 ? grid.slice(0, 32) : grid;
+        // If less than 32 rows, pad with empty rows
+        while (trimmed.length < 32) {
+          trimmed.push(new Array(32).fill('#000000'));
+        }
+        // Reassign grid
+        (grid as any) = trimmed;
+      }
 
-      return grid.map(row => {
-        if (!Array.isArray(row) || row.length !== 32) return null;
-        return row.map(color => {
+      const result = grid.map((row: any, rowIndex: number) => {
+        if (!Array.isArray(row)) {
+          logSystem(`parsePixelGrid: row ${rowIndex} is not an array`);
+          return new Array(32).fill('#000000');
+        }
+        let normalizedRow = row;
+        if (row.length > 32) {
+          normalizedRow = row.slice(0, 32);
+        } else if (row.length < 32) {
+          normalizedRow = [...row, ...new Array(32 - row.length).fill('#000000')];
+        }
+        return normalizedRow.map((color: string) => {
           if (color.length === 4) {
             return '#' + color[1] + color[1] + color[2] + color[2] + color[3] + color[3];
           }
           return color;
         });
-      }).filter(Boolean) as string[][];
-    } catch {
+      });
+      
+      return result as string[][];
+    } catch (err) {
+      logSystem(`parsePixelGrid error: ${err instanceof Error ? err.message : String(err)}`);
       return null;
     }
   }
