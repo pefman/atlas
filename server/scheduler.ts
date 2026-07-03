@@ -1476,12 +1476,28 @@ class Scheduler {
     logSystem(`Generating portraits for ${rolesWithoutPortraits.length} roles...`);
 
     for (const role of rolesWithoutPortraits) {
-      try {
-        const portrait = await this.generatePortrait(role.name);
-        db.prepare('UPDATE roles SET portrait = ? WHERE id = ?').run(portrait, role.id);
-        logSystem(`Generated portrait for ${role.name}`);
-      } catch (err) {
-        logSystem(`Failed to generate portrait for ${role.name}: ${err instanceof Error ? err.message : String(err)}`);
+      let success = false;
+      const maxRetries = 3;
+      
+      for (let attempt = 0; attempt < maxRetries; attempt++) {
+        try {
+          const portrait = await this.generatePortrait(role.name);
+          db.prepare('UPDATE roles SET portrait = ? WHERE id = ?').run(portrait, role.id);
+          logSystem(`Generated portrait for ${role.name} (attempt ${attempt + 1})`);
+          success = true;
+          break;
+        } catch (err) {
+          logSystem(`Portrait attempt ${attempt + 1} for ${role.name} failed: ${err instanceof Error ? err.message : String(err)}`);
+          if (attempt < maxRetries - 1) {
+            const delay = 5000 * Math.pow(2, attempt);
+            logSystem(`Retrying in ${delay / 1000}s...`);
+            await new Promise(resolve => setTimeout(resolve, delay));
+          }
+        }
+      }
+      
+      if (!success) {
+        logSystem(`All retries exhausted for ${role.name}, leaving portrait empty`);
       }
     }
   }
