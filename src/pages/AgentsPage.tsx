@@ -97,7 +97,7 @@ export function AgentsPage() {
       actions={<Badge variant="secondary">CEO-selectable {selectableCount}</Badge>}
     >
       <Card>
-        <CardHeader className="space-y-3">
+        <CardHeader className="space-y-2 pb-3">
           <CardTitle className="text-base">Agent Library</CardTitle>
           <CardDescription>
             Browse available specialist agents, their prompts, and activity footprint.
@@ -118,59 +118,61 @@ export function AgentsPage() {
             <p className="text-sm text-muted-foreground">No agents found.</p>
           )}
 
-          <div className="grid grid-cols-1 gap-3 lg:grid-cols-2">
+          <div className="grid grid-cols-1 gap-2 md:grid-cols-2 xl:grid-cols-3">
             {visibleAgents.map((agent) => (
               <Card key={agent.id} className="border-border/80">
-                <CardHeader className="pb-3">
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex items-start gap-3">
+                <CardHeader className="pb-2 pt-3">
+                  <div className="flex items-start justify-between gap-1">
+                    <div className="flex items-start gap-2">
                       {agent.portrait ? (
                         <img
                           src={`data:image/png;base64,${agent.portrait}`}
                           alt=""
-                          className="w-8 h-8 rounded"
+                          className="h-7 w-7 rounded"
                           style={{ imageRendering: 'pixelated' }}
                         />
                       ) : (
-                        <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-xs font-bold">
+                        <div className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/20 text-[10px] font-bold">
                           {agent.name.charAt(0).toUpperCase()}
                         </div>
                       )}
-                      <div>
-                        <CardTitle className="text-sm">{roleLabel(agent.name)}</CardTitle>
-                        <CardDescription className="mt-1 font-mono text-[11px] text-muted-foreground">
-                          {agent.name}
-                        </CardDescription>
+                      <div className="min-w-0">
+                        <CardTitle className="truncate text-sm">{agent.funny_name || roleLabel(agent.name)}</CardTitle>
+                        {agent.funny_name && (
+                          <CardDescription className="truncate font-mono text-[10px] text-muted-foreground">
+                            {roleLabel(agent.name)}
+                          </CardDescription>
+                        )}
                       </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <Badge variant={agent.selectable_by_ceo ? 'default' : 'secondary'}>
+                    <div className="flex items-center gap-1">
+                      <Badge variant={agent.selectable_by_ceo ? 'default' : 'secondary'} className="h-5 text-[10px]">
                         {agent.selectable_by_ceo ? 'CEO-selectable' : 'Orchestrator'}
                       </Badge>
                     </div>
                   </div>
                 </CardHeader>
-                <CardContent className="space-y-3 pt-0">
-                  <p className="line-clamp-3 text-sm text-muted-foreground">
+                <CardContent className="space-y-2 pt-0">
+                  <p className="line-clamp-2 text-xs text-muted-foreground">
                     {agent.description || 'No description'}
                   </p>
 
-                  <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-                    <Badge variant="secondary">{agentStatusLabel(agent.status)}</Badge>
+                  <div className="flex flex-wrap items-center gap-1 text-xs text-muted-foreground">
+                    <Badge variant="secondary" className="h-5 text-[10px]">{agentStatusLabel(agent.status)}</Badge>
                     {agent.stats && (
-                      <Badge variant="secondary">
+                      <Badge variant="secondary" className="h-5 text-[10px]">
                         Calls {agent.stats.totalCalls}
                       </Badge>
                     )}
                     {agent.stats && (
-                      <Badge variant="secondary">
+                      <Badge variant="secondary" className="h-5 text-[10px]">
                         Tokens {formatTokens((agent.stats.inputTokens || 0) + (agent.stats.outputTokens || 0))}
                       </Badge>
                     )}
                   </div>
 
                   <div className="flex justify-end">
-                    <Button variant="outline" size="sm" onClick={() => navigate(`/agent/${agent.id}`)}>
+                    <Button variant="outline" size="sm" className="h-7 px-2 text-xs" onClick={() => navigate(`/agent/${agent.id}`)}>
                       Open Details
                     </Button>
                   </div>

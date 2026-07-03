@@ -9,6 +9,10 @@ const CANONICAL_ROLE_NAMES = new Set([
   'tech_lead',
   'frontend_developer',
   'backend_developer',
+  'devops_engineer',
+  'data_engineer',
+  'ui_ux_designer',
+  'security_engineer',
   'qa_engineer',
   'seo_specialist',
 ]);

@@ -8,6 +8,13 @@ interface AgentSidebarItemProps {
   onClick?: (agent: Agent) => void;
 }
 
+function roleLabel(name: string): string {
+  return name
+    .split('_')
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ');
+}
+
 const getStatusColor = (status: string) => {
   switch (status) {
     case 'executing':
@@ -117,7 +124,12 @@ export function AgentSidebarItem({ agent, onClick }: AgentSidebarItemProps) {
           )}
           <div className="flex items-center gap-2">
             <div className={`w-2 h-2 rounded-full ${getStatusColor(agent.status)} ${isActive ? 'animate-pulse' : ''}`} />
-            <span className="text-sm font-semibold">{agent.name}</span>
+            <div className="flex flex-col">
+              <span className="text-sm font-semibold">{agent.funny_name || agent.name}</span>
+              {agent.funny_name && (
+                <span className="text-[10px] text-muted-foreground">{roleLabel(agent.name)}</span>
+              )}
+            </div>
           </div>
         </div>
         {agent.stats && agent.stats.totalCalls > 0 && (

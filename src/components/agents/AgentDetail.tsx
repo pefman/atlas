@@ -75,8 +75,10 @@ export function AgentDetail({ agent, onClose }: AgentDetailProps) {
       <div className="space-y-4 border-t p-4">
         <div className="flex items-start justify-between gap-3">
           <div className="space-y-1">
-            <h3 className="text-lg font-semibold">{roleLabel(agent.name)}</h3>
-            <p className="font-mono text-xs text-muted-foreground">{agent.name}</p>
+            <h3 className="text-lg font-semibold">{agent.funny_name || roleLabel(agent.name)}</h3>
+            {agent.funny_name && (
+              <p className="font-mono text-xs text-muted-foreground">{roleLabel(agent.name)}</p>
+            )}
           </div>
           <Button variant="ghost" size="icon" onClick={onClose} aria-label="Close agent details">
             <X className="h-4 w-4" />

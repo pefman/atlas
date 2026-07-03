@@ -18,6 +18,10 @@ export type RoleName =
   | 'tech_lead'
   | 'frontend_developer'
   | 'backend_developer'
+  | 'devops_engineer'
+  | 'data_engineer'
+  | 'ui_ux_designer'
+  | 'security_engineer'
   | 'qa_engineer'
   | 'seo_specialist'
   | string;
@@ -126,6 +130,8 @@ export interface Agent {
   system_prompt: string;
   personality?: string;
   portrait?: string;
+  funny_name?: string;
+  gender?: 'male' | 'female';
   canonical?: boolean;
   selectable_by_ceo?: boolean;
   status: AgentStatus;

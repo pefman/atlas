@@ -665,7 +665,7 @@ export function MessagesPage() {
                           {agent.name.charAt(0).toUpperCase()}
                         </div>
                       )}
-                      {agent.name}
+                      {agent.funny_name || agent.name}
                     </div>
                   </SelectItem>
                 ))}
