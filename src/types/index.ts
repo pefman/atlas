@@ -124,6 +124,8 @@ export interface Agent {
   name: string;
   description: string;
   system_prompt: string;
+  personality?: string;
+  portrait?: string;
   canonical?: boolean;
   selectable_by_ceo?: boolean;
   status: AgentStatus;

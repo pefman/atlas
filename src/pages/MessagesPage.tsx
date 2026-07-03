@@ -645,12 +645,28 @@ export function MessagesPage() {
               }}
             >
               <SelectTrigger>
-                <SelectValue placeholder="Select agent" />
+                <SelectValue placeholder="Select agent">
+                  {newAgentId ? agents.find((a) => String(a.id) === newAgentId)?.name ?? 'Select agent' : 'Select agent'}
+                </SelectValue>
               </SelectTrigger>
               <SelectContent>
                 {agents.map((agent) => (
                   <SelectItem key={agent.id} value={String(agent.id)}>
-                    {agent.name}
+                    <div className="flex items-center gap-2">
+                      {agent.portrait ? (
+                        <img
+                          src={`data:image/png;base64,${agent.portrait}`}
+                          alt=""
+                          className="w-5 h-5 rounded"
+                          style={{ imageRendering: 'pixelated' }}
+                        />
+                      ) : (
+                        <div className="w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center text-[10px] font-bold">
+                          {agent.name.charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                      {agent.name}
+                    </div>
                   </SelectItem>
                 ))}
               </SelectContent>
