@@ -207,6 +207,12 @@ if (!roleColumns.find(c => c.name === 'personality')) {
 if (!roleColumns.find(c => c.name === 'portrait')) {
   db.exec("ALTER TABLE roles ADD COLUMN portrait TEXT NOT NULL DEFAULT ''");
 }
+if (!roleColumns.find(c => c.name === 'gender')) {
+  db.exec("ALTER TABLE roles ADD COLUMN gender TEXT NOT NULL DEFAULT 'male'");
+}
+if (!roleColumns.find(c => c.name === 'funny_name')) {
+  db.exec("ALTER TABLE roles ADD COLUMN funny_name TEXT NOT NULL DEFAULT ''");
+}
 
 const messageThreadColumns = db.pragma("table_info('message_threads')") as Array<{ name: string }>;
 if (!messageThreadColumns.find(c => c.name === 'category')) {

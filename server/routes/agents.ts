@@ -27,7 +27,7 @@ router.get('/', (req: Request, res: Response) => {
       : null;
 
   const agents = db.prepare(`
-    SELECT r.*, r.personality, r.portrait,
+    SELECT r.*, r.personality, r.portrait, r.gender, r.funny_name,
            (SELECT t.title FROM tasks t WHERE t.role_id = r.id AND t.status = 'in_progress' LIMIT 1) as current_task_title,
            CASE
              WHEN a.last_user_message_at IS NOT NULL

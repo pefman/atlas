@@ -5,6 +5,7 @@ import { recomputeTaskStatus } from './lib/taskProgress';
 import { OllamaProvider } from './ai/ollama';
 import { OpenAIProvider } from './ai/openai';
 import * as zlib from 'zlib';
+import { getGender, getFunnyName } from './lib/avatarGenerator';
 
 type Priority = 'high' | 'medium' | 'low';
 
@@ -1346,6 +1347,17 @@ class Scheduler {
   }
 
   private async generatePortrait(roleName: string): Promise<string> {
+    // Use deterministic generator for instant avatar generation
+    const { generateAvatar, renderPixelGridToBase64 } = await import('./lib/avatarGenerator');
+    const grid = generateAvatar(roleName);
+    return renderPixelGridToBase64(grid);
+  }
+
+  /**
+   * Generate portrait using AI (original method)
+   * Kept for manual regeneration if needed
+   */
+  private async generatePortraitAI(roleName: string): Promise<string> {
     const { provider } = await this.getProvider();
 
     const systemPrompt = `Output a 32x32 pixel art grid as a JSON 2D array of hex colors. ${roleName} character portrait. No markdown, no text, just the array.`;
@@ -1482,8 +1494,13 @@ class Scheduler {
       for (let attempt = 0; attempt < maxRetries; attempt++) {
         try {
           const portrait = await this.generatePortrait(role.name);
-          db.prepare('UPDATE roles SET portrait = ? WHERE id = ?').run(portrait, role.id);
-          logSystem(`Generated portrait for ${role.name} (attempt ${attempt + 1})`);
+          db.prepare('UPDATE roles SET portrait = ?, gender = ?, funny_name = ? WHERE id = ?').run(
+            portrait,
+            getGender(role.name),
+            getFunnyName(role.name),
+            role.id
+          );
+          logSystem(`Generated portrait for ${role.name} (attempt ${attempt + 1}) - ${getGender(role.name)}, "${getFunnyName(role.name)}"`);
           success = true;
           break;
         } catch (err) {
