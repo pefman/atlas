@@ -4,12 +4,14 @@ import { AppPage } from '@/components/layout/AppPage';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, RefreshCw, Palette, UserCircle } from 'lucide-react';
 import { toast } from 'sonner';
 
 export function SettingsPage() {
   const [resetDialogOpen, setResetDialogOpen] = useState(false);
   const [resetting, setResetting] = useState(false);
+  const [regeneratingAvatars, setRegeneratingAvatars] = useState(false);
+  const [regeneratingPersonalities, setRegeneratingPersonalities] = useState(false);
 
   const handleReset = async () => {
     setResetting(true);
@@ -29,12 +31,88 @@ export function SettingsPage() {
     }
   };
 
+  const handleRegenerateAvatars = async () => {
+    setRegeneratingAvatars(true);
+    try {
+      const res = await fetch('/api/settings/regenerate/portraits', { method: 'POST' });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Failed to regenerate');
+      }
+      const data = await res.json();
+      toast.success(`Regenerated ${data.regenerated} avatar(s) with new styles.`);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to regenerate avatars');
+    } finally {
+      setRegeneratingAvatars(false);
+    }
+  };
+
+  const handleRegeneratePersonalities = async () => {
+    setRegeneratingPersonalities(true);
+    try {
+      const res = await fetch('/api/settings/regenerate/personalities', { method: 'POST' });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Failed to regenerate');
+      }
+      const data = await res.json();
+      toast.success(`Regenerated ${data.regenerated} personality(s) with new traits.`);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to regenerate personalities');
+    } finally {
+      setRegeneratingPersonalities(false);
+    }
+  };
+
   return (
     <AppPage
       title="Settings"
       subtitle="Configure AI providers and application settings."
     >
       <SettingsForm />
+
+      <Card className="mt-6">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Palette className="h-5 w-5" />
+            Regenerate Avatars
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-sm text-muted-foreground">
+            Regenerate all agent avatars with new deterministic pixel art styles. Each role will get a unique combination of colors, gender, and funny name.
+          </p>
+          <Button
+            onClick={handleRegenerateAvatars}
+            disabled={regeneratingAvatars}
+          >
+            <RefreshCw className={`h-4 w-4 mr-2 ${regeneratingAvatars ? 'animate-spin' : ''}`} />
+            {regeneratingAvatars ? 'Regenerating...' : 'Regenerate All Avatars'}
+          </Button>
+        </CardContent>
+      </Card>
+
+      <Card className="mt-6">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <UserCircle className="h-5 w-5" />
+            Regenerate Personalities
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <p className="text-sm text-muted-foreground">
+            Regenerate all agent personality traits, strengths, and areas for growth. Each role will get a unique combination of characteristics.
+          </p>
+          <Button
+            onClick={handleRegeneratePersonalities}
+            disabled={regeneratingPersonalities}
+          >
+            <RefreshCw className={`h-4 w-4 mr-2 ${regeneratingPersonalities ? 'animate-spin' : ''}`} />
+            {regeneratingPersonalities ? 'Regenerating...' : 'Regenerate All Personalities'}
+          </Button>
+        </CardContent>
+      </Card>
 
       <Card className="mt-6 border-destructive/30">
         <CardHeader>

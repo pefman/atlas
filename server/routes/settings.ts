@@ -3,6 +3,8 @@ import { db } from '../db';
 import { OllamaProvider } from '../ai/ollama';
 import { OpenAIProvider } from '../ai/openai';
 import { AIProvider, Message, AIModel } from '../ai/provider';
+import { scheduler } from '../scheduler';
+import { getGender, getFunnyName, generateAvatar } from '../lib/avatarGenerator';
 
 const router = Router();
 
@@ -158,5 +160,104 @@ router.post('/reset', (req: Request, res: Response) => {
     res.status(500).json({ error: `Failed to reset data: ${error.message}` });
   }
 });
+
+// Regenerate all avatars with deterministic algorithm
+router.post('/regenerate/portraits', async (req: Request, res: Response) => {
+  try {
+    const { renderPixelGridToBase64 } = await import('../lib/avatarGenerator');
+    const roles = db.prepare('SELECT id, name FROM roles').all() as Array<{ id: number; name: string }>;
+    let regenerated = 0;
+
+    for (const role of roles) {
+      try {
+        const avatar = generateAvatar(role.name, { useFunnyNames: true });
+        const gender = getGender(role.name);
+        const funnyName = getFunnyName(role.name);
+        
+        // Convert grid to base64 PNG
+        const pngDataUrl = renderPixelGridToBase64(avatar);
+        
+        db.prepare('UPDATE roles SET portrait = ?, gender = ?, funny_name = ? WHERE id = ?')
+          .run(pngDataUrl, gender, funnyName, role.id);
+        regenerated++;
+      } catch (err) {
+        console.error(`Failed to regenerate avatar for ${role.name}:`, err);
+      }
+    }
+
+    res.json({ success: true, regenerated, total: roles.length });
+  } catch (err) {
+    const error = err instanceof Error ? err : new Error(String(err));
+    res.status(500).json({ error: `Failed to regenerate portraits: ${error.message}` });
+  }
+});
+
+// Regenerate all personalities
+router.post('/regenerate/personalities', async (req: Request, res: Response) => {
+  try {
+    const roles = db.prepare('SELECT id, name FROM roles').all() as Array<{ id: number; name: string }>;
+    let regenerated = 0;
+
+    for (const role of roles) {
+      try {
+        const personality = generatePersonality(role.name);
+        db.prepare('UPDATE roles SET personality = ? WHERE id = ?').run(personality, role.id);
+        regenerated++;
+      } catch (err) {
+        console.error(`Failed to regenerate personality for ${role.name}:`, err);
+      }
+    }
+
+    res.json({ success: true, regenerated, total: roles.length });
+  } catch (err) {
+    const error = err instanceof Error ? err : new Error(String(err));
+    res.status(500).json({ error: `Failed to regenerate personalities: ${error.message}` });
+  }
+});
+
+// Helper to generate deterministic personality
+function generatePersonality(roleName: string): string {
+  const seed = hashString(roleName);
+  const traits = [
+    'Detail-oriented', 'Methodical', 'Creative', 'Analytical', 'Collaborative',
+    'Independent', 'Decisive', 'Empathetic', 'Assertive', 'Patient',
+    'Enthusiastic', 'Cautious', 'Adaptable', 'Persistent', 'Strategic'
+  ];
+  
+  const pickedTraits = [];
+  for (let i = 0; i < 3; i++) {
+    const index = (seed + i * 7) % traits.length;
+    pickedTraits.push(traits[index]);
+  }
+  
+  const strengths = [
+    'Problem-solving', 'Communication', 'Leadership', 'Technical expertise', 'Teamwork',
+    'Time management', 'Organization', 'Creativity', 'Attention to detail', 'Critical thinking'
+  ];
+  
+  const strengthIndex = (seed + 3) % strengths.length;
+  
+  const weaknesses = [
+    'Overthinking', 'Perfectionism', 'Delegation', 'Public speaking', 'Task prioritization',
+    'Saying no', 'Impatience', 'Self-criticism', 'Avoiding feedback', 'Taking on too much'
+  ];
+  
+  const weaknessIndex = (seed + 4) % weaknesses.length;
+  
+  return `Personality traits: ${pickedTraits.join(', ')}. 
+Strengths: ${strengths[strengthIndex]}. 
+Areas for growth: ${weaknesses[weaknessIndex]}.`;
+}
+
+// Simple hash function
+function hashString(str: string): number {
+  let hash = 0;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash; // Convert to 32-bit integer
+  }
+  return Math.abs(hash);
+}
 
 export default router;
