@@ -8,18 +8,20 @@
 import { deflateSync } from 'zlib';
 import { createHash } from 'crypto';
 
-// Funny names for avatars
+// Real names for avatars
 const funnyNames = [
-  'Sir Code-a-Lot', 'Lord of the Pings', 'Captain Debug',
-  'Baron von Bit', 'Duchess of Data', 'Count Closure',
-  'Sir Compile-time', 'Lady Stack Overflow', 'Baron Byte',
-  'Duke of Debugging', 'Princess Pixel', 'Lord of the Loops',
-  'Sir Recursion', 'Duchess of Deploys', 'Count Cache',
-  'Baron of Bugs', 'Lady of Latency', 'Duke of Data',
-  'Sir of Syntax', 'Princess of Pixels', 'Lord of Loops',
-  'Captain Commit', 'Admiral of AWS', 'General of Git',
-  'Major of Memory', 'Colonel of Cache', 'Sergeant of Sprints',
-  'Private Pixel', 'Corporal of Code', 'Lieutenant of Loops'
+  // Male names
+  'James', 'John', 'Robert', 'Michael', 'William', 'David', 'Richard', 'Joseph', 'Thomas', 'Charles',
+  'Christopher', 'Daniel', 'Matthew', 'Anthony', 'Mark', 'Donald', 'Steven', 'Paul', 'Andrew', 'Joshua',
+  'Kenneth', 'Kevin', 'Brian', 'George', 'Timothy', 'Ronald', 'Edward', 'Jason', 'Jeffrey', 'Ryan',
+  'Jacob', 'Gary', 'Nicholas', 'Eric', 'Jonathan', 'Stephen', 'Larry', 'Justin', 'Scott', 'Brandon',
+  'Benjamin', 'Samuel', 'Raymond', 'Gregory', 'Frank', 'Alexander', 'Patrick', 'Jack', 'Dennis', 'Jerry',
+  // Female names
+  'Mary', 'Patricia', 'Jennifer', 'Linda', 'Barbara', 'Elizabeth', 'Susan', 'Jessica', 'Sarah', 'Karen',
+  'Lisa', 'Nancy', 'Betty', 'Margaret', 'Sandra', 'Ashley', 'Dorothy', 'Kimberly', 'Emily', 'Donna',
+  'Michelle', 'Carol', 'Amanda', 'Melissa', 'Deborah', 'Stephanie', 'Rebecca', 'Sharon', 'Laura', 'Cynthia',
+  'Kathleen', 'Amy', 'Angela', 'Shirley', 'Anna', 'Brenda', 'Pamela', 'Emma', 'Nicole', 'Helen',
+  'Samantha', 'Katherine', 'Christine', 'Debra', 'Rachel', 'Carolyn', 'Janet', 'Catherine', 'Maria', 'Heather'
 ];
 
 // Gender options
