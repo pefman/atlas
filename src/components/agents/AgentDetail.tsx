@@ -83,6 +83,24 @@ export function AgentDetail({ agent, onClose }: AgentDetailProps) {
           </Button>
         </div>
 
+        {agent.portrait && (
+          <div className="flex justify-center py-2">
+            <img
+              src={`data:image/png;base64,${agent.portrait}`}
+              alt=""
+              className="w-16 h-16 rounded-lg"
+              style={{ imageRendering: 'pixelated' }}
+            />
+          </div>
+        )}
+
+        {agent.personality && (
+          <div className="rounded-md border bg-card p-3">
+            <label className="text-xs text-muted-foreground">Mail Personality</label>
+            <p className="mt-1 text-sm">{agent.personality}</p>
+          </div>
+        )}
+
         <div className="grid gap-3 md:grid-cols-3">
           <div className="rounded-md border bg-card p-3">
             <label className="text-xs text-muted-foreground">Status</label>

@@ -103,8 +103,22 @@ export function AgentSidebarItem({ agent, onClick }: AgentSidebarItemProps) {
     >
       <div className="flex items-center justify-between mb-2">
         <div className="flex items-center gap-2">
-          <div className={`w-2 h-2 rounded-full ${getStatusColor(agent.status)} ${isActive ? 'animate-pulse' : ''}`} />
-          <span className="text-sm font-semibold">{agent.name}</span>
+          {agent.portrait ? (
+            <img
+              src={`data:image/png;base64,${agent.portrait}`}
+              alt=""
+              className="w-4 h-4 rounded"
+              style={{ imageRendering: 'pixelated' }}
+            />
+          ) : (
+            <div className="w-4 h-4 rounded-full bg-primary/20 flex items-center justify-center text-[8px] font-bold">
+              {agent.name.charAt(0).toUpperCase()}
+            </div>
+          )}
+          <div className="flex items-center gap-2">
+            <div className={`w-2 h-2 rounded-full ${getStatusColor(agent.status)} ${isActive ? 'animate-pulse' : ''}`} />
+            <span className="text-sm font-semibold">{agent.name}</span>
+          </div>
         </div>
         {agent.stats && agent.stats.totalCalls > 0 && (
           <span className="text-xs text-muted-foreground">{agent.stats.totalCalls} calls</span>

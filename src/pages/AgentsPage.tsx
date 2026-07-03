@@ -123,11 +123,25 @@ export function AgentsPage() {
               <Card key={agent.id} className="border-border/80">
                 <CardHeader className="pb-3">
                   <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <CardTitle className="text-sm">{roleLabel(agent.name)}</CardTitle>
-                      <CardDescription className="mt-1 font-mono text-[11px] text-muted-foreground">
-                        {agent.name}
-                      </CardDescription>
+                    <div className="flex items-start gap-3">
+                      {agent.portrait ? (
+                        <img
+                          src={`data:image/png;base64,${agent.portrait}`}
+                          alt=""
+                          className="w-8 h-8 rounded"
+                          style={{ imageRendering: 'pixelated' }}
+                        />
+                      ) : (
+                        <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center text-xs font-bold">
+                          {agent.name.charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                      <div>
+                        <CardTitle className="text-sm">{roleLabel(agent.name)}</CardTitle>
+                        <CardDescription className="mt-1 font-mono text-[11px] text-muted-foreground">
+                          {agent.name}
+                        </CardDescription>
+                      </div>
                     </div>
                     <div className="flex items-center gap-2">
                       <Badge variant={agent.selectable_by_ceo ? 'default' : 'secondary'}>
