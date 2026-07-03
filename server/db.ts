@@ -22,7 +22,9 @@ db.exec(`
     id INTEGER PRIMARY KEY AUTOINCREMENT,
     name TEXT UNIQUE NOT NULL,
     description TEXT NOT NULL,
-    system_prompt TEXT NOT NULL
+    system_prompt TEXT NOT NULL,
+    personality TEXT NOT NULL DEFAULT '',
+    portrait TEXT NOT NULL DEFAULT ''
   );
 
   CREATE TABLE IF NOT EXISTS tasks (
@@ -198,6 +200,14 @@ if (!notificationColumns.find(c => c.name === 'thread_id')) {
   db.exec("ALTER TABLE notifications ADD COLUMN thread_id INTEGER");
 }
 
+const roleColumns = db.pragma("table_info('roles')") as Array<{ name: string }>;
+if (!roleColumns.find(c => c.name === 'personality')) {
+  db.exec("ALTER TABLE roles ADD COLUMN personality TEXT NOT NULL DEFAULT ''");
+}
+if (!roleColumns.find(c => c.name === 'portrait')) {
+  db.exec("ALTER TABLE roles ADD COLUMN portrait TEXT NOT NULL DEFAULT ''");
+}
+
 const messageThreadColumns = db.pragma("table_info('message_threads')") as Array<{ name: string }>;
 if (!messageThreadColumns.find(c => c.name === 'category')) {
   db.exec("ALTER TABLE message_threads ADD COLUMN category TEXT NOT NULL DEFAULT 'general'");
@@ -218,6 +228,7 @@ type CanonicalRole = {
   name: string;
   description: string;
   systemPrompt: string;
+  personality: string;
 };
 
 const CLARIFICATION_POLICY =
@@ -267,55 +278,63 @@ const CANONICAL_ROLES: CanonicalRole[] = [
       '5) Subtasks must be actionable and ordered logically for implementation flow.\n\n' +
       'Example shape:\n' +
       '{"subtasks":[{"title":"...","description":"...","role":"backend_developer","priority":"high"}]}',
+    personality: 'direct, decisive, no-nonsense. Uses short sentences. Gets to the point.',
   },
   {
     name: 'product_manager',
     description: 'Defines scope, requirements, and acceptance criteria',
     systemPrompt:
       'You are a Product Manager. Clarify requirements, define user value, identify constraints, and produce acceptance criteria that engineering and QA can execute against. Be specific and decision-oriented.' + TOOL_POLICY + CLARIFICATION_POLICY,
+    personality: 'structured, analytical. Asks clarifying questions before making recommendations. Prefers bullet points.',
   },
   {
     name: 'tech_lead',
     description: 'Owns technical architecture and implementation strategy',
     systemPrompt:
       'You are a Tech Lead. Design robust technical approaches, identify dependencies and risks, and provide implementation guidance with clear tradeoffs. Prioritize maintainability, performance, and delivery speed.' + TOOL_POLICY + CLARIFICATION_POLICY,
+    personality: 'thoughtful, pragmatic. Weighs tradeoffs explicitly. Uses technical terms precisely.',
   },
   {
     name: 'frontend_developer',
     description: 'Builds UI, client interactions, and frontend integration',
     systemPrompt:
       'You are a Frontend Developer. Implement user-facing interfaces with clear UX, responsive behavior, and accessible interactions. Produce practical UI implementation steps and clean component-level output.' + TOOL_POLICY + CLARIFICATION_POLICY,
+    personality: 'detail-oriented, visual. Thinks about user experience. Mentions accessibility when relevant.',
   },
   {
     name: 'backend_developer',
     description: 'Builds APIs, business logic, and data integrations',
     systemPrompt:
       'You are a Backend Developer. Implement reliable server-side logic, API endpoints, and data workflows. Focus on correctness, security, observability, and maintainable code structure.' + TOOL_POLICY + CLARIFICATION_POLICY,
+    personality: 'methodical, security-conscious. Explains reasoning behind architectural choices. Prefers proven patterns.',
   },
   {
     name: 'qa_engineer',
     description: 'Verifies quality through test strategy and validation',
     systemPrompt:
       'You are a QA Engineer. Create concise test plans, define edge cases, and verify acceptance criteria. Highlight functional risks, regression concerns, and release readiness with clear pass/fail reasoning.' + TOOL_POLICY + CLARIFICATION_POLICY,
+    personality: 'thorough, skeptical. Looks for edge cases. Asks "what if this breaks?" Consideration for regression.',
   },
   {
     name: 'seo_specialist',
     description: 'Optimizes discoverability, metadata, and search performance',
     systemPrompt:
       'You are an SEO Specialist. Improve search visibility through metadata, information architecture, keyword intent alignment, and technical SEO recommendations. Provide concrete, prioritized SEO actions.' + TOOL_POLICY + CLARIFICATION_POLICY,
+    personality: 'data-driven, strategic. Focuses on metrics and rankings. Suggests specific keywords and metadata.',
   },
 ];
 
 const upsertRole = db.prepare(`
-  INSERT INTO roles (name, description, system_prompt)
-  VALUES (?, ?, ?)
+  INSERT INTO roles (name, description, system_prompt, personality)
+  VALUES (?, ?, ?, ?)
   ON CONFLICT(name) DO UPDATE SET
     description = excluded.description,
-    system_prompt = excluded.system_prompt
+    system_prompt = excluded.system_prompt,
+    personality = excluded.personality
 `);
 
 for (const role of CANONICAL_ROLES) {
-  upsertRole.run(role.name, role.description, role.systemPrompt);
+  upsertRole.run(role.name, role.description, role.systemPrompt, role.personality);
 }
 
 export { db };
