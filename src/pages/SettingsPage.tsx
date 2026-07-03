@@ -40,7 +40,8 @@ export function SettingsPage() {
         throw new Error(data.error || 'Failed to regenerate');
       }
       const data = await res.json();
-      toast.success(`Regenerated ${data.regenerated} avatar(s) with new styles.`);
+      toast.success(`Regenerated ${data.regenerated} avatar(s) with new styles. Reloading...`);
+      setTimeout(() => window.location.reload(), 1000);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to regenerate avatars');
     } finally {
@@ -57,7 +58,8 @@ export function SettingsPage() {
         throw new Error(data.error || 'Failed to regenerate');
       }
       const data = await res.json();
-      toast.success(`Regenerated ${data.regenerated} personality(s) with new traits.`);
+      toast.success(`Regenerated ${data.regenerated} personality(s) with new traits. Reloading...`);
+      setTimeout(() => window.location.reload(), 1000);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to regenerate personalities');
     } finally {
