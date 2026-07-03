@@ -4,7 +4,7 @@ import { OllamaProvider } from '../ai/ollama';
 import { OpenAIProvider } from '../ai/openai';
 import { AIProvider, Message, AIModel } from '../ai/provider';
 import { scheduler } from '../scheduler';
-import { getGender, getFunnyName, generateAvatar } from '../lib/avatarGenerator';
+import { getGender, getFunnyName, generateAvatar, renderPixelGridToBase64 } from '../lib/avatarGenerator';
 
 const router = Router();
 
@@ -164,7 +164,6 @@ router.post('/reset', (req: Request, res: Response) => {
 // Regenerate all avatars with deterministic algorithm
 router.post('/regenerate/portraits', async (req: Request, res: Response) => {
   try {
-    const { renderPixelGridToBase64 } = await import('../lib/avatarGenerator');
     const roles = db.prepare('SELECT id, name FROM roles').all() as Array<{ id: number; name: string }>;
     let regenerated = 0;
 
