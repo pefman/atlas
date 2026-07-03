@@ -19,7 +19,7 @@ import { Button } from '@/components/ui/button';
 import { X } from 'lucide-react';
 import { Toaster } from '@/components/ui/sonner';
 import { AppPage } from '@/components/layout/AppPage';
-import { AIStatusIndicator } from '@/components/AIStatusIndicator';
+
 import { KanbanStreamProvider } from '@/contexts/KanbanStreamContext';
 
 interface AppSidebarProps {
@@ -102,7 +102,6 @@ function App() {
             </SidebarInset>
           </SidebarProvider>
           <Toaster />
-          <AIStatusIndicator />
         </Router>
       </KanbanStreamProvider>
     </NotificationProvider>
