@@ -1,13 +1,15 @@
 import { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { SettingsForm } from '@/components/settings/SettingsForm';
 import { AppPage } from '@/components/layout/AppPage';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { AlertTriangle, RefreshCw, Palette, UserCircle } from 'lucide-react';
+import { AlertTriangle, RefreshCw, Palette, UserCircle, ExternalLink } from 'lucide-react';
 import { toast } from 'sonner';
 
 export function SettingsPage() {
+  const navigate = useNavigate();
   const [resetDialogOpen, setResetDialogOpen] = useState(false);
   const [resetting, setResetting] = useState(false);
   const [regeneratingAvatars, setRegeneratingAvatars] = useState(false);
@@ -40,8 +42,8 @@ export function SettingsPage() {
         throw new Error(data.error || 'Failed to regenerate');
       }
       const data = await res.json();
-      toast.success(`Regenerated ${data.regenerated} avatar(s) with new styles. Reloading...`);
-      setTimeout(() => window.location.reload(), 1000);
+      toast.success(`Regenerated ${data.regenerated} avatar(s) with new styles!`);
+      setTimeout(() => navigate('/agents'), 1000);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to regenerate avatars');
     } finally {
@@ -58,8 +60,8 @@ export function SettingsPage() {
         throw new Error(data.error || 'Failed to regenerate');
       }
       const data = await res.json();
-      toast.success(`Regenerated ${data.regenerated} personality(s) with new traits. Reloading...`);
-      setTimeout(() => window.location.reload(), 1000);
+      toast.success(`Regenerated ${data.regenerated} personality(s) with new traits!`);
+      setTimeout(() => navigate('/agents'), 1000);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : 'Failed to regenerate personalities');
     } finally {
