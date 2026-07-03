@@ -1348,23 +1348,9 @@ class Scheduler {
   private async generatePortrait(roleName: string): Promise<string> {
     const { provider } = await this.getProvider();
 
-    const systemPrompt = `You are a pixel art generator. Output ONLY a valid JSON array representing a 32x32 pixel art portrait of a ${roleName}.
+    const systemPrompt = `Output a 32x32 pixel art grid as a JSON 2D array of hex colors. ${roleName} character portrait. No markdown, no text, just the array.`;
 
-Rules:
-- Output ONLY a JSON 2D array, 32 rows x 32 columns
-- Each cell is a hex color string like "#RRGGBB" or "#RGB"
-- Depict a character or icon representing this role
-- Use full RGB colors
-- No text, no UI, no borders
-
-Example format (showing only first 2 rows, you must output all 32):
-[
-  ["#FFFFFF", "#FFFFFF", ... 30 more],
-  ["#FFFFFF", "#FFFFFF", ... 30 more],
-  ... 30 more rows
-]`;
-
-    const userMessage = `Generate a 32x32 pixel art portrait of a ${roleName}. Output ONLY the JSON array.`;
+    const userMessage = `Return exactly 32 rows of 32 hex colors each for a pixel art portrait of a ${roleName}. JSON array only.`;
 
     const response = await provider.chat([
       { role: 'system', content: systemPrompt },
@@ -1382,7 +1368,10 @@ Example format (showing only first 2 rows, you must output all 32):
 
   private parsePixelGrid(response: string): string[][] | null {
     try {
-      const jsonMatch = response.match(/\[[\s\S]*\]/);
+      // Strip markdown code fences
+      let cleaned = response.replace(/```(?:json)?\s*/g, '').replace(/```\s*/g, '').trim();
+      
+      const jsonMatch = cleaned.match(/\[[\s\S]*\]/);
       if (!jsonMatch) {
         logSystem(`parsePixelGrid: no JSON array found in response`);
         return null;
@@ -1396,14 +1385,12 @@ Example format (showing only first 2 rows, you must output all 32):
       
       if (grid.length !== 32) {
         logSystem(`parsePixelGrid: expected 32 rows, got ${grid.length}. Truncating/padding to 32.`);
-        // If more than 32 rows, take first 32
-        const trimmed = grid.length > 32 ? grid.slice(0, 32) : grid;
-        // If less than 32 rows, pad with empty rows
-        while (trimmed.length < 32) {
-          trimmed.push(new Array(32).fill('#000000'));
+        if (grid.length > 32) {
+          while (grid.length > 32) grid.pop();
         }
-        // Reassign grid
-        (grid as any) = trimmed;
+        while (grid.length < 32) {
+          grid.push(new Array(32).fill('#000000'));
+        }
       }
 
       const result = grid.map((row: any, rowIndex: number) => {
