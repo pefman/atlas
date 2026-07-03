@@ -4,6 +4,7 @@ import { execEventBus } from './events';
 import { recomputeTaskStatus } from './lib/taskProgress';
 import { OllamaProvider } from './ai/ollama';
 import { OpenAIProvider } from './ai/openai';
+import * as zlib from 'zlib';
 
 type Priority = 'high' | 'medium' | 'low';
 
@@ -1339,6 +1340,129 @@ class Scheduler {
     }
   }
 
+  private async generatePortrait(roleName: string): Promise<string> {
+    const { provider } = await this.getProvider();
+
+    const systemPrompt = `You are a pixel art generator. Output ONLY a valid JSON array representing a 32x32 pixel art portrait of a ${roleName}.
+
+Rules:
+- Output ONLY a JSON 2D array, 32 rows x 32 columns
+- Each cell is a hex color string like "#RRGGBB" or "#RGB"
+- Depict a character or icon representing this role
+- Use full RGB colors
+- No text, no UI, no borders
+
+Example format (showing only first 2 rows, you must output all 32):
+[
+  ["#FFFFFF", "#FFFFFF", ... 30 more],
+  ["#FFFFFF", "#FFFFFF", ... 30 more],
+  ... 30 more rows
+]`;
+
+    const userMessage = `Generate a 32x32 pixel art portrait of a ${roleName}. Output ONLY the JSON array.`;
+
+    const response = await provider.chat([
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: userMessage },
+    ]);
+
+    const grid = this.parsePixelGrid(response.content);
+    if (!grid) {
+      throw new Error('Failed to parse pixel grid from AI response');
+    }
+
+    return this.renderPixelGridToBase64(grid);
+  }
+
+  private parsePixelGrid(response: string): string[][] | null {
+    try {
+      const jsonMatch = response.match(/\[[\s\S]*\]/);
+      if (!jsonMatch) return null;
+
+      const grid = JSON.parse(jsonMatch[0]);
+      if (!Array.isArray(grid) || grid.length !== 32) return null;
+
+      return grid.map(row => {
+        if (!Array.isArray(row) || row.length !== 32) return null;
+        return row.map(color => {
+          if (color.length === 4) {
+            return '#' + color[1] + color[1] + color[2] + color[2] + color[3] + color[3];
+          }
+          return color;
+        });
+      }).filter(Boolean) as string[][];
+    } catch {
+      return null;
+    }
+  }
+
+  private renderPixelGridToBase64(grid: string[][]): string {
+    const SIZE = 32;
+    const rawData: number[] = [];
+
+    for (let y = 0; y < SIZE; y++) {
+      rawData.push(0);
+      for (let x = 0; x < SIZE; x++) {
+        const color = grid[y][x];
+        const r = parseInt(color.slice(1, 3), 16);
+        const g = parseInt(color.slice(3, 5), 16);
+        const b = parseInt(color.slice(5, 7), 16);
+        rawData.push(r, g, b);
+      }
+    }
+
+    const signature = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);
+
+    const ihdrData = Buffer.alloc(13);
+    ihdrData.writeUInt32BE(SIZE, 0);
+    ihdrData.writeUInt32BE(SIZE, 4);
+    ihdrData[8] = 8;
+    ihdrData[9] = 2;
+    ihdrData[10] = 0;
+    ihdrData[11] = 0;
+    ihdrData[12] = 0;
+    const ihdr = this.makeChunk('IHDR', ihdrData);
+
+    const rawBuffer = Buffer.from(rawData);
+    const compressed = zlib.deflateSync(rawBuffer);
+    const idat = this.makeChunk('IDAT', compressed);
+
+    const iend = this.makeChunk('IEND', Buffer.alloc(0));
+
+    const png = Buffer.concat([signature, ihdr, idat, iend]);
+    return png.toString('base64');
+  }
+
+  private makeChunk(type: string, data: Buffer): Buffer {
+    const length = Buffer.alloc(4);
+    length.writeUInt32BE(data.length, 0);
+    const typeBuf = Buffer.from(type, 'ascii');
+    const crcData = Buffer.concat([typeBuf, data]);
+    const crc = Buffer.alloc(4);
+    crc.writeUInt32BE(crc32(crcData) >>> 0, 0);
+    return Buffer.concat([length, typeBuf, data, crc]);
+  }
+
+  private async seedPortraits(): Promise<void> {
+    const rolesWithoutPortraits = db.prepare(
+      'SELECT id, name FROM roles WHERE portrait = ""'
+    ).all() as Array<{ id: number; name: string }>;
+
+    if (rolesWithoutPortraits.length === 0) return;
+
+    logSystem(`Generating portraits for ${rolesWithoutPortraits.length} roles...`);
+
+    for (const role of rolesWithoutPortraits) {
+      try {
+        const portrait = await this.generatePortrait(role.name);
+        db.prepare('UPDATE roles SET portrait = ? WHERE id = ?').run(portrait, role.id);
+        logSystem(`Generated portrait for ${role.name}`);
+      } catch (err) {
+        logSystem(`Failed to generate portrait for ${role.name}: ${err instanceof Error ? err.message : String(err)}`);
+      }
+    }
+  }
+
   private async getProvider(): Promise<{ provider: any; name: string }> {
     const settings = db.prepare('SELECT * FROM settings ORDER BY id DESC LIMIT 1').get();
     if (!settings) {
@@ -1352,6 +1476,24 @@ class Scheduler {
     }
     return { provider: new OllamaProvider(settings.endpoint, settings.model), name: 'ollama' };
   }
+}
+
+// Minimal CRC32 lookup table
+const crc32Table: number[] = [];
+for (let n = 0; n < 256; n++) {
+  let c = n;
+  for (let k = 0; k < 8; k++) {
+    c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+  }
+  crc32Table[n] = c;
+}
+
+function crc32(buf: Buffer): number {
+  let crc = 0xFFFFFFFF;
+  for (let i = 0; i < buf.length; i++) {
+    crc = crc32Table[(crc ^ buf[i]) & 0xFF] ^ (crc >>> 8);
+  }
+  return (crc ^ 0xFFFFFFFF) >>> 0;
 }
 
 export const scheduler = new Scheduler();
