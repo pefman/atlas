@@ -170,9 +170,11 @@ router.post('/regenerate/portraits', async (req: Request, res: Response) => {
 
     for (const role of roles) {
       try {
-        const avatar = generateAvatar(role.name, { useFunnyNames: true });
-        const gender = getGender(role.name);
-        const funnyName = getFunnyName(role.name);
+        // Add random seed to get different avatars each time
+        const randomSeed = Math.floor(Math.random() * 1000000);
+        const avatar = generateAvatar(role.name + randomSeed, { useFunnyNames: true });
+        const gender = getGender(role.name + randomSeed);
+        const funnyName = getFunnyName(role.name + randomSeed);
         
         // Convert grid to base64 PNG
         const pngDataUrl = renderPixelGridToBase64(avatar);
@@ -200,7 +202,9 @@ router.post('/regenerate/personalities', async (req: Request, res: Response) => 
 
     for (const role of roles) {
       try {
-        const personality = generatePersonality(role.name);
+        // Add random seed to get different personalities each time
+        const randomSeed = Math.floor(Math.random() * 1000000);
+        const personality = generatePersonality(role.name + randomSeed);
         db.prepare('UPDATE roles SET personality = ? WHERE id = ?').run(personality, role.id);
         regenerated++;
       } catch (err) {
