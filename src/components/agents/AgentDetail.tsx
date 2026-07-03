@@ -132,6 +132,23 @@ export function AgentDetail({ agent, onClose }: AgentDetailProps) {
           </pre>
         </div>
 
+        {agent.portrait && (
+          <div className="flex justify-center">
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={async () => {
+                const res = await fetch(`/api/agents/${agent.id}/regenerate-portrait`, { method: 'POST' });
+                if (res.ok) {
+                  onClose();
+                }
+              }}
+            >
+              Regenerate Portrait
+            </Button>
+          </div>
+        )}
+
         <div className="mt-2 flex gap-2">
           <Button size="sm" onClick={() => setIsEditOpen(true)}>Edit</Button>
           {agent.name !== 'ceo' && (
