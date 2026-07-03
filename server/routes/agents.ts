@@ -27,7 +27,7 @@ router.get('/', (req: Request, res: Response) => {
       : null;
 
   const agents = db.prepare(`
-    SELECT r.*, 
+    SELECT r.*, r.personality, r.portrait,
            (SELECT t.title FROM tasks t WHERE t.role_id = r.id AND t.status = 'in_progress' LIMIT 1) as current_task_title,
            CASE
              WHEN a.last_user_message_at IS NOT NULL
@@ -197,7 +197,7 @@ router.get('/:id/assigned-work', (req: Request, res: Response) => {
 
 // Update agent
 router.put('/:id', (req: Request, res: Response) => {
-  const { name, description, system_prompt } = req.body;
+  const { name, description, system_prompt, personality, portrait } = req.body;
   const agentId = parseInt(req.params.id);
   
   const agent = db.prepare('SELECT * FROM roles WHERE id = ?').get(agentId);
@@ -207,17 +207,42 @@ router.put('/:id', (req: Request, res: Response) => {
     return;
   }
   
-  if (name) {
+  if (name !== undefined) {
     db.prepare('UPDATE roles SET name = ? WHERE id = ?').run(name, agentId);
   }
-  if (description) {
+  if (description !== undefined) {
     db.prepare('UPDATE roles SET description = ? WHERE id = ?').run(description, agentId);
   }
-  if (system_prompt) {
+  if (system_prompt !== undefined) {
     db.prepare('UPDATE roles SET system_prompt = ? WHERE id = ?').run(system_prompt, agentId);
+  }
+  if (personality !== undefined) {
+    db.prepare('UPDATE roles SET personality = ? WHERE id = ?').run(personality, agentId);
+  }
+  if (portrait !== undefined) {
+    db.prepare('UPDATE roles SET portrait = ? WHERE id = ?').run(portrait, agentId);
   }
   
   res.json({ success: true });
+});
+
+// Regenerate portrait
+router.post('/:id/regenerate-portrait', async (req: Request, res: Response) => {
+  const agentId = parseInt(req.params.id);
+  const role = db.prepare('SELECT id, name FROM roles WHERE id = ?').get(agentId) as any;
+
+  if (!role) {
+    res.status(404).json({ error: 'Agent not found' });
+    return;
+  }
+
+  try {
+    const portrait = await scheduler.generatePortrait(role.name);
+    db.prepare('UPDATE roles SET portrait = ? WHERE id = ?').run(portrait, agentId);
+    res.json({ success: true, portrait });
+  } catch (error) {
+    res.status(500).json({ error: error instanceof Error ? error.message : 'Portrait generation failed' });
+  }
 });
 
 // Delete agent
