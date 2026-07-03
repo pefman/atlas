@@ -631,7 +631,7 @@ export function MessagesPage() {
           <SheetHeader>
             <SheetTitle>New Message</SheetTitle>
             <SheetDescription>
-              Start a conversation with an agent and optionally link task context.
+              Start a conversation with an agent. A task link is optional — leave it blank to message without context.
             </SheetDescription>
           </SheetHeader>
 
@@ -662,7 +662,7 @@ export function MessagesPage() {
               placeholder="Subject (optional)"
             />
 
-            <Select value={newTaskId} onValueChange={(value) => { setNewTaskId(value ?? 'none'); setNewSubtaskId('none'); }} disabled={!assignedWork}>
+            <Select value={newTaskId} onValueChange={(value) => { setNewTaskId(value ?? 'none'); setNewSubtaskId('none'); }}>
               <SelectTrigger>
                 <SelectValue placeholder="Relevant task" />
               </SelectTrigger>
@@ -675,6 +675,10 @@ export function MessagesPage() {
                 ))}
               </SelectContent>
             </Select>
+
+            <p className="px-1 text-xs text-muted-foreground">
+              No task? That is fine — the agent will reply based on your message alone.
+            </p>
 
             <Select value={newSubtaskId} onValueChange={(value) => setNewSubtaskId(value ?? 'none')} disabled={visibleSubtasks.length === 0}>
               <SelectTrigger>

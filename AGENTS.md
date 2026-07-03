@@ -4,22 +4,23 @@
 
 ```bash
 npm install
-npm run dev        # frontend (5173) + backend (3101) via concurrently
-npm run build      # tsc --noEmit && vite build → dist/
+npm run dev        # frontend (5174) + backend (3101) via concurrently
+npm run build      # typecheck (tsc, noEmit in tsconfig) + vite build → dist/
 npm run preview    # serves dist/ only, no backend
 ```
 
-`npm run dev` runs `tsx server/index.ts` (Express on **3101**) and `vite` (5173). Vite proxies `/api` to `http://127.0.0.1:3101`. Vite binds `0.0.0.0` with `strictPort: true`.
+Vite config binds `0.0.0.0:5174` with `strictPort: true`. Vite proxies `/api` to `http://127.0.0.1:3101`.
 
 ## Architecture
 
-- **Frontend**: `src/` — React 19 + Vite + TypeScript + shadcn/ui v4 (Base UI, **no `asChild` prop**). Entry: `src/main.tsx` wraps `<App />` in `ThemeProvider` → `ErrorBoundary` → `<KanbanStreamProvider>` → `<Router>`.
+- **Frontend**: `src/` — React 19 + Vite + TypeScript + shadcn/ui v4 (Base UI, **no `asChild` prop**). Entry: `src/main.tsx` wraps `<App />` in `ThemeProvider` → `ErrorBoundary`.
+- **App tree**: `NotificationProvider → KanbanStreamProvider → Router → SidebarProvider → AppSidebar + SidebarInset`. Routes defined in `src/App.tsx`.
 - **Backend**: `server/` — Express 5. Entry: `server/index.ts`. Scheduler starts on boot via `scheduler.start()`. Health: `GET /api/health`.
 - **Database**: `server/db.ts` creates SQLite at `data/tasks.db` on first run (WAL mode, FK enabled). Auto-seeds 7 canonical roles.
 - **Scheduler**: `server/scheduler.ts` — `Scheduler` class with priority queues (high/medium/low). CEO worker polls every 5s for `status='in_progress' AND ceo_status='idle'`. Subtask retry: `MAX_ATTEMPTS=3`, backoff capped at 5min. Decomposition retry: `DECOMP_MAX_ATTEMPTS=3`, backoff capped at 30s.
 - **Progress recomputation**: `server/lib/taskProgress.ts` — `recomputeTaskStatus(taskId)` sets task to `review` if any subtask failed, `done` if all succeeded.
 - **AI providers**: `server/ai/` — `OllamaProvider` (default), `OpenAIProvider`. Configured via Settings, stored in `settings` table.
-- **Event bus**: `server/events.ts` — emits `notification`, `task_decomposed`, `task_decomposing`, `subtask_start`, `subtask_complete`, `subtask_failed`, `task_completed`, `task_status_changed` for SSE streams.
+- **Event bus**: `server/events.ts` — emits `notification`, `task_decomposed`, `task_decomposing`, `subtask_start`, `subtask_complete`, `subtask_failed`, `task_completed`, `task_status_changed`, `message_created`, `message_updated` for SSE streams.
 
 ## Frontend routes
 
@@ -60,7 +61,7 @@ npm run preview    # serves dist/ only, no backend
 - TypeScript path alias: `@/*` → `./src/*` (both `tsconfig.json` and Vite).
 - Tailwind v4 with `@tailwindcss/postcss`. CSS imports use `@import "tailwindcss"`. CSS variables in **oklch**.
 - `rsc: false` in `components.json` — client-rendered, no Server Components.
-- **Server uses `tsx` (not `tsc`)**. `tsc --noEmit` only type-checks `src/`.
+- **Server uses `tsx` (not `tsc`)**. `tsc --noEmit` only type-checks `src/` (server excluded by tsconfig include).
 - `better-sqlite3` is **synchronous** (`.get()`, `.run()`, `.all()`).
 - `cn()` in `src/lib/utils.ts` wraps `clsx` + `twMerge`.
 - `tsconfig.json` allows unused vars (`noUnusedLocals: false`).
@@ -71,7 +72,7 @@ npm run preview    # serves dist/ only, no backend
 
 ```bash
 npx tsc --noEmit    # frontend only (server excluded by tsconfig include)
-npm run build        # tsc --noEmit && vite build
+npm run build        # tsc (noEmit in tsconfig) && vite build
 ```
 
 ## Database
